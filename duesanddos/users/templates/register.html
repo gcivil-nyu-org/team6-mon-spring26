@@ -1,0 +1,16 @@
+<h2>Roommate Registration</h2>
+
+<form method="post">
+  {% csrf_token %}
+
+  {{ form.non_field_errors }}
+
+  <p>{{ form.username.label_tag }}<br>{{ form.username }}{{ form.username.errors }}</p>
+  <p>{{ form.firstName.label_tag }}<br>{{ form.firstName }}{{ form.firstName.errors }}</p>
+  <p>{{ form.lastName.label_tag }}<br>{{ form.lastName }}{{ form.lastName.errors }}</p>
+  <p>{{ form.email.label_tag }}<br>{{ form.email }}{{ form.email.errors }}</p>
+  <p>{{ form.password.label_tag }}<br>{{ form.password }}{{ form.password.errors }}</p>
+  <p>{{ form.confirmPassword.label_tag }}<br>{{ form.confirmPassword }}{{ form.confirmPassword.errors }}</p>
+
+  <button type="submit">Sign Up</button>
+</form>
