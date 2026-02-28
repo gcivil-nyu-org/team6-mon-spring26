@@ -1,17 +1,40 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
-<head><title>Login</title></head>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Dues & Dos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+
 <body>
-  <h2>Login</h2>
+  <div class="login-container">
+    <div class="login-header">
+      <h2>Welcome Back</h2>
+      <p>Please enter your details to sign in.</p>
+    </div>
 
-  {% if form.errors %}
-    <p style="color:red;">Invalid username or password.</p>
-  {% endif %}
+    {% if form.errors %}
+    <div class="error-msg">
+      Invalid username or password. Please try again.
+    </div>
+    {% endif %}
 
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Log In</button>
-  </form>
+    <form method="POST" class="form-group">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="submit-btn">Log In</button>
+    </form>
+
+    <div class="form-footer">
+      Don't have an account? <a href="/register/">Sign up</a>
+    </div>
+  </div>
 </body>
+
 </html>
