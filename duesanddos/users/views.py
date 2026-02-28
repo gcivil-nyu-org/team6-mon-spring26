@@ -1,32 +1,31 @@
-from django.shortcuts import render
-from .models import CustomUser
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.db import transaction
 from .forms import RegisterForm
+from .models import CustomUser
 
+@transaction.atomic
 def register_view(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            # Get the data directly
-            id_val = form.cleaned_data.get('identifier')
-            pw = form.cleaned_data.get('password')
-            cpw = form.cleaned_data.get('confirm_password')
+            username = form.cleaned_data["username"]
+            first_name = form.cleaned_data["firstName"].strip()
+            last_name = form.cleaned_data["lastName"].strip()
+            email = form.cleaned_data["email"]
+            password = form.cleaned_data["password"]
 
-            if pw == cpw:
-                # Create the user manually
-                user = CustomUser.objects.create(username=id_val)
-                if "@" in id_val:
-                    user.email = id_val
-                else:
-                    user.phone_number = id_val
-                
-                user.set_password(pw)
-                user.save()
-                
-                print(f"SUCCESS: User {id_val} created!") # Check your terminal for this!
-                return render(request, 'users/success.html', {'id_used': id_val})
-            else:
-                form.add_error(None, "Passwords do not match")
+            user = CustomUser.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+
+            messages.success(request, "Account created! Please log in.")
+            return redirect("register")  # change to your login url name
     else:
         form = RegisterForm()
-    
-    return render(request, 'users/register.html', {'form': form})
+
+    return render(request, "register.html", {"form": form})
