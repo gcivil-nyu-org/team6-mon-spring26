@@ -24,7 +24,7 @@ def register_view(request):
             )
 
             messages.success(request, "Account created! Please log in.")
-            return redirect("register")  # change to your login url name
+            return redirect("login")
     else:
         form = RegisterForm()
 
