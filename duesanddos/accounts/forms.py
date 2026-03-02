@@ -8,7 +8,7 @@ class RegisterForm(forms.Form):
     lastName = forms.CharField(label="Last Name")
     email = forms.EmailField(widget=forms.EmailInput())
     password = forms.CharField(widget=forms.PasswordInput())
-    confirmPassword = forms.CharField(widget=forms.PasswordInput())
+    confirmPassword = forms.CharField(widget=forms.PasswordInput(), label="Confirm Password")
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
