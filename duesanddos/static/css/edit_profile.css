@@ -1,0 +1,30 @@
+.edit-profile-container {
+  max-width: 700px;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(249, 250, 251, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+.form-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.form-actions .submit-btn,
+.form-actions .secondary-btn {
+  flex: 1;
+  min-width: 180px;
+}

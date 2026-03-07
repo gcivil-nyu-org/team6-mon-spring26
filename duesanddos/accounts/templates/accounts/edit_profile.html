@@ -5,33 +5,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Profile - Dues & Dos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+  <link rel="stylesheet" href="{% static 'css/edit_profile.css' %}">
 </head>
-<body>
-  <h2>Edit Profile</h2>
+<body class="page-top">
+  <div class="card edit-profile-container">
+    <div class="card-header edit-profile-header">
+      <h2>Edit Profile</h2>
+      <p>Update your personal details, preferences, and password.</p>
+    </div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <p>{{ message }}</p>
-    {% endfor %}
-  {% endif %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
 
-  <h3>Update Profile Information</h3>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ user_form.as_p }}
-    {{ profile_form.as_p }}
-    <button type="submit" name="save_profile">Save Changes</button>
-  </form>
+    {% if user_form.non_field_errors or profile_form.non_field_errors or password_form.non_field_errors %}
+      <div class="error-msg">
+        {{ user_form.non_field_errors }}
+        {{ profile_form.non_field_errors }}
+        {{ password_form.non_field_errors }}
+      </div>
+    {% endif %}
 
-  <hr>
+    <div class="form-section">
+      <h3>Profile Information</h3>
+      <form method="post" enctype="multipart/form-data" class="form-group">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        {{ profile_form.as_p }}
 
-  <h3>Change Password</h3>
-  <form method="post">
-    {% csrf_token %}
-    {{ password_form.as_p }}
-    <button type="submit" name="change_password">Update Password</button>
-  </form>
+        <div class="form-actions">
+          <button type="submit" name="save_profile" class="submit-btn">Save Changes</button>
+          <a href="{% url 'profile' %}" class="secondary-btn">Cancel</a>
+        </div>
+      </form>
+    </div>
 
-  <p><a href="{% url 'profile' %}">Back to Profile</a></p>
+    <div class="form-section">
+      <h3>Change Password</h3>
+      <form method="post" class="form-group">
+        {% csrf_token %}
+        {{ password_form.as_p }}
+
+        <div class="form-actions">
+          <button type="submit" name="change_password" class="submit-btn">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>

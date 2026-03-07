@@ -5,29 +5,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile - Dues & Dos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 </head>
-<body>
-  <h2>Your Profile</h2>
+<body class="page-center">
+  <div class="card profile-container">
+    <div class="card-header profile-header">
+      <h2>Your Profile</h2>
+      <p>View your account details and preferences.</p>
+    </div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <p>{{ message }}</p>
-    {% endfor %}
-  {% endif %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
 
-  {% if profile.avatar %}
-    <img src="{{ profile.avatar.url }}" alt="Profile picture" width="150">
-  {% else %}
-    <p>No profile picture uploaded.</p>
-  {% endif %}
+    <div class="avatar-wrapper">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="Profile picture">
+      {% else %}
+        <div class="avatar-placeholder">No Photo</div>
+      {% endif %}
+    </div>
 
-  <p><strong>Username:</strong> {{ request.user.username }}</p>
-  <p><strong>Email:</strong> {{ request.user.email }}</p>
-  <p><strong>First Name:</strong> {{ request.user.first_name }}</p>
-  <p><strong>Last Name:</strong> {{ request.user.last_name }}</p>
-  <p><strong>Bio:</strong> {{ profile.bio }}</p>
-  <p><strong>Notifications Enabled:</strong> {{ profile.notifications_enabled|yesno:"Yes,No" }}</p>
+    <div class="profile-details">
+      <div class="detail-row">
+        <span class="detail-label">Username</span>
+        <span class="detail-value">{{ request.user.username }}</span>
+      </div>
 
-  <a href="{% url 'edit_profile' %}">Edit Profile</a>
+      <div class="detail-row">
+        <span class="detail-label">Email</span>
+        <span class="detail-value">{{ request.user.email }}</span>
+      </div>
+
+      <div class="detail-row">
+        <span class="detail-label">First Name</span>
+        <span class="detail-value">{{ request.user.first_name|default:"Not provided" }}</span>
+      </div>
+
+      <div class="detail-row">
+        <span class="detail-label">Last Name</span>
+        <span class="detail-value">{{ request.user.last_name|default:"Not provided" }}</span>
+      </div>
+
+      <div class="detail-row">
+        <span class="detail-label">Bio</span>
+        <span class="detail-value">{{ profile.bio|default:"No bio added yet." }}</span>
+      </div>
+
+      <div class="detail-row">
+        <span class="detail-label">Notifications</span>
+        <span class="detail-value">{{ profile.notifications_enabled|yesno:"Enabled,Disabled" }}</span>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <a href="{% url 'edit_profile' %}" class="action-btn">Edit Profile</a>
+      <a href="/dashboard/" class="secondary-btn">Back to Dashboard</a>
+    </div>
+  </div>
 </body>
 </html>
