@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile - Dues & Dos</title>
+</head>
+<body>
+  <h2>Edit Profile</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+
+  <h3>Update Profile Information</h3>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ user_form.as_p }}
+    {{ profile_form.as_p }}
+    <button type="submit" name="save_profile">Save Changes</button>
+  </form>
+
+  <hr>
+
+  <h3>Change Password</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{ password_form.as_p }}
+    <button type="submit" name="change_password">Update Password</button>
+  </form>
+
+  <p><a href="{% url 'profile' %}">Back to Profile</a></p>
+</body>
+</html>
