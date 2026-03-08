@@ -1,7 +1,9 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LogoutView
 from django.db import transaction
 from .models import CustomUser, Profile
 from .forms import RegisterForm, UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
@@ -81,3 +83,14 @@ def edit_profile_view(request):
             "password_form": password_form,
         },
     )
+
+@login_required
+def dashboard_view(request):
+    return render(request, "accounts/dashboard.html")
+
+class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
+    template_name = "accounts/logout.html"
+
+    def get(self, request, *args, **kwargs):
+        # Allow GET requests to render the template
+        return self.render_to_response(self.get_context_data())
