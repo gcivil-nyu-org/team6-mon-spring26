@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dues & Dos{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <style>
+        .app-layout { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            border-right: 1px solid var(--color-gray-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .nav-list { list-style: none; flex-grow: 1; }
+        .nav-item { 
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            text-decoration: none; color: var(--color-text-muted);
+            border-radius: 12px; margin-bottom: 8px; font-weight: 500;
+        }
+        .nav-item.active { background: #f0fdf4; color: var(--color-primary-sage); }
+        
+        .sidebar-footer { border-top: 1px solid #eee; padding-top: 20px; margin-top: auto; }
+        .user-pill { display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; }
+
+        .main-content { flex: 1; margin-left: 280px; padding: 40px; background: #f9fafb; }
+
+        .logout-popover {
+            display: none; position: absolute; bottom: 80px; left: 20px;
+            background: white; border: 1px solid #ddd; padding: 10px;
+            border-radius: 8px; box-shadow: var(--btn-shadow);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-pill">D</div>
+                <span class="brand-text">Dues & Do's</span>
+            </div>
+
+            <nav class="nav-list">
+                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="#" class="nav-item">Expenses</a>
+                <a href="#" class="nav-item">Chores</a>
+                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">Profile</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-pill" onclick="toggleLogout()">
+                    <strong>{{ user.username }}</strong>
+                    <span class="logout-icon">🚪</span>
+                </div>
+                <div id="logoutBox" class="logout-popover">
+                    <form method="POST" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer; font-weight:600;">Confirm Log Out</button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function toggleLogout() {
+            var box = document.getElementById('logoutBox');
+            box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        }
+    </script>
+</body>
+</html>

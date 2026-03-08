@@ -1,12 +1,170 @@
-.register-page {
-  padding: 2rem 0;
+.split-screen-body {
+    display: flex;
+    min-height: 100vh;
 }
 
-.register-container {
-  max-width: 500px;
+.login-sidebar {
+    flex: 1.2;
+    background-color: var(--color-primary-dark);
+    color: var(--color-white);
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
 }
 
-.submit-btn {
-  width: 100%;
-  margin-top: 1rem;
+.brand-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-pill {
+    background: var(--color-primary-sage);
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.brand-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.sidebar-center-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sidebar-quote {
+    font-size: 2.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 12px;
+}
+
+.sidebar-author {
+    color: var(--color-primary-bright);
+    margin-bottom: 48px;
+    font-size: 1.1rem;
+}
+
+.sidebar-features {
+    display: flex;
+    gap: 15px;
+}
+
+.feat-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 12px;
+    flex: 1;
+}
+
+.feat-box strong {
+    color: var(--color-primary-bright);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.feat-box span {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.login-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.login-content-wrapper {
+    width: 100%;
+    max-width: 450px;
+    padding: 20px 0;
+}
+
+.form-title {
+    color: var(--color-primary-mid);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+.custom-django-form p {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-django-form label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--color-text-main);
+}
+
+.custom-django-form input {
+    padding: 12px;
+    border: 1px solid var(--color-gray-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: var(--color-white);
+    color: var(--color-text-main);
+}
+
+.custom-django-form input:focus {
+    outline: none;
+    border-color: var(--color-primary-mid);
+}
+
+.errorlist {
+    color: var(--error-color);
+    font-size: 0.8rem;
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+}
+
+.login-action-btn {
+    width: 100%;
+    background-color: var(--color-primary-sage);
+    color: var(--color-white);
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: var(--btn-shadow);
+}
+
+.login-action-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.form-footer {
+    text-align: center;
+    margin-top: 25px;
+    color: var(--color-text-muted);
+}
+
+.form-footer a {
+    color: var(--color-primary-mid);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    font-size: 0.85rem;
+    opacity: 0.6;
 }
