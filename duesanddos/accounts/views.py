@@ -40,12 +40,6 @@ def register_view(request):
 @login_required
 def profile_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
-    return render(request, "accounts/profile.html", {"profile": profile})
-
-
-@login_required
-def edit_profile_view(request):
-    profile, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
         if "save_profile" in request.POST:
@@ -78,6 +72,7 @@ def edit_profile_view(request):
         request,
         "accounts/edit_profile.html",
         {
+            "profile": profile,
             "user_form": user_form,
             "profile_form": profile_form,
             "password_form": password_form,
@@ -87,6 +82,15 @@ def edit_profile_view(request):
 @login_required
 def dashboard_view(request):
     return render(request, "accounts/dashboard.html")
+
+def faq_view(request):
+    return render(request, "accounts/faq.html")
+
+def terms_view(request):
+    return render(request, "accounts/terms.html")
+
+def privacy_view(request):
+    return render(request, "accounts/privacy.html")
 
 class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
     template_name = "accounts/logout.html"

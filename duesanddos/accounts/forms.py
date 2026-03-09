@@ -60,7 +60,7 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["avatar", "bio", "notifications_enabled"]
+        fields = ["avatar", "notifications_enabled"]
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):

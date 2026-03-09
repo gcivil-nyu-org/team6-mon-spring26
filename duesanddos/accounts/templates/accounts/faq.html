@@ -1,0 +1,126 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ | Dues & Do's</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico' %}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#051f52', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex min-h-screen flex-col">
+    <!-- Navbar (Same as index) -->
+    <header class="sticky top-0 z-50 border-b border-stone-100 bg-white/80 backdrop-blur-md">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <a href="{% url 'home' %}" class="flex items-center gap-2">
+                <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" class="h-8 w-8 rounded-lg object-contain">
+                <span class="font-display text-lg font-semibold text-stone-900">
+                    Dues <span class="text-brand-600">&</span> Do's
+                </span>
+            </a>
+            <nav class="hidden items-center gap-8 md:flex">
+                <a href="index.html#features" class="text-sm text-stone-600 transition-colors hover:text-stone-900">Features</a>
+                <a href="index.html#how-it-works" class="text-sm text-stone-600 transition-colors hover:text-stone-900">How it works</a>
+                <a href="{% url 'faq' %}" class="text-sm text-brand-600 font-medium">FAQ</a>
+            </nav>
+            <div class="hidden items-center gap-3 md:flex">
+                <a href="{% url 'login' %}" class="btn-secondary py-2 text-sm">Log in</a>
+                <a href="{% url 'register' %}" class="btn-primary py-2 text-sm">Get started free</a>
+            </div>
+            <button class="rounded-lg p-2 text-stone-600 hover:bg-stone-100 md:hidden" id="mobile-menu-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+        <div id="mobile-menu" class="hidden border-t border-stone-100 bg-white px-4 pb-6 pt-4 md:hidden">
+            <nav class="flex flex-col gap-4">
+                <a href="index.html#features" class="text-sm font-medium text-stone-700">Features</a>
+                <a href="index.html#how-it-works" class="text-sm font-medium text-stone-700">How it works</a>
+                <a href="{% url 'faq' %}" class="text-sm font-medium text-brand-600">FAQ</a>
+                <hr class="border-stone-100">
+                <a href="{% url 'login' %}" class="btn-secondary text-center text-sm">Log in</a>
+                <a href="{% url 'register' %}" class="btn-primary text-center text-sm">Get started free</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1 bg-stone-50 py-16 sm:py-24">
+        <div class="mx-auto max-w-3xl px-6">
+            <div class="text-center mb-16">
+                <h1 class="font-display text-4xl font-semibold text-stone-900 sm:text-5xl">Frequently Asked Questions</h1>
+                <p class="mt-4 text-lg text-stone-500">Everything you need to know about managing your household with Dues & Do's.</p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Is Dues & Do's really free?</h3>
+                    <p class="text-stone-500 leading-relaxed">Yes! Our core features for tracking expenses and scheduling chores are completely free for households of up to 10 members.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">How do I invite my roommates?</h3>
+                    <p class="text-stone-500 leading-relaxed">Once you create a household, you'll get a unique invite link. Just share that link with your roommates via text or email, and they can join instantly.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Does Dues & Do's handle actual payments?</h3>
+                    <p class="text-stone-500 leading-relaxed">Currently, we help you track balances and settle up records. We don't process direct bank transfers yet, but we provide easy links to note when a payment has been made via other apps.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">What happens if someone forgets a chore?</h3>
+                    <p class="text-stone-500 leading-relaxed">The app sends gentle, automated reminders so you don't have to be the "bad guy." You can also see a history of chore completion to keep things fair.</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">How secure is my data?</h3>
+                    <p class="text-stone-500 leading-relaxed">We take privacy seriously. Your household data is private to your members, and we never sell your personal information to third parties.</p>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center bg-brand-600 rounded-3xl p-10 text-white">
+                <h2 class="font-display text-2xl font-semibold mb-3">Still have questions?</h2>
+                <p class="mb-8 opacity-90">We're here to help you live together, better.</p>
+                <a href="mailto:support@duesanddos.com" class="bg-white text-brand-600 px-8 py-3 rounded-xl font-semibold hover:bg-brand-50 transition-colors">Contact Support</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-stone-100 bg-white py-10">
+        <!-- (Same footer as index) -->
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
+                <a href="{% url 'home' %}" class="flex items-center gap-2">
+                    <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" class="h-8 w-8 rounded-lg object-contain">
+                    <span class="font-display text-lg font-semibold text-stone-900">Dues <span class="text-brand-600">&</span> Do's</span>
+                </a>
+                <nav class="flex flex-wrap items-center justify-center gap-6">
+                    <a href="{% url 'terms' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Terms of Service</a>
+                    <a href="{% url 'privacy' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Privacy Policy</a>
+                    <a href="{% url 'faq' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600 font-medium text-stone-600">FAQ</a>
+                    <a href="{% url 'login' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Log in</a>
+                    <a href="{% url 'register' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Sign up</a>
+                </nav>
+                <p class="text-xs text-stone-400">© <span id="year"></span> Dues & Do's</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+        const btn = document.getElementById('mobile-menu-button');
+        const menu = document.getElementById('mobile-menu');
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

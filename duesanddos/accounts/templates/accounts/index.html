@@ -1,0 +1,203 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dues & Do's | Shared Living, Better</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico' %}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex min-h-screen flex-col">
+    <!-- Navbar -->
+    <header class="sticky top-0 z-50 border-b border-stone-100 bg-white/80 backdrop-blur-md">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <a href="{% url 'home' %}" class="flex items-center gap-2">
+                <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" class="h-8 w-8 rounded-lg object-contain">
+                <span class="font-display text-lg font-semibold text-stone-900">
+                    Dues <span class="text-brand-600">&</span> Do's
+                </span>
+            </a>
+            <!-- Desktop nav -->
+            <nav class="hidden items-center gap-8 md:flex">
+                <a href="#features" class="text-sm text-stone-600 transition-colors hover:text-stone-900">Features</a>
+                <a href="#how-it-works" class="text-sm text-stone-600 transition-colors hover:text-stone-900">How it works</a>
+                <a href="{% url 'faq' %}" class="text-sm text-stone-600 transition-colors hover:text-stone-900">FAQ</a>
+            </nav>
+            <div class="hidden items-center gap-3 md:flex">
+                <a href="{% url 'login' %}" class="btn-secondary py-2 text-sm">Log in</a>
+                <a href="{% url 'register' %}" class="btn-primary py-2 text-sm">Get started free</a>
+            </div>
+            <!-- Mobile menu toggle (Simplified for static) -->
+            <button class="rounded-lg p-2 text-stone-600 hover:bg-stone-100 md:hidden" id="mobile-menu-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+        <!-- Mobile Drawer -->
+        <div id="mobile-menu" class="hidden border-t border-stone-100 bg-white px-4 pb-6 pt-4 md:hidden">
+            <nav class="flex flex-col gap-4">
+                <a href="#features" class="text-sm font-medium text-stone-700">Features</a>
+                <a href="#how-it-works" class="text-sm font-medium text-stone-700">How it works</a>
+                <a href="{% url 'faq' %}" class="text-sm font-medium text-stone-700">FAQ</a>
+                <hr class="border-stone-100">
+                <a href="{% url 'login' %}" class="btn-secondary text-center text-sm">Log in</a>
+                <a href="{% url 'register' %}" class="btn-primary text-center text-sm">Get started free</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1">
+        <!-- Hero -->
+        <section class="relative overflow-hidden bg-white py-20 sm:py-28 lg:py-36">
+            <div aria-hidden class="pointer-events-none absolute inset-0 overflow-hidden">
+                <div class="absolute -top-40 right-0 h-[600px] w-[600px] rounded-full bg-brand-50 opacity-60 blur-3xl"></div>
+                <div class="absolute -bottom-20 left-0 h-[400px] w-[400px] rounded-full bg-brand-100 opacity-40 blur-3xl"></div>
+            </div>
+            <div class="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+                <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-xs font-medium text-brand-700">
+                    <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                    Built for real households
+                </div>
+                <h1 class="font-display text-4xl font-semibold leading-tight text-stone-900 sm:text-5xl lg:text-6xl">
+                    Living together, <span class="text-brand-600 italic">better</span>
+                </h1>
+                <p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-stone-500">
+                    Track shared expenses, rotate chores, and collaborate effortlessly — all in one place. Say goodbye to messy spreadsheets and hello to peaceful shared living.
+                </p>
+                <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                    <a href="{% url 'register' %}" class="btn-primary w-full px-8 py-3.5 sm:w-auto text-base">
+                        Get started — it's free
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                    <a href="{% url 'login' %}" class="btn-secondary w-full px-8 py-3.5 sm:w-auto text-base">Log in</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Problem Section -->
+        <section class="bg-stone-50 py-20 sm:py-28">
+            <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div class="max-w-2xl">
+                    <h2 class="font-display text-3xl font-semibold text-stone-900 sm:text-4xl">
+                        Shared living is great. <span class="text-stone-400">Let's keep it that way.</span>
+                    </h2>
+                    <p class="mt-4 text-stone-500">
+                        A simple, clear system helps everyone pitch in so your home remains peaceful and organized.
+                    </p>
+                </div>
+                <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="card p-6">
+                        <div class="mb-4 text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Who owes who?</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">Tracking who paid what can be confusing. We make it easy to see shared expenses so everyone is always on the same page.</p>
+                    </div>
+                    <div class="card p-6">
+                        <div class="mb-4 text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Sharing household chores</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">A clear system helps everyone pitch in. Rotate tasks effortlessly and keep your home tidy, together.</p>
+                    </div>
+                    <div class="card p-6">
+                        <div class="mb-4 text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path><path d="M8 12h.01"></path><path d="M12 12h.01"></path><path d="M16 12h.01"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Friendly reminders</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">Helpful nudges make it easy to manage shared bills without the awkward conversations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features" class="bg-white py-20 sm:py-28">
+            <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-2xl text-center">
+                    <h2 class="font-display text-3xl font-semibold text-stone-900 sm:text-4xl">Everything your household needs</h2>
+                    <p class="mt-4 text-stone-500">Simple tools, thoughtfully designed for the reality of shared living.</p>
+                </div>
+                <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="group rounded-2xl border border-stone-100 bg-stone-50 p-6 transition-all duration-200 hover:border-brand-200 hover:bg-brand-50/40">
+                        <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700 transition-colors group-hover:bg-brand-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V19"></path><path d="M12 5v1.5"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Expense splitting</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">Log any shared expense and split it by percentage, equal shares, or custom amounts.</p>
+                    </div>
+                    <!-- More features... (simplified for brevity) -->
+                    <div class="group rounded-2xl border border-stone-100 bg-stone-50 p-6 transition-all duration-200 hover:border-brand-200 hover:bg-brand-50/40">
+                        <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700 transition-colors group-hover:bg-brand-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Chore scheduling</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">Assign chores, set frequencies, and rotate automatically. A shared schedule means no excuses.</p>
+                    </div>
+                    <div class="group rounded-2xl border border-stone-100 bg-stone-50 p-6 transition-all duration-200 hover:border-brand-200 hover:bg-brand-50/40">
+                        <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700 transition-colors group-hover:bg-brand-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <h3 class="mb-2 font-semibold text-stone-900">Household management</h3>
+                        <p class="text-sm leading-relaxed text-stone-500">Create your household, invite roommates, and manage everything from one dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it Works -->
+        <section id="how-it-works" class="bg-stone-50 py-20 sm:py-28">
+            <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-2xl text-center">
+                    <h2 class="font-display text-3xl font-semibold text-stone-900 sm:text-4xl">Up and running in minutes</h2>
+                    <p class="mt-4 text-stone-500">Designed to be so simple, your busiest roommate will actually use it.</p>
+                </div>
+                <!-- ... Step implementation ... -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-stone-100 bg-white py-10">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
+                <a href="{% url 'home' %}" class="flex items-center gap-2">
+                    <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" class="h-8 w-8 rounded-lg object-contain">
+                    <span class="font-display text-lg font-semibold text-stone-900">Dues <span class="text-brand-600">&</span> Do's</span>
+                </a>
+                <nav class="flex flex-wrap items-center justify-center gap-6">
+                    <a href="{% url 'terms' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Terms of Service</a>
+                    <a href="{% url 'privacy' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Privacy Policy</a>
+                    <a href="{% url 'faq' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">FAQ</a>
+                    <a href="{% url 'login' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Log in</a>
+                    <a href="{% url 'register' %}" class="text-xs text-stone-400 transition-colors hover:text-stone-600">Sign up</a>
+                </nav>
+                <p class="text-xs text-stone-400">© <span id="year"></span> Dues & Do's</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+        const btn = document.getElementById('mobile-menu-button');
+        const menu = document.getElementById('mobile-menu');
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

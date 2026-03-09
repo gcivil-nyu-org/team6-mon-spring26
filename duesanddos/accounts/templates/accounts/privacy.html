@@ -1,0 +1,60 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Dues & Do's</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico' %}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-white">
+    <header class="border-b border-stone-100 px-6 py-5 sticky top-0 bg-white/80 backdrop-blur-md">
+        <a href="{% url 'home' %}" class="flex items-center gap-2 w-fit">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+                <span class="text-sm font-bold text-white">D</span>
+            </div>
+            <span class="font-display text-lg font-semibold text-stone-900">
+                Dues <span class="text-brand-600">&</span> Do's
+            </span>
+        </a>
+    </header>
+    <main class="mx-auto max-w-2xl px-6 py-16 sm:py-24 animate-fade-up">
+        <h1 class="font-display text-4xl font-semibold text-stone-900">Privacy Policy</h1>
+        <div class="mt-8 space-y-6 text-stone-500 leading-relaxed">
+            <p>We respect your privacy. Dues & Do's collects only the data necessary to provide our service.</p>
+            <h2 class="text-xl font-semibold text-stone-900">Data Collection</h2>
+            <p>We collect your email, username, and household data (expenses, chores) to make the app work for you.</p>
+            <h2 class="text-xl font-semibold text-stone-900">Data Usage</h2>
+            <p>We do not sell your data or show you ads. Your data is used exclusively to provide the platform's core features.</p>
+            <h2 class="text-xl font-semibold text-stone-900">Security</h2>
+            <p>We use industry-standard encryption to protect your information.</p>
+        </div>
+        <a href="{% url 'home' %}" class="mt-12 inline-block text-sm text-brand-600 hover:underline">
+            ← Back to home
+        </a>
+    </main>
+    <footer class="border-t border-stone-100 bg-stone-50 py-10">
+        <div class="mx-auto max-w-2xl px-6 text-center text-xs text-stone-400">
+            © <span id="year-p"></span> Dues & Do's. All rights reserved.
+        </div>
+    </footer>
+    <script>
+        document.getElementById('year-p').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

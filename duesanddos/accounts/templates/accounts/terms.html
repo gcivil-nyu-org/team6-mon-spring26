@@ -1,0 +1,60 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service | Dues & Do's</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico' %}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-white">
+    <header class="border-b border-stone-100 px-6 py-5 sticky top-0 bg-white/80 backdrop-blur-md">
+        <a href="{% url 'home' %}" class="flex items-center gap-2 w-fit">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+                <span class="text-sm font-bold text-white">D</span>
+            </div>
+            <span class="font-display text-lg font-semibold text-stone-900">
+                Dues <span class="text-brand-600">&</span> Do's
+            </span>
+        </a>
+    </header>
+    <main class="mx-auto max-w-2xl px-6 py-16 sm:py-24 animate-fade-up">
+        <h1 class="font-display text-4xl font-semibold text-stone-900">Terms of Service</h1>
+        <div class="mt-8 space-y-6 text-stone-500 leading-relaxed">
+            <p>Welcome to Dues & Do's. By using our service, you agree to the following terms.</p>
+            <h2 class="text-xl font-semibold text-stone-900">1. Acceptance of Terms</h2>
+            <p>Our full Terms of Service are being finalized and will be published here soon. By using Dues & Do's, you agree to use the service in a lawful and respectful manner.</p>
+            <h2 class="text-xl font-semibold text-stone-900">2. User Accounts</h2>
+            <p>You are responsible for maintaining the confidentiality of your account and password. You agree to notify us immediately of any unauthorized use of your account.</p>
+            <h2 class="text-xl font-semibold text-stone-900">3. Household Data</h2>
+            <p>The data you enter regarding your household stays private to your members. However, you are responsible for the accuracy of the data you input.</p>
+        </div>
+        <a href="{% url 'home' %}" class="mt-12 inline-block text-sm text-brand-600 hover:underline">
+            ← Back to home
+        </a>
+    </main>
+    <footer class="border-t border-stone-100 bg-stone-50 py-10">
+        <div class="mx-auto max-w-2xl px-6 text-center text-xs text-stone-400">
+            © <span id="year-t"></span> Dues & Do's. All rights reserved.
+        </div>
+    </footer>
+    <script>
+        document.getElementById('year-t').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

@@ -2,55 +2,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Dues & Dos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/shared.css' %}">
-  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | Dues & Do's</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles to match the new color scheme and fix button text */
+        .btn-primary {
+            background-color: #051f52 !important;
+        }
+        .btn-primary:hover {
+            background-color: #031436 !important;
+        }
+        .text-brand-600, .text-brand-400, .text-brand-500 {
+            color: #051f52 !important;
+        }
+        .bg-brand-950 {
+            background-color: #051f52 !important;
+        }
+    </style>
 </head>
-<body class="split-screen-body">
-  <div class="login-sidebar">
-    <div class="sidebar-header">
-      <div class="brand-group">
-        <div class="logo-pill">D</div>
-        <span class="brand-text">Dues & Do's</span>
-      </div>
-    </div>
-    <div class="sidebar-center-content">
-      <h1 class="sidebar-quote">"Finally, a way to handle the money stuff without making things weird."</h1>
-      <p class="sidebar-author">— A very relieved roommate</p>
-      <div class="sidebar-features">
-        <div class="feat-box">
-          <strong>Automated</strong>
-          <span>Shared bills tracked</span>
+<body class="flex min-h-screen">
+    <div class="flex min-h-screen w-full">
+      <!-- Left panel — branding -->
+      <div class="relative hidden flex-1 flex-col justify-between bg-brand-950 p-12 lg:flex" style="background-color: #051f52;">
+        <div aria-hidden class="pointer-events-none absolute inset-0 overflow-hidden">
+          <div class="absolute -right-20 top-0 h-96 w-96 rounded-full bg-brand-800 opacity-30 blur-3xl"></div>
+          <div class="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-brand-700 opacity-20 blur-3xl"></div>
         </div>
-        <div class="feat-box">
-          <strong>Zero</strong>
-          <span>Chore disputes</span>
+
+        <a href="{% url 'home' %}" class="relative flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+            <span class="text-sm font-bold" style="color: #051f52;">D</span>
+          </div>
+          <span class="font-display text-lg font-semibold text-white">
+            Dues <span style="color: #38bdf8;">&</span> Do's
+          </span>
+        </a>
+
+        <div class="relative space-y-8">
+          <blockquote class="space-y-3">
+            <p class="font-display text-2xl font-medium leading-snug text-white">
+              "Finally, a way to handle the money stuff without making things weird."
+            </p>
+            <footer class="text-sm" style="color: #bae6fd;">— A very relieved roommate</footer>
+          </blockquote>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-xl p-4" style="background-color: rgba(255, 255, 255, 0.1);">
+              <div class="font-display text-xl font-semibold text-white">Automated</div>
+              <div class="mt-1 text-xs" style="color: #38bdf8;">Shared bills tracked</div>
+            </div>
+            <div class="rounded-xl p-4" style="background-color: rgba(255, 255, 255, 0.1);">
+              <div class="font-display text-xl font-semibold text-white">Zero</div>
+              <div class="mt-1 text-xs" style="color: #38bdf8;">Chore disputes</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="relative text-xs" style="color: #38bdf8;">© <span id="year-l"></span> Dues & Do's</p>
+      </div>
+
+      <!-- Right panel — form -->
+      <div class="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8 lg:px-12">
+        <div class="mb-10 lg:hidden text-center">
+            <a href="{% url 'home' %}" class="flex items-center gap-2 justify-center">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-8 rounded-lg object-contain">
+                <span class="font-display text-lg font-semibold text-stone-900">Dues <span style="color: #051f52;">&</span> Do's</span>
+            </a>
+        </div>
+
+        <div class="w-full max-w-md">
+          <div class="mb-8 text-center sm:text-left">
+            <h1 class="font-display text-3xl font-semibold text-stone-900">Welcome back</h1>
+            <p class="mt-2 text-sm text-stone-500">Log in to see your household's expenses and chores.</p>
+          </div>
+          
+          {% if form.errors %}
+          <div class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-600">
+            Invalid credentials. Please try again.
+          </div>
+          {% endif %}
+
+          <form method="POST" class="space-y-5">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <button type="button" class="btn-secondary w-full py-3 flex items-center justify-center gap-2 border-stone-200">
+                    <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google Logo" class="h-5 w-5">
+                    Continue with Google
+                </button>
+                <div class="relative my-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-stone-200"></div></div>
+                    <div class="relative flex justify-center text-sm"><span class="bg-white px-2 text-stone-500">Or continue with email</span></div>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label for="id_username" class="form-label">Username</label>
+                <input type="text" name="username" id="id_username" class="input-field" placeholder="Username" required autofocus>
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                    <label for="id_password" class="form-label">Password</label>
+                    <a href="{% url 'password_reset' %}" class="text-xs hover:underline" style="color: #051f52;">Forgot password?</a>
+                </div>
+                <input type="password" name="password" id="id_password" class="input-field" placeholder="Your password" required>
+            </div>
+
+            <button type="submit" class="btn-primary w-full py-3">Log in</button>
+
+            <p class="text-center text-sm text-stone-500">
+              Don't have an account? <a href="{% url 'register' %}" class="font-medium hover:underline" style="color: #051f52;">Sign up free</a>
+            </p>
+          </form>
         </div>
       </div>
     </div>
-    <div class="sidebar-footer">© 2026 Dues & Do's</div>
-  </div>
-  <div class="login-main">
-    <div class="login-content-wrapper">
-      <h2 class="form-title">Login</h2>
-      {% if form.errors %}
-      <div class="error-msg">Invalid credentials. Please try again.</div>
-      {% endif %}
-      <form method="POST" class="form-group custom-django-form">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="login-action-btn">Log in</button>
-      </form>
-      <div class="form-footer">
-        <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
-        Don't have an account? <a href="{% url 'register' %}">Sign up</a>
-      </div>
-    </div>
-  </div>
+    <script>
+        document.getElementById('year-l').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
