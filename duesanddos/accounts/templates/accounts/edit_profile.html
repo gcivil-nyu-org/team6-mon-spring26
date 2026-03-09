@@ -1,0 +1,51 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}?v=1.3">
+
+<div class="profile-page-header">
+    <h1 class="page-main-title">My Profile</h1>
+</div>
+
+<div class="edit-profile-grid">
+    <div class="edit-card">
+        <div class="card-header-group">
+            <h3 class="green-indicator">Basic Info</h3>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="custom-django-form">
+            {% csrf_token %}
+            <div class="form-fields-scroll">
+                {{ user_form.as_p }}
+                {{ profile_form.as_p }}
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" name="save_profile" class="brand-action-btn">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="edit-card">
+        <div class="card-header-group">
+            <h3 class="green-indicator">Change Password</h3>
+        </div>
+        
+        <form method="post" class="custom-django-form">
+            {% csrf_token %}
+            <div class="form-fields-scroll">
+                {{ password_form.as_p }}
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" name="change_password" class="brand-action-btn">
+                    Change Password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

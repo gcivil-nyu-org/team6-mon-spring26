@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged Out - Dues & Dos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/logout.css' %}">
+</head>
+
+<body class="split-screen-body">
+    <div class="logout-sidebar">
+        <div class="sidebar-header">
+            <div class="brand-group">
+                <div class="logo-pill">D</div>
+                <span class="brand-text">Dues & Do's</span>
+            </div>
+        </div>
+
+        <div class="sidebar-center-content">
+            <h1 class="sidebar-quote">“See you later! Your funds and chores are safe with us.”</h1>
+            <p class="sidebar-author">— The Dues & Do's Team</p>
+        </div>
+
+        <div class="sidebar-footer">© 2026 Dues & Do's</div>
+    </div>
+
+    <div class="logout-main">
+        <div class="logout-content-wrapper">
+            <h2 class="form-title">You've been logged out</h2>
+            <p class="logout-message">You have been securely signed out of your account.</p>
+
+            <div class="button-group">
+                <a href="{% url 'login' %}" class="action-btn primary-btn">Log back in</a>
+                <a href="{% url 'home' %}" class="action-btn secondary-btn">Return to home</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

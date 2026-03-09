@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,33 +8,49 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/shared.css' %}">
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
-
-<body>
-  <div class="login-container">
-    <div class="login-header">
-      <h2>Welcome Back</h2>
-      <p>Please enter your details to sign in.</p>
+<body class="split-screen-body">
+  <div class="login-sidebar">
+    <div class="sidebar-header">
+      <div class="brand-group">
+        <div class="logo-pill">D</div>
+        <span class="brand-text">Dues & Do's</span>
+      </div>
     </div>
-
-    {% if form.errors %}
-    <div class="error-msg">
-      Invalid username or password. Please try again.
+    <div class="sidebar-center-content">
+      <h1 class="sidebar-quote">"Finally, a way to handle the money stuff without making things weird."</h1>
+      <p class="sidebar-author">— A very relieved roommate</p>
+      <div class="sidebar-features">
+        <div class="feat-box">
+          <strong>Automated</strong>
+          <span>Shared bills tracked</span>
+        </div>
+        <div class="feat-box">
+          <strong>Zero</strong>
+          <span>Chore disputes</span>
+        </div>
+      </div>
     </div>
-    {% endif %}
-
-    <form method="POST" class="form-group">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="submit-btn">Log In</button>
-    </form>
-
-    <div class="form-footer">
-      <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
-      Don't have an account? <a href="{% url 'register' %}">Sign up</a>
+    <div class="sidebar-footer">© 2026 Dues & Do's</div>
+  </div>
+  <div class="login-main">
+    <div class="login-content-wrapper">
+      <h2 class="form-title">Login</h2>
+      {% if form.errors %}
+      <div class="error-msg">Invalid credentials. Please try again.</div>
+      {% endif %}
+      <div class="form-footer">
+        <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+        Don't have an account? <a href="{% url 'register' %}">Sign up</a>
+      </div>
+      <form method="POST" class="form-group custom-django-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="login-action-btn">Log in</button>
+      </form>
     </div>
   </div>
 </body>
-
 </html>
