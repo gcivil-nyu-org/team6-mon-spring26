@@ -29,12 +29,17 @@
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit" class="submit-btn">Log In</button>
-    </form>
+   
 
-    <div class="form-footer">
-      <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
-      Don't have an account? <a href="{% url 'register' %}">Sign up</a>
-    </div>
+      <div class="login-footer mt-3 text-center">
+        <p>
+            <a href="{% url 'password_reset' %}">Forgot password?</a>
+        </p>
+        <p>
+            Don't have an account? <a href="{% url 'register' %}">Sign Up</a>
+        </p>
+      </div>
+    </form>
   </div>
 </body>
 
