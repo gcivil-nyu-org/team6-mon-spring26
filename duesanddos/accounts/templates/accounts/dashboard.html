@@ -1,64 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "accounts/base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard - Dues & Dos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #f3f4f6;
-            margin: 0;
-            color: #1f2937;
-        }
+{% block title %}Dashboard - Dues & Dos{% endblock %}
 
-        .dashboard-container {
-            background: white;
-            padding: 3rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        h1 {
-            margin-bottom: 1rem;
-            color: #4f46e5;
-        }
-
-        .logout-btn {
-            margin-top: 1.5rem;
-            padding: 0.75rem 1.5rem;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .logout-btn:hover {
-            background: #dc2626;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="dashboard-container">
-        <h1>Welcome to Dues & Dos!</h1>
-        <p>You have successfully logged in.</p>
-
-        <form method="POST" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn">Log Out</button>
-        </form>
-    </div>
-</body>
-
-</html>
+{% block content %}
+<div class="dashboard-container">
+    <h1 style="color: var(--color-primary-sage);">Welcome, {{ user.username }}!</h1>
+    <p>You have successfully logged in to your dashboard.</p>
+</div>
+{% endblock %}

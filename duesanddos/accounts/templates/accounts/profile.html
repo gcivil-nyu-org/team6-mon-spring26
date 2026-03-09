@@ -1,0 +1,32 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}?v=1.5">
+
+<div class="profile-page-wrapper">
+    <div class="profile-header-area">
+        <h1 class="page-main-title">Profile</h1>
+        <div class="header-action-row">
+            <a href="{% url 'edit_profile' %}" class="brand-action-btn">Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="profile-card-list">
+        <div class="detail-row">
+            <span class="detail-label">USERNAME</span>
+            <span class="detail-value">{{ request.user.username }}</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">EMAIL</span>
+            <span class="detail-value">{{ request.user.email }}</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">BIO</span>
+            <span class="detail-value">{{ profile.bio|default:"No bio added yet." }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
