@@ -5,8 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Dues & Do's{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -16,89 +18,65 @@
                             50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
                             500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
-        .nav-item-active { background-color: #f0fdf4; color: #166534; }
-        .brand-text-gradient {
-            background: linear-gradient(to right, #051f52, #38bdf8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-    </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full transition-all duration-300">
-            <div class="p-6">
-                <a href="{% url 'home' %}" class="flex items-center gap-3">
-                    <img src="{% static 'images/logo.png' %}" alt="Dues & Do's" class="h-8 w-auto">
-                    <span class="text-lg font-bold brand-text-gradient">Dues & Do's</span>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <a href="{% url 'home' %}" class="flex items-center gap-3" style="text-decoration: none;">
+                    <div class="logo-pill" style="background: #277853; width: 32px; height: 32px; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.25rem;">D</div>
+                    <span class="brand-text" style="color: #1C4D38; font-weight: 800; font-size: 1.25rem;">Dues & Do's</span>
                 </a>
             </div>
 
-            <nav class="flex-1 px-4 space-y-1">
-                <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-brand-500{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
-                    Dashboard
-                </a>
-                <button onclick="showComingSoon('Expenses')" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed rounded-xl hover:bg-gray-50 transition-colors">
-                    Expenses
-                </button>
-                <button onclick="showComingSoon('Chores')" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed rounded-xl hover:bg-gray-50 transition-colors">
-                    Chores
-                </button>
-                <a href="{% url 'profile' %}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors {% if 'profile' in request.resolver_match.url_name %}bg-blue-50 text-brand-500{% else %}text-gray-600 hover:bg-gray-100{% endif %}">
-                    Profile
-                </a>
+            <nav class="nav-list">
+                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <button onclick="showComingSoon('Expenses')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">Expenses</button>
+                <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">Chores</button>
+                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">Profile</a>
             </nav>
 
-            <div class="p-4 border-t border-gray-100">
-                <div class="relative group">
-                    <button onclick="toggleLogout()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors text-left">
-                        <div class="h-10 w-10 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold">
+            <div class="sidebar-footer">
+                <div class="user-pill" onclick="toggleLogout()">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="height: 32px; width: 32px; border-radius: 8px; background-color: #051f52; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">
                             {{ user.username|first|upper }}
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate">{{ user.username }}</p>
-                            <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+                        <div style="display: flex; flex-direction: column;">
+                            <strong style="font-size: 0.875rem; color: #1e293b;">{{ user.username }}</strong>
+                            <span style="font-size: 0.75rem; color: #64748b;">{{ user.email|truncatechars:20 }}</span>
                         </div>
-                    </button>
-                    
-                    <div id="logoutBox" class="hidden absolute bottom-full left-0 w-full mb-2 bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-50">
-                        <form method="POST" action="{% url 'logout' %}" class="px-2">
-                            {% csrf_token %}
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors">
-                                Sign out
-                            </button>
-                        </form>
                     </div>
+                    <span class="logout-icon">🚪</span>
+                </div>
+                <div id="logoutBox" class="logout-popover" style="display: none; position: absolute; bottom: 80px; left: 20px; background: white; border: 1px solid #ddd; padding: 12px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+                    <form method="POST" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:700; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
+                            <span>Sign out</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 ml-64 p-8">
-            <div class="max-w-5xl mx-auto">
-                {% if messages %}
+        <main class="main-content">
+            {% if messages %}
+                <div class="messages-container" style="margin-bottom: 24px;">
                     {% for message in messages %}
-                        <div class="mb-6 p-4 rounded-xl {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                        <div class="message {{ message.tags }}" style="padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; font-size: 0.875rem; font-weight: 500; {% if message.tags == 'success' %}background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;{% else %}background-color: #f0f9ff; color: #075985; border: 1px solid #bae6fd;{% endif %}">
                             {{ message }}
                         </div>
                     {% endfor %}
-                {% endif %}
-                
-                {% block content %}{% endblock %}
-            </div>
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
         </main>
     </div>
 
@@ -106,18 +84,18 @@
         function showComingSoon(feature) {
             alert(feature + ' feature is coming soon!');
         }
-        
+
         function toggleLogout() {
-            const box = document.getElementById('logoutBox');
-            box.classList.toggle('hidden');
+            var box = document.getElementById('logoutBox');
+            box.style.display = (box.style.display === 'block') ? 'none' : 'block';
         }
-        
+
         // Close logout box when clicking outside
         document.addEventListener('click', function(event) {
             const logoutBox = document.getElementById('logoutBox');
-            const toggleBtn = logoutBox.previousElementSibling;
-            if (!logoutBox.contains(event.target) && !toggleBtn.contains(event.target)) {
-                logoutBox.classList.add('hidden');
+            const userPill = document.querySelector('.user-pill');
+            if (logoutBox && userPill && !logoutBox.contains(event.target) && !userPill.contains(event.target)) {
+                logoutBox.style.display = 'none';
             }
         });
     </script>
