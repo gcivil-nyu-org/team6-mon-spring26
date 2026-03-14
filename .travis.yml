@@ -1,0 +1,20 @@
+language: python
+
+python:
+  - "3.12"
+
+install:
+  - pip install -r duesanddos/requirements.txt
+  - pip install coverage 'coveralls[yaml]' flake8
+
+before_script:
+  - cd duesanddos
+  - python manage.py migrate
+
+script:
+  - black --check .
+  - flake8 .
+  - coverage run --source=accounts manage.py test
+
+after_success:
+  - coveralls --verbose
