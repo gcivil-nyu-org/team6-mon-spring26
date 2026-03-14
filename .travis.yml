@@ -3,13 +3,25 @@ language: python
 python:
   - "3.12"
 
+services:
+  - postgresql
+
+env:
+  global:
+    - DJANGO_SETTINGS_MODULE=duesanddos.settings
+    - PGHOST=127.0.0.1
+    - PGPORT=5432
+    - PGUSER=postgres
+    - PGPASSWORD=
+    - PGDATABASE=travis_ci_test
+
 install:
   - pip install -r duesanddos/requirements.txt
-  - pip install coverage 'coveralls[yaml]' flake8
+  - pip install coverage 'coveralls[yaml]' flake8 black
 
 before_script:
+  - psql -c 'CREATE DATABASE travis_ci_test;' -U postgres
   - cd duesanddos
-  - python manage.py migrate
 
 script:
   - black --check .
