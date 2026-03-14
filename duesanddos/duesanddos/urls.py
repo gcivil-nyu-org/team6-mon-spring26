@@ -13,7 +13,10 @@ def home_redirect(request):
 urlpatterns = [
     path("", home_redirect, name="home"),
     path("admin/", admin.site.urls),
+    # Accounts app routes
     path("accounts/", include("accounts.urls")),
+    # Allauth routes (e.g., google/login/, etc.)
+    path("accounts/", include("allauth.urls")),
 ]
 
 if settings.DEBUG:

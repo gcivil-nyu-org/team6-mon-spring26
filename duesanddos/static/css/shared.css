@@ -28,19 +28,24 @@ body {
 } */
 
 :root {
-  --color-primary-bright: #99C5FF;
-  --color-primary-mid: #5A8FD8;
-  --color-primary-sage: #3B6FB6;
-  --color-primary-dark: #001F54;
+  /* Blue Primary Palette */
+  --color-primary-bright: #60a5fa; /* Tailwind blue-400 */
+  --color-primary-mid: #3b82f6;    /* Tailwind blue-500 */
+  --color-primary-sage: #0a317d;
+  --color-primary-dark: #1e3a8a;   /* Tailwind blue-900 */
   
-  --color-white: #FFFFFF;
-  --color-gray-bg: #DDE4F0;
-  --color-gray-border: #A6A6A6;
-  --color-text-main: #001F54;
-  --color-text-muted: #A6A6A6;
+  /* Layout Colors */
+  --color-white: #ffffff;
+  --color-gray-bg: #f9fafb;        /* Tailwind gray-50 */
+  --color-gray-border: #e5e7eb;    /* Tailwind gray-200 */
   
+  /* Text Colors */
+  --color-text-main: #111827;      /* Tailwind gray-900 */
+  --color-text-muted: #6b7280;     /* Tailwind gray-500 */
+  
+  /* Utilities */
   --error-color: #ef4444;
-  --btn-shadow: 0 4px 12px rgba(0, 31, 84, 0.15);
+  --btn-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -2px rgba(37, 99, 235, 0.1);
 }
 
 * {
@@ -52,5 +57,5 @@ body {
 body {
   font-family: 'Inter', sans-serif;
   color: var(--color-text-main);
-  background-color: var(--color-white);
+  background-color: var(--color-gray-bg);
 }

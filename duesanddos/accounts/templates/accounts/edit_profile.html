@@ -4,42 +4,7 @@
 {% block title %}Profile Settings | Dues & Do's{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}">
-<style>
-    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-    .form-group input, .form-group textarea, .form-group select { 
-        width: 100%; padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid #e5e7eb;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-size: 0.875rem; background-color: #f9fafb;
-        color: #111827;
-    }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-        outline: none; border-color: #051f52; box-shadow: 0 0 0 4px rgba(5, 31, 82, 0.05); background-color: #fff;
-    }
-    .form-group input:disabled {
-        background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; border-color: #e5e7eb;
-    }
-    .helptext { font-size: 0.7rem; color: #9ca3af; margin-top: 0.3rem; line-height: 1.4; }
-    .errorlist { color: #ef4444; font-size: 0.75rem; margin-top: 0.3rem; list-style: none; padding: 0; font-weight: 500; }
-    
-    .card-hover { transition: all 0.3s ease; }
-    .card-hover:hover { transform: translateY(-2px); border-color: rgba(5, 31, 82, 0.1); }
-
-    /* Modern Toggle Switch */
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-        position: absolute; cursor: pointer; inset: 0; background-color: #e5e7eb;
-        transition: .4s; border-radius: 24px;
-    }
-    .slider:before {
-        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-        background-color: white; transition: .4s; border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    input:checked + .slider { background-color: #051f52; }
-    input:checked + .slider:before { transform: translateX(20px); }
-    input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
-</style>
+<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
@@ -50,27 +15,142 @@
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Profile Settings</h1>
             <p class="text-gray-500 mt-1 font-medium">Manage your personal presence and account info.</p>
         </div>
-        <button id="enableEditBtn" onclick="enableEditing()" class="px-6 py-2 bg-brand-500 text-white rounded-xl text-sm font-black hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 active:scale-95">
+        <button id="enableEditBtn" onclick="enableEditing()" class="px-6 py-2 text-white rounded-xl text-sm font-black transition-all active:scale-95" style="background-color: var(--color-primary-sage); box-shadow: var(--btn-shadow);">
             Edit Details
         </button>
     </div>
 
-    <!-- Forms in Two Columns -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <!-- Basic info card -->
-        <section class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 space-y-6 card-hover">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                </div>
-                <h3 class="text-xl font-black text-gray-900 tracking-tight">Personal Information</h3>
-            </div>
-            
-            <form id="profileForm" method="post" enctype="multipart/form-data" class="space-y-5">
+    <!-- Forms in Three Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start h-full">
+        
+        <!-- Left Column: Personal info card -->
+        <section class="edit-profile-card h-full">
+            <form id="profileForm" method="post" enctype="multipart/form-data" class="flex flex-col h-full">
                 {% csrf_token %}
-                <div class="space-y-5">
+                
+                <div class="profile-avatar-section" style="position: relative;">
+                    <label for="id_avatar" style="cursor: pointer; position: relative; display: inline-block;" class="avatar-upload-wrapper" title="Click to change avatar" onclick="handleAvatarClick(event)">
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="{{ user.first_name|default:user.username }}" class="avatar-large" id="avatarPreviewImg" style="object-fit: cover; width: 80px; height: 80px; border-radius: 50%;">
+                        {% else %}
+                            <div id="avatarInitials" class="avatar-large" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #051f52 0%, #1e40af 100%); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 800; color: white; letter-spacing: -1px;">
+                                {{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper }}
+                            </div>
+                            <img src="" alt="" class="avatar-large" id="avatarPreviewImg" style="object-fit: cover; width: 80px; height: 80px; border-radius: 50%; display: none;">
+                        {% endif %}
+                        <div class="avatar-upload-overlay" id="avatar-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.55); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; color: white; pointer-events: none; gap: 2px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <span style="font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Upload</span>
+                        </div>
+                    </label>
+                    <input type="file" name="avatar" id="id_avatar" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                    
+                    <style>
+                        .avatar-upload-wrapper:hover .avatar-upload-overlay {
+                            opacity: 1 !important;
+                        }
+                    </style>
+
+                    <div class="avatar-info">
+                        <h2>{{ user.first_name|default:user.username }} {{ user.last_name }}</h2>
+                        <p>{{ user.email }}</p>
+                        <p id="avatar-hint" style="font-size: 0.72rem; color: var(--color-text-muted); margin-top: 4px; display: none;">Click the photo to upload a new avatar</p>
+                    </div>
+                </div>
+
+                <script>
+                    const MAX_AVATAR_BYTES = 800 * 1024; // 800 KB
+
+                    async function compressImage(file, maxBytes) {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement('canvas');
+                                    // Scale down if wider than 1200px
+                                    const MAX_DIM = 1200;
+                                    const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+                                    canvas.width = Math.round(img.width * scale);
+                                    canvas.height = Math.round(img.height * scale);
+                                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                                    // Iteratively reduce quality until ≤ maxBytes
+                                    let quality = 0.85;
+                                    const tryCompress = () => {
+                                        canvas.toBlob((blob) => {
+                                            if (blob.size <= maxBytes || quality <= 0.1) {
+                                                resolve(blob);
+                                            } else {
+                                                quality = Math.max(0.1, quality - 0.1);
+                                                tryCompress();
+                                            }
+                                        }, 'image/jpeg', quality);
+                                    };
+                                    tryCompress();
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+
+                    // Store compressed blob globally so the form submit can access it
+                    let _compressedAvatarBlob = null;
+                    let _compressedAvatarName = null;
+
+                    async function previewAvatar(input) {
+                        if (!input.files || !input.files[0]) return;
+                        const original = input.files[0];
+
+                        // Show loading state
+                        const hint = document.getElementById('avatar-hint');
+                        if (hint) hint.textContent = 'Compressing…';
+
+                        const blob = await compressImage(original, MAX_AVATAR_BYTES);
+                        _compressedAvatarBlob = blob;
+                        _compressedAvatarName = original.name.replace(/\.[^.]+$/, '') + '_compressed.jpg';
+
+                        // Preview
+                        const previewImg = document.getElementById('avatarPreviewImg');
+                        previewImg.src = URL.createObjectURL(blob);
+                        previewImg.style.display = 'block';
+                        const initials = document.getElementById('avatarInitials');
+                        if (initials) initials.style.display = 'none';
+
+                        // Show size info
+                        const kb = (blob.size / 1024).toFixed(0);
+                        const origKb = (original.size / 1024).toFixed(0);
+                        if (hint) hint.textContent = `Compressed: ${kb} KB (from ${origKb} KB) — ready to save`;
+                    }
+
+                    // Intercept form submit — inject compressed blob into the file input
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const form = document.getElementById('profileForm');
+                        if (!form) return;
+                        form.addEventListener('submit', function(e) {
+                            if (!_compressedAvatarBlob) return; // no image selected, submit normally
+                            e.preventDefault();
+                            const fileInput = document.getElementById('id_avatar');
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(new File([_compressedAvatarBlob], _compressedAvatarName, { type: 'image/jpeg' }));
+                            fileInput.files = dataTransfer.files;
+                            _compressedAvatarBlob = null;
+                            // Add save_profile as a hidden field (form.submit() skips buttons entirely)
+                            // This avoids requestSubmit's re-trigger loop that caused the double-click bug
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = 'save_profile';
+                            hidden.value = '';
+                            form.appendChild(hidden);
+                            form.submit(); // native submit — bypasses all event listeners, no loop
+                        });
+                    });
+                </script>
+
+                <div class="custom-django-form flex-grow">
                     {% for field in user_form %}
-                        <div class="form-group">
+                        <div class="form-group mb-4">
                             {{ field.label_tag }}
                             {{ field }}
                             {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
@@ -79,98 +159,264 @@
                     {% endfor %}
                     
                     {% for field in profile_form %}
+                        {% if field.name != 'notifications_enabled' and field.name != 'avatar' %}
                         <div class="form-group">
-                            {% if field.name == 'notifications_enabled' %}
-                                <div class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 transition-all hover:border-brand-100">
-                                    <div>
-                                        {{ field.label_tag }}
-                                        {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
-                                    </div>
-                                    <label class="switch">
-                                        {{ field }}
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            {% else %}
-                                {{ field.label_tag }}
-                                <div class="mt-1">
-                                    {{ field }}
-                                </div>
-                                {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
-                            {% endif %}
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
                             {{ field.errors }}
                         </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
 
-                <div class="pt-4 hidden" id="saveProfileBtn">
-                    <button type="submit" name="save_profile" class="w-full px-8 py-3.5 bg-brand-500 text-white rounded-xl text-sm font-black hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 active:scale-95">
+                <div class="mt-6 hidden" id="saveProfileBtn">
+                    <button type="submit" name="save_profile" class="brand-action-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         Save Changes
                     </button>
                 </div>
-            </form>
         </section>
 
-        <div class="space-y-8">
+        <!-- Middle Column: Change Password -->
+        <section class="edit-profile-card h-full flex flex-col justify-center items-center text-center">
+            <div class="mb-4 text-[#051f52]">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Password Settings</h3>
+            <p class="text-sm text-gray-500 mb-6 max-w-xs">Update your password to keep your account secure. We recommend changing it periodically.</p>
+            
+            <button type="button" onclick="openPasswordModal()" class="px-6 py-2.5 bg-[#051f52] text-white text-sm font-bold rounded-lg shadow-sm hover:bg-[#0a317d] transition-colors flex items-center gap-2">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Change Password
+            </button>
+        </section>
 
-            <!-- Security card -->
-            <section class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 space-y-6 card-hover">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-black text-gray-900 tracking-tight">Security & Credentials</h3>
+        <!-- Right Column: Households & Danger Zone -->
+        <div class="flex flex-col gap-6 h-full overflow-y-auto" style="padding-right: 4px;">
+            <!-- Households Card -->
+            <section class="edit-profile-card shrink-0">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <h3 class="card-title">My Households</h3>
                 </div>
-                
-                <form id="passwordForm" method="post" class="space-y-5">
-                    {% csrf_token %}
-                    <div class="space-y-5">
-                        {% for field in password_form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {{ field }}
-                                {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
-                                {{ field.errors }}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for membership in memberships %}
+                    <div class="user-info-group mb-0" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="household-icon" style="background-color: #dbeafe; color: var(--color-primary-sage); width: 40px; height: 40px;">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                             </div>
-                        {% endfor %}
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-main);">{{ membership.household.name }}</span>
+                        </div>
+                        <span class="household-badge" {% if membership.role == 'Admin' %}style="background-color: var(--color-primary-sage); color: white;"{% endif %}>{{ membership.role }}</span>
                     </div>
+                    {% empty %}
+                    <div style="padding: 12px; background: #f9fafb; border-radius: 8px; text-align: center;">
+                        <span style="font-size: 0.85rem; color: var(--color-text-muted);">You are not a member of any household yet.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
 
-                    <div class="pt-4 hidden" id="savePasswordBtn">
-                        <button type="submit" name="change_password" class="w-full px-8 py-3.5 bg-white border-2 border-brand-500 text-brand-500 rounded-xl text-sm font-black hover:bg-brand-50 transition-all active:scale-95">
-                            Update Password
-                        </button>
-                    </div>
-                </form>
+            <!-- Danger Zone -->
+            <section class="edit-profile-card border-red-200 mt-auto shrink-0" style="border: 1px solid #fecaca; background-color: #fef2f2;">
+                <div class="card-header pb-2 border-b-0">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <h3 class="card-title text-red-600 font-bold" style="color: #dc2626;">Danger Zone</h3>
+                </div>
+                <div class="px-5 pb-5">
+                    <p class="text-sm text-red-500 mb-4" style="color: #ef4444;">Once you delete your account, there is no going back. All of your connected households will also be permanently deleted.</p>
+                    <button type="button" onclick="openDeleteModal()" class="w-full py-2.5 bg-white text-red-600 text-sm font-bold rounded-lg border border-red-200 hover:bg-red-50 transition-colors shadow-sm" style="color: #dc2626; border-color: #fca5a5;">
+                        Delete Account
+                    </button>
+                </div>
             </section>
         </div>
     </div>
 </div>
 
+<!-- Delete Account Modal (Hidden by default) -->
+<div id="deleteAccountModal" data-requires-text="{% if user.has_usable_password %}false{% else %}true{% endif %}" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50" style="backdrop-filter: blur(2px);">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
+        <div class="flex items-center gap-3 mb-4 text-red-600">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <h2 class="text-xl font-bold">Delete Account</h2>
+        </div>
+        
+        <div class="mb-5 p-3 bg-red-50 rounded-lg text-sm text-red-700 leading-relaxed border border-red-100">
+            <p class="font-bold mb-1">Warning: This action is irreversible.</p>
+            <p>This will permanently delete your account, profile data, media, and <strong>ALL connected households you are a member of</strong>.</p>
+        </div>
+        
+        <form method="POST" action="{% url 'delete_account' %}">
+            {% csrf_token %}
+            <div class="mb-5">
+                {% if user.has_usable_password %}
+                    <label for="deleteConfirmation" class="block text-sm font-semibold text-gray-700 mb-1">To verify, please enter your password:</label>
+                    <input type="password" name="confirmation" id="deleteConfirmation" class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" required autofocus>
+                {% else %}
+                    <label for="deleteConfirmation" class="block text-sm font-semibold text-gray-700 mb-1">To verify, type <strong>DELETE</strong> below:</label>
+                    <input type="text" name="confirmation" id="deleteConfirmation" class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="DELETE" required autofocus>
+                {% endif %}
+            </div>
+            
+            <div class="flex gap-3 justify-end mt-6">
+                <button type="button" onclick="closeDeleteModal()" class="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" id="deleteSubmitBtn" disabled class="px-5 py-2 text-sm font-bold text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 active:scale-95 transition-all opacity-50 cursor-not-allowed">
+                    Permanently Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50" style="backdrop-filter: blur(2px);">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        <div class="flex items-center gap-3 mb-4 text-[#051f52] shrink-0">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <h2 class="text-xl font-bold">Change Password</h2>
+        </div>
+        
+        <form method="post" class="custom-django-form flex flex-col overflow-y-auto pr-2" style="max-height: 100%;">
+            {% csrf_token %}
+            <div class="mb-4">
+                {% for field in password_form %}
+                    <div class="form-group mb-4">
+                        {{ field.label_tag }}
+                        <div class="mt-1">
+                            {{ field }}
+                        </div>
+                        {% if field.help_text %}<p class="helptext text-xs text-gray-500 mt-1">{{ field.help_text|safe }}</p>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="flex gap-3 justify-end mt-4 shrink-0 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closePasswordModal()" class="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" name="change_password" class="px-5 py-2 text-sm font-bold text-white bg-[#051f52] rounded-lg shadow-sm hover:bg-[#0a317d] transition-colors">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    // Track edit mode state
+    let isEditMode = false;
+
+    // Delete Account Modal handlers
+    const deleteInput = document.getElementById('deleteConfirmation');
+    const deleteSubmitBtn = document.getElementById('deleteSubmitBtn');
+
+    function validateDeleteInput() {
+        if (!deleteInput || !deleteSubmitBtn) return;
+        
+        // Check if the user is required to type DELETE specifically
+        const isDeleteTextRequired = document.getElementById('deleteAccountModal').dataset.requiresText === "true";
+        
+        if (isDeleteTextRequired) {
+            if (deleteInput.value === "DELETE") {
+                deleteSubmitBtn.disabled = false;
+                deleteSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                deleteSubmitBtn.disabled = true;
+                deleteSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            // If checking a password, just ensure it's not empty
+            if (deleteInput.value.length > 0) {
+                deleteSubmitBtn.disabled = false;
+                deleteSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                deleteSubmitBtn.disabled = true;
+                deleteSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    }
+
+    if (deleteInput) {
+        deleteInput.addEventListener('input', validateDeleteInput);
+    }
+
+    function openDeleteModal() {
+        document.getElementById('deleteAccountModal').classList.remove('hidden');
+        if (deleteInput) {
+            deleteInput.value = '';
+            validateDeleteInput();
+            setTimeout(() => {
+                deleteInput.focus();
+            }, 100);
+        }
+    }
+
+    function openPasswordModal() {
+        document.getElementById('changePasswordModal').classList.remove('hidden');
+    }
+
+    function closePasswordModal() {
+        document.getElementById('changePasswordModal').classList.add('hidden');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteAccountModal').classList.add('hidden');
+        if (deleteInput) deleteInput.value = '';
+    }
+
+    // Avatar click guard
+    function handleAvatarClick(e) {
+        if (!isEditMode) {
+            e.preventDefault();
+            // Show a toast nudge via the base.html toast system
+            if (typeof showNotificationToast === 'function') {
+                showNotificationToast('info', 'Click "Edit Details" to update your profile.');
+            }
+        }
+        // else: allow the native label-for behaviour to open the file picker
+    }
+
     // Initialize fields as disabled
     document.addEventListener('DOMContentLoaded', function() {
         disableAllFields();
     });
 
     function disableAllFields() {
-        const inputs = document.querySelectorAll('input, select, textarea');
+        const inputs = document.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea');
         inputs.forEach(input => {
-            if (input.name !== 'csrfmiddlewaretoken') {
+            // Do not disable the text inputs inside the Delete Account modal
+            if (input.name !== 'csrfmiddlewaretoken' && !input.closest('#deleteAccountModal')) {
                 input.disabled = true;
             }
         });
     }
 
     function enableEditing() {
-        const inputs = document.querySelectorAll('input, select, textarea');
+        isEditMode = true;
+        const inputs = document.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea');
         inputs.forEach(input => {
             input.disabled = false;
         });
-        
-        // Hide edit button and show save buttons
-        document.getElementById('enableEditBtn').classList.add('hidden');
+        document.getElementById('enableEditBtn').style.display = 'none';
         document.getElementById('saveProfileBtn').classList.remove('hidden');
-        document.getElementById('savePasswordBtn').classList.remove('hidden');
+        // Show avatar upload hint and update cursor title
+        const avatarHint = document.getElementById('avatar-hint');
+        if (avatarHint) avatarHint.style.display = 'block';
+        const avatarWrapper = document.querySelector('.avatar-upload-wrapper');
+        if (avatarWrapper) avatarWrapper.title = 'Click to change your avatar';
+        const fakeSubmitBtn = document.getElementById('fakeSubmitBtn');
+        if (fakeSubmitBtn) {
+            fakeSubmitBtn.disabled = false;
+            fakeSubmitBtn.style.removeProperty('background-color');
+        }
     }
 </script>
 {% endblock %}

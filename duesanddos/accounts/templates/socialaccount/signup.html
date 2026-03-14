@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log in | Dues & Do's</title>
+    <title>Complete Sign Up | Dues & Do's</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
@@ -24,7 +24,6 @@
         }
     </script>
     <style>
-        /* Custom styles to match the new color scheme and fix button text */
         .btn-primary {
             background-color: #051f52 !important;
         }
@@ -91,56 +90,49 @@
 
         <div class="w-full max-w-md">
           <div class="mb-8 text-center sm:text-left">
-            <h1 class="font-display text-3xl font-semibold text-stone-900">Welcome back</h1>
-            <p class="mt-2 text-sm text-stone-500">Log in to see your household's expenses and chores.</p>
+            <h1 class="font-display text-3xl font-semibold text-stone-900">Choose a username</h1>
+            <p class="mt-2 text-sm text-stone-500">You are about to sign up with Google. What should we call you here?</p>
           </div>
           
           {% if form.errors %}
           <div class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-            Invalid credentials. Please try again.
+            {% for field in form %}
+              {% for error in field.errors %}
+                {{ error }}<br>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              {{ error }}<br>
+            {% endfor %}
           </div>
           {% endif %}
 
-          {% load socialaccount %}
-          <form action="{% provider_login_url 'google' %}" method="post" class="mb-6">
+          <form method="POST" action="{% url 'socialaccount_signup' %}" class="space-y-5">
             {% csrf_token %}
-            <button type="submit" class="btn-secondary w-full py-3 flex items-center justify-center gap-2 border-stone-200">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google Logo" class="h-5 w-5">
-                Continue with Google
-            </button>
-          </form>
-
-          <div class="relative my-6">
-              <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-stone-200"></div></div>
-              <div class="relative flex justify-center text-sm"><span class="bg-white px-2 text-stone-500">Or continue with email</span></div>
-          </div>
-
-          <form method="POST" class="space-y-5">
-            {% csrf_token %}
-            <div class="space-y-1">
-                <label for="id_username" class="form-label">Username</label>
-                <input type="text" name="username" id="id_username" class="input-field" placeholder="Username" required autofocus>
-            </div>
 
             <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                    <label for="id_password" class="form-label">Password</label>
-                    <a href="{% url 'password_reset' %}" class="text-xs hover:underline" style="color: #051f52;">Forgot password?</a>
-                </div>
-                <input type="password" name="password" id="id_password" class="input-field" placeholder="Your password" required>
+                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                {{ form.username }}
             </div>
 
-            <button type="submit" class="btn-primary w-full py-3">Log in</button>
+            <!-- Hide the email field if allauth includes it in the form (it usually uses the Google email) -->
+            <div style="display: none;">
+                {{ form.email }}
+            </div>
 
-            <p class="text-center text-sm text-stone-500">
-              Don't have an account? <a href="{% url 'register' %}" class="font-medium hover:underline" style="color: #051f52;">Sign up free</a>
-            </p>
+            <button type="submit" class="btn-primary w-full py-3">Complete Sign Up</button>
           </form>
         </div>
       </div>
     </div>
     <script>
         document.getElementById('year-l').textContent = new Date().getFullYear();
+        // Add styling classes to the username input rendered by Django
+        const usernameInput = document.getElementById('id_username');
+        if (usernameInput) {
+            usernameInput.classList.add('input-field');
+            usernameInput.placeholder = 'e.g. jondoe';
+        }
     </script>
 </body>
 </html>
