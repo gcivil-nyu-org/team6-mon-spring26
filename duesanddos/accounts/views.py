@@ -1,12 +1,18 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
 from django.db import transaction
 from .models import CustomUser, Profile
-from .forms import RegisterForm, UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
+from .forms import (
+    RegisterForm,
+    UserUpdateForm,
+    ProfileUpdateForm,
+    CustomPasswordChangeForm,
+)
+
 
 @transaction.atomic
 def register_view(request):
@@ -26,7 +32,7 @@ def register_view(request):
                 first_name=first_name,
                 last_name=last_name,
             )
-            
+
             Profile.objects.get_or_create(user=user)
 
             login(request, user)
@@ -36,6 +42,7 @@ def register_view(request):
         form = RegisterForm()
 
     return render(request, "accounts/register.html", {"form": form})
+
 
 @login_required
 def profile_view(request):
@@ -50,7 +57,9 @@ def edit_profile_view(request):
     if request.method == "POST":
         if "save_profile" in request.POST:
             user_form = UserUpdateForm(request.POST, instance=request.user)
-            profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+            profile_form = ProfileUpdateForm(
+                request.POST, request.FILES, instance=profile
+            )
             password_form = CustomPasswordChangeForm(request.user)
 
             if user_form.is_valid() and profile_form.is_valid():
@@ -84,9 +93,11 @@ def edit_profile_view(request):
         },
     )
 
+
 @login_required
 def dashboard_view(request):
     return render(request, "accounts/dashboard.html")
+
 
 class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
     template_name = "accounts/logout.html"
