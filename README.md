@@ -1,1 +1,3 @@
 # Team Project repo
+Main: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spring26.svg?token=DmD1Wzzxg64ktDYLxKH1&branch=main)](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spring26)
+Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spring26.svg?token=DmD1Wzzxg64ktDYLxKH1&branch=develop)](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spring26)
