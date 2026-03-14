@@ -20,7 +20,7 @@ install:
   - pip install coverage 'coveralls[yaml]' flake8 black
 
 before_script:
-  - psql -c 'CREATE DATABASE travis_ci_test;' -U postgres
+  - psql -h 127.0.0.1 -U postgres -d postgres -c 'CREATE DATABASE travis_ci_test;'
   - cd duesanddos
 
 script:
