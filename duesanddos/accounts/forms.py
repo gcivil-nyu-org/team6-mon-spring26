@@ -4,13 +4,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import PasswordChangeForm
 from .models import CustomUser, Profile
 
+
 class RegisterForm(forms.Form):
     username = forms.CharField(max_length=150)
     firstName = forms.CharField(label="First Name")
     lastName = forms.CharField(label="Last Name")
     email = forms.EmailField(widget=forms.EmailInput())
     password = forms.CharField(widget=forms.PasswordInput())
-    confirmPassword = forms.CharField(widget=forms.PasswordInput(), label="Confirm Password")
+    confirmPassword = forms.CharField(
+        widget=forms.PasswordInput(), label="Confirm Password"
+    )
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
@@ -50,7 +53,8 @@ class RegisterForm(forms.Form):
                 self.add_error("password", e)
 
         return cleaned_data
-    
+
+
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
