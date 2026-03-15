@@ -1,20 +1,22 @@
 from django.contrib import admin
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.views.generic import RedirectView
 
 def home_redirect(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
-    return redirect("login")
-
+    return render(request, "accounts/index.html")
 
 urlpatterns = [
     path("", home_redirect, name="home"),
     path("admin/", admin.site.urls),
+    # Accounts app routes
     path("accounts/", include("accounts.urls")),
+    # Allauth routes (e.g., google/login/, etc.)
+    path("accounts/", include("allauth.urls")),
 ]
 
 if settings.DEBUG:

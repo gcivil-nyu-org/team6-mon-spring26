@@ -4,69 +4,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Dues & Dos{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <style>
-        .app-layout { display: flex; min-height: 100vh; }
-        
-        .sidebar {
-            width: 280px;
-            background: #fff;
-            border-right: 1px solid var(--color-gray-border);
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            position: fixed;
-            height: 100vh;
+    <title>{% block title %}Dues & Do's{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=2">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
+                        }
+                    }
+                }
+            }
         }
-
-        .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
-        .nav-list { list-style: none; flex-grow: 1; }
-        .nav-item { 
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            text-decoration: none; color: var(--color-text-muted);
-            border-radius: 12px; margin-bottom: 8px; font-weight: 500;
-        }
-        .nav-item.active { background: #f0fdf4; color: var(--color-primary-sage); }
-        
-        .sidebar-footer { border-top: 1px solid #eee; padding-top: 20px; margin-top: auto; }
-        .user-pill { display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; }
-
-        .main-content { flex: 1; margin-left: 280px; padding: 40px; background: #f9fafb; }
-
-        .logout-popover {
-            display: none; position: absolute; bottom: 80px; left: 20px;
-            background: white; border: 1px solid #ddd; padding: 10px;
-            border-radius: 8px; box-shadow: var(--btn-shadow);
-        }
-    </style>
+    </script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <div class="app-layout">
-        <aside class="sidebar">
+        <aside id="app-sidebar" class="sidebar">
             <div class="sidebar-brand">
-                <div class="logo-pill">D</div>
-                <span class="brand-text">Dues & Do's</span>
+                <a href="{% url 'home' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; overflow: hidden; white-space: nowrap;">
+                    <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" style="width: 28px; height: 28px; border-radius: 8px; object-fit: contain; flex-shrink: 0;">
+                    <span class="sidebar-text" style="font-size: 1.1rem; font-weight: 700; color: var(--color-text-main);">Dues <span style="color: var(--color-text-muted);">&</span> Do's</span>
+                </a>
+                <button id="sidebarPinBtn" onclick="toggleSidebarPin()" class="pin-btn" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'" title="Pin/Unpin Sidebar">
+                    <svg id="pinIcon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+            </div>
+
+            <div style="height: 1px; background-color: var(--color-gray-border); margin: 0 -16px 24px -16px;"></div>
+
+            <div class="household-switcher" style="background-color: #eff6ff; overflow: hidden; white-space: nowrap;">
+                <div class="household-icon" style="background-color: #dbeafe; color: var(--color-primary-sage); flex-shrink: 0;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
+                <div class="sidebar-text" style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-text-main);">
+                        {% if request.user.profile.active_household %}
+                            {{ request.user.profile.active_household.name }}
+                        {% else %}
+                            No Household
+                        {% endif %}
+                    </span>
+                </div>
             </div>
 
             <nav class="nav-list">
-                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
-                <a href="#" class="nav-item">Expenses</a>
-                <a href="#" class="nav-item">Chores</a>
-                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">Profile</a>
+                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="Dashboard">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <button onclick="showComingSoon('Expenses')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Expenses">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <span class="sidebar-text">Expenses</span>
+                </button>
+                <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chores">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span class="sidebar-text">Chores</span>
+                </button>
+                <button onclick="showComingSoon('My Activity')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="My Activity">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <span class="sidebar-text">My Activity</span>
+                </button>
+                <button onclick="showComingSoon('Chat')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chat">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    <span class="sidebar-text">Chat</span>
+                </button>
+                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}" title="Profile">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="sidebar-text">Profile</span>
+                </a>
+                <a href="{% url 'household_settings' %}" class="nav-item {% if request.resolver_match.url_name == 'household_settings' %}active{% endif %}" title="Household Settings">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span class="sidebar-text">Household Settings</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
                 <div class="user-pill" onclick="toggleLogout()">
-                    <strong>{{ user.username }}</strong>
-                    <span class="logout-icon">🚪</span>
+                    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%;">
+                        {% if request.user.profile.avatar %}
+                            <img src="{{ request.user.profile.avatar.url }}" alt="User Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=051f52&color=fff" alt="User Avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;">
+                        {% endif %}
+                        <div class="sidebar-text" style="display: flex; flex-direction: column; overflow: hidden; white-space: nowrap;">
+                            <strong style="font-size: 0.85rem; color: var(--color-text-main); text-overflow: ellipsis; overflow: hidden;">{{ user.first_name|default:user.username }} {{ user.last_name }}</strong>
+                            <span style="font-size: 0.70rem; color: var(--color-text-muted); text-overflow: ellipsis; overflow: hidden;">{{ user.email|truncatechars:20 }}</span>
+                        </div>
+                    </div>
+                    <svg class="logout-icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
                 </div>
-                <div id="logoutBox" class="logout-popover">
+                <!-- Popover stays the same -->
+                <div id="logoutBox" class="logout-popover" style="display: none; position: absolute; bottom: 60px; left: 16px; width: 228px; background: white; border: 1px solid var(--color-gray-border); padding: 8px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                     <form method="POST" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer; font-weight:600;">Confirm Log Out</button>
+                        <button type="submit" style="background:none; border:none; color:#ef4444; width: 100%; text-align: left; cursor:pointer; font-weight:600; font-size: 0.85rem; padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            <span>Sign out</span>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -77,11 +120,170 @@
         </main>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container" style="position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: flex; flex-direction: column; gap: 12px;"></div>
+
     <script>
+        function showComingSoon(feature) {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                background-color: var(--color-white, #ffffff);
+                border-left: 4px solid var(--color-primary-sage, #3b82f6);
+                padding: 16px 20px;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                font-size: 0.95rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transform: translateX(120%);
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            `;
+            
+            toast.innerHTML = `
+                <div style="background-color: #eff6ff; color: var(--color-primary-sage, #3b82f6); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                </div>
+                <span><strong style="color: var(--color-text-main, #1e293b);">${feature}</strong> <span style="color: var(--color-text-muted, #64748b);">is coming soon!</span></span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.style.transform = 'translateX(0)';
+                    toast.style.opacity = '1';
+                });
+            });
+            
+            // Remove after 3.5 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(120%)';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (container.contains(toast)) container.removeChild(toast);
+                }, 400);
+            }, 3500);
+        }
+
+        function showNotificationToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let borderColor = 'var(--color-primary-sage, #3b82f6)';
+            let iconColor = 'var(--color-primary-sage, #3b82f6)';
+            let iconBg = '#eff6ff';
+            let iconHtml = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>';
+
+            if (type === 'success') {
+                borderColor = '#10b981';
+                iconColor = '#10b981';
+                iconBg = '#d1fae5';
+                iconHtml = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+            } else if (type === 'error' || type === 'danger') {
+                borderColor = '#ef4444';
+                iconColor = '#ef4444';
+                iconBg = '#fee2e2';
+                iconHtml = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+            }
+
+            toast.style.cssText = `
+                background-color: var(--color-white, #ffffff);
+                border-left: 4px solid ${borderColor};
+                padding: 16px 20px;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                font-size: 0.95rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transform: translateX(120%);
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                max-width: 400px;
+            `;
+            
+            toast.innerHTML = `
+                <div style="background-color: ${iconBg}; color: ${iconColor}; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    ${iconHtml}
+                </div>
+                <span style="color: var(--color-text-main, #1e293b);">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.style.transform = 'translateX(0)';
+                    toast.style.opacity = '1';
+                });
+            });
+            
+            // Remove after 4.5 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(120%)';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (container.contains(toast)) container.removeChild(toast);
+                }, 400);
+            }, 4500);
+        }
+
+        // Catch Django messages from backend
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if messages %}
+                {% for message in messages %}
+                    showNotificationToast("{{ message.tags|escapejs }}", "{{ message|escapejs }}");
+                {% endfor %}
+            {% endif %}
+        });
+
         function toggleLogout() {
             var box = document.getElementById('logoutBox');
             box.style.display = (box.style.display === 'block') ? 'none' : 'block';
         }
+
+        // Close logout box when clicking outside
+        document.addEventListener('click', function(event) {
+            const logoutBox = document.getElementById('logoutBox');
+            const userPill = document.querySelector('.user-pill');
+            if (logoutBox && userPill && !logoutBox.contains(event.target) && !userPill.contains(event.target)) {
+                logoutBox.style.display = 'none';
+            }
+        });
+
+        // Sidebar Pin Logic
+        const sidebar = document.getElementById('app-sidebar');
+        const pinIcon = document.getElementById('pinIcon');
+        let isSidebarPinned = localStorage.getItem('sidebarPinned') === 'true'; // Default to unpinned
+
+        function updateSidebarState() {
+            if (isSidebarPinned) {
+                sidebar.classList.add('pinned');
+                document.body.classList.add('sidebar-pinned');
+                pinIcon.innerHTML = '<path d="M19 12H5M12 19l-7-7 7-7"/>'; // Collapse icon
+            } else {
+                sidebar.classList.remove('pinned');
+                document.body.classList.remove('sidebar-pinned');
+                pinIcon.innerHTML = '<path d="M5 12h14M12 5l7 7-7 7"/>'; // Expand icon
+            }
+        }
+
+        function toggleSidebarPin() {
+            isSidebarPinned = !isSidebarPinned;
+            localStorage.setItem('sidebarPinned', isSidebarPinned);
+            updateSidebarState();
+        }
+
+        // Init sidebar state immediately
+        updateSidebarState();
     </script>
 </body>
 </html>
