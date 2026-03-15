@@ -41,7 +41,7 @@ deploy:
     bucket: "$AWS_DEPLOYMENT_BUCKET"
     edge: true
     on:
-      condition: branch = develop AND type = push
+      branch: develop
       python: "3.12"
 
   - provider: elasticbeanstalk
@@ -53,5 +53,5 @@ deploy:
     bucket: "$AWS_DEPLOYMENT_BUCKET"
     edge: true
     on:
-      condition: branch = main AND type = push
+      branch: main
       python: "3.12"
