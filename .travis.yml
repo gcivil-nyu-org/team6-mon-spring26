@@ -32,14 +32,26 @@ after_success:
   - coveralls --verbose
 
 deploy:
-  provider: elasticbeanstalk
-  access_key_id: "$AWS_ACCESS_KEY_ID"
-  secret_access_key: "$AWS_SECRET_ACCESS_KEY"
-  region: "$AWS_S3_REGION_NAME"
-  app: "$AWS_APP"
-  env: "$AWS_ENV"
-  bucket: "$AWS_DEPLOYMENT_BUCKET"
-  edge: true
-  on:
-    branch: "$BRANCH"
-    python: "3.12"
+  - provider: elasticbeanstalk
+    access_key_id: "$AWS_ACCESS_KEY_ID"
+    secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+    region: "$AWS_S3_REGION_NAME"
+    app: "$AWS_APP"
+    env: "$AWS_ENV_DEVELOP"
+    bucket: "$AWS_DEPLOYMENT_BUCKET"
+    edge: true
+    on:
+      condition: branch = develop AND type = push
+      python: "3.12"
+
+  - provider: elasticbeanstalk
+    access_key_id: "$AWS_ACCESS_KEY_ID"
+    secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+    region: "$AWS_S3_REGION_NAME"
+    app: "$AWS_APP"
+    env: "$AWS_ENV_MAIN"
+    bucket: "$AWS_DEPLOYMENT_BUCKET"
+    edge: true
+    on:
+      condition: branch = main AND type = push
+      python: "3.12"
