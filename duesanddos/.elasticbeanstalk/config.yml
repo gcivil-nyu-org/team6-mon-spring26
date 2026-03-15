@@ -1,0 +1,19 @@
+branch-defaults:
+  default:
+    environment: duesanddos-prod
+    group_suffix: null
+environment-defaults:
+  duesanddos-prod:
+    branch: null
+    repository: null
+global:
+  application_name: duesanddos
+  default_ec2_keyname: null
+  default_platform: Python 3.12
+  default_region: us-east-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  sc: null
+  workspace_type: Application

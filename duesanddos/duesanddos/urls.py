@@ -11,7 +11,13 @@ def home_redirect(request):
     return redirect("login")
 
 
+from django.http import HttpResponse
+
+def health_check(request):
+    return HttpResponse("OK")
+
 urlpatterns = [
+    path("healthcheck/", health_check),
     path("", home_redirect, name="home"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),

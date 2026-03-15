@@ -248,3 +248,12 @@ __marimo__/
 Network Trash Folder
 Temporary Items
 .apdisk
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/config.yml
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# EB generated logs
+full_eb_logs.txt
+full_logs.txt
