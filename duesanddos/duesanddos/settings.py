@@ -6,6 +6,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -24,7 +25,7 @@ SECRET_KEY = "django-insecure-7u%$^$fnfqqo#c%gh!=)dtj82tm3!6uqoi4br&%+o3*_xdmuxh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['duesanddos.us-east-1.elasticbeanstalk.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ["duesanddos.us-east-1.elasticbeanstalk.com", "127.0.0.1", "localhost"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -37,7 +38,6 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "storages",
     "accounts",
-
     # django-allauth
     "allauth",
     "allauth.account",
@@ -89,7 +89,7 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-AUTH_PASSWORD_VALIDATORS = [
+AUTH_PASSWORD_VALIDATORS = [  # noqa: E501
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
@@ -124,8 +124,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 # django-allauth Settings
@@ -135,7 +135,7 @@ ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 
 # Social Account Settings
 SOCIALACCOUNT_STORE_TOKENS = True
-SOCIALACCOUNT_AUTO_SIGNUP = False 
+SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
@@ -152,8 +152,8 @@ SOCIALACCOUNT_PROVIDERS = {
         "APP": {
             "client_id": os.environ.get("GOOGLE_OAUTH2_CLIENT_ID"),
             "secret": os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET"),
-            "key": ""
-        }
+            "key": "",
+        },
     }
 }
 
@@ -180,7 +180,7 @@ AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1").strip()
 USE_S3 = os.getenv("USE_S3", "False").strip().lower() == "true"
 
 if USE_S3 and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
     AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_FILE_OVERWRITE = True
     AWS_DEFAULT_ACL = None
@@ -189,7 +189,9 @@ if USE_S3 and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     STORAGES = {
         "default": {"BACKEND": "duesanddos.custom_storages.MediaStorage"},
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        },
     }
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 else:

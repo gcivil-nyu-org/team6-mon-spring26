@@ -2,8 +2,9 @@ import requests
 from django.core.files.base import ContentFile
 from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
-from .models import Profile, make_upload_path
+from .models import Profile
 from allauth.socialaccount.models import SocialAccount
+
 
 @receiver(user_signed_up)
 def fetch_gmail_photo(request, user, **kwargs):
@@ -13,17 +14,19 @@ def fetch_gmail_photo(request, user, **kwargs):
     """
     try:
         # Check if the user signed up via Google
-        social_account = SocialAccount.objects.filter(user=user, provider='google').first()
+        social_account = SocialAccount.objects.filter(
+            user=user, provider="google"
+        ).first()
         if not social_account:
             return
 
         # Google profile photo URL is typically stored in extra_data['picture']
-        picture_url = social_account.extra_data.get('picture')
+        picture_url = social_account.extra_data.get("picture")
         if not picture_url:
             return
 
         profile, _ = Profile.objects.get_or_create(user=user)
-        
+
         # Don't overwrite if they somehow already have an avatar
         if profile.avatar:
             return

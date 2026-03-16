@@ -1,6 +1,5 @@
 import uuid
 import os
-from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
@@ -30,21 +29,22 @@ class UploadToPath:
         self.category = category
 
     def __call__(self, instance, filename):
-        ext = os.path.splitext(filename)[1].lower() or '.jpg'
-        user_pk = getattr(instance, 'user_id', None)
+        ext = os.path.splitext(filename)[1].lower() or ".jpg"
+        user_pk = getattr(instance, "user_id", None)
         if user_pk is None:
-            user = getattr(instance, 'user', None)
-            user_pk = getattr(user, 'pk', 'unknown') if user else 'unknown'
+            user = getattr(instance, "user", None)
+            user_pk = getattr(user, "pk", "unknown") if user else "unknown"
         return f"{self.category}/uid_{user_pk}/{uuid.uuid4().hex}{ext}"
 
     def deconstruct(self):
         """Required by Django to serialize this callable in migration files."""
-        return ('accounts.models.UploadToPath', [self.category], {})
+        return ("accounts.models.UploadToPath", [self.category], {})
 
 
 def make_upload_path(category: str) -> UploadToPath:
     """Convenience alias: make_upload_path('expenses') == UploadToPath('expenses')."""
     return UploadToPath(category)
+
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)  # required + unique
@@ -53,10 +53,11 @@ class CustomUser(AbstractUser):
     # Keep defaults:
     # USERNAME_FIELD = 'username'
     # REQUIRED_FIELDS includes 'email' by default in createsuperuser prompts if you set it:
-    REQUIRED_FIELDS = ["email"]
+    REQUIRED_FIELDS = ["email"]  # noqa: E501
 
     def __str__(self):
         return self.username
+
 
 class Household(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -68,28 +69,42 @@ class Household(models.Model):
     def __str__(self):
         return self.name
 
+
 class HouseholdMember(models.Model):
     ROLE_CHOICES = (
-        ('Admin', 'Admin'),
-        ('Member', 'Member'),
+        ("Admin", "Admin"),
+        ("Member", "Member"),
     )
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='memberships')
-    household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='members')
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='Member')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships"
+    )
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="members"
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="Member")
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'household')
+        unique_together = ("user", "household")
 
     def __str__(self):
         return f"{self.user.username} - {self.household.name} ({self.role})"
-    
+
+
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    avatar = models.ImageField(upload_to=make_upload_path('profile_pics'), blank=True, null=True)
+    avatar = models.ImageField(
+        upload_to=make_upload_path("profile_pics"), blank=True, null=True
+    )
     bio = models.TextField(blank=True)
     notifications_enabled = models.BooleanField(default=True)
-    active_household = models.ForeignKey(Household, on_delete=models.SET_NULL, null=True, blank=True, related_name='active_profiles')
+    active_household = models.ForeignKey(
+        Household,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="active_profiles",
+    )
 
     def save(self, *args, **kwargs):
         """Delete the old avatar from S3 whenever a new one is uploaded."""
