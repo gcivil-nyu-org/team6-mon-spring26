@@ -399,11 +399,11 @@ def delete_account_view(request):
         if user.has_usable_password():
             if not user.check_password(confirmation):
                 messages.error(request, "Incorrect password. Account deletion aborted.")
-                return redirect("edit_profile")
+                return redirect("profile")
         else:
             if confirmation != "DELETE":
                 messages.error(request, "please type as it is - case sensitive")
-                return redirect("edit_profile")
+                return redirect("profile")
 
         # Proceed with deletion
         with transaction.atomic():
