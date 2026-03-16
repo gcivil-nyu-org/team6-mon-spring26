@@ -388,14 +388,16 @@ class EditProfileViewTests(TestCase):
 
     # -- POST save_profile (invalid) ------------------------------------------
 
-        self.assertEqual(response.status_code, 302)
+    def test_save_profile_invalid_returns_200(self):
+        response = self.client.post(self.url, self._profile_data(username=""))
+        self.assertEqual(response.status_code, 200)
 
     def test_save_profile_invalid_shows_user_form_errors(self):
-        response = self.client.post(self.url, self._profile_data(username=""), follow=True)
+        response = self.client.post(self.url, self._profile_data(username=""))
         self.assertIn("username", response.context["user_form"].errors)
 
     def test_save_profile_invalid_still_has_all_forms_in_context(self):
-        response = self.client.post(self.url, self._profile_data(username=""), follow=True)
+        response = self.client.post(self.url, self._profile_data(username=""))
         self.assertIn("user_form", response.context)
         self.assertIn("profile_form", response.context)
         self.assertIn("password_form", response.context)
@@ -406,8 +408,8 @@ class EditProfileViewTests(TestCase):
             email="taken@example.com",
             password=TEST_PASSWORD,
         )
-        response = self.client.post(self.url, self._profile_data(username="taken"), follow=True)
-        self.assertEqual(response.status_code, 200)  # Followed redirect should be 200
+        response = self.client.post(self.url, self._profile_data(username="taken"))
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user_form"].errors)
 
     # -- POST change_password (valid) -----------------------------------------

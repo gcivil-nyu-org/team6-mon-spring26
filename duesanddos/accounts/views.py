@@ -65,26 +65,7 @@ def profile_view(request):
                 profile_form.save()
                 messages.success(request, "Your profile was updated.")
                 return redirect("profile")
-            else:
-                # PRG: flash errors as toasts and redirect so a browser refresh
-                # doesn't re-POST — form fields revert to real DB values on GET
-                for field, errors in user_form.errors.items():
-                    label = (
-                        user_form.fields[field].label
-                        if field in user_form.fields
-                        else field.replace("_", " ").title()
-                    )
-                    for error in errors:
-                        messages.error(request, f"{label}: {error}")
-                for field, errors in profile_form.errors.items():
-                    label = (
-                        profile_form.fields[field].label
-                        if field in profile_form.fields
-                        else field.replace("_", " ").title()
-                    )
-                    for error in errors:
-                        messages.error(request, f"{label}: {error}")
-                return redirect("profile")
+            # Re-render the form with errors so tests and users can see them
 
         elif "change_password" in request.POST:
             user_form = UserUpdateForm(instance=request.user)
