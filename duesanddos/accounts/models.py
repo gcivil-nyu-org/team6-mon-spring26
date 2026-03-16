@@ -55,6 +55,7 @@ class CustomUser(AbstractUser):
     # REQUIRED_FIELDS includes 'email' by default in createsuperuser prompts if you set it:
     REQUIRED_FIELDS = ["email"]  # noqa: E501
 
+
     def __str__(self):
         return self.username
 
