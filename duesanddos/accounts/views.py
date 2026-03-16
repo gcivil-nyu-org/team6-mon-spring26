@@ -39,7 +39,7 @@ def register_view(request):
 
             Profile.objects.get_or_create(user=user)
 
-            login(request, user)
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             messages.success(request, "Account created! Please log in.")
             return redirect("profile")
     else:
@@ -396,4 +396,4 @@ def delete_account_view(request):
         messages.success(request, "Your account has been successfully deleted.")
         return redirect("login")
 
-    return redirect("edit_profile")
+    return redirect("profile")
