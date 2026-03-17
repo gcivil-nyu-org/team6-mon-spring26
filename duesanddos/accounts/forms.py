@@ -58,7 +58,10 @@ class RegisterForm(forms.Form):
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ["username", "first_name", "last_name", "email"]
+        fields = ["username", "first_name", "last_name", "email", "phone_number"]
+        labels = {
+            "phone_number": "Phone Number",
+        }
 
 
 class ProfileUpdateForm(forms.ModelForm):
