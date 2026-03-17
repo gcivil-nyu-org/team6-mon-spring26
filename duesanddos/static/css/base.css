@@ -1,68 +1,163 @@
+/* Refined UI Component - base.css */
 .app-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
     background-color: var(--color-gray-bg);
+    overflow: hidden;
 }
 
 .sidebar {
-    width: 280px;
+    width: 80px;
     background: var(--color-white);
     border-right: 1px solid var(--color-gray-border);
     display: flex;
     flex-direction: column;
-    padding: 32px 24px;
-    position: fixed;
+    padding: 24px 20px;
     height: 100vh;
     z-index: 100;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sidebar:hover, .sidebar.pinned {
+    width: 260px;
+    padding: 24px 16px;
+}
+
+.sidebar-text {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    display: inline-flex;
+    width: 0;
+    pointer-events: none;
+}
+
+.sidebar:hover .sidebar-text,
+.sidebar.pinned .sidebar-text {
+    opacity: 1;
+    transform: translateX(0);
+    width: 100%;
+    pointer-events: auto;
+}
+
+.pin-btn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .pin-btn, .sidebar.pinned .pin-btn {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 48px;
+    justify-content: space-between;
+    padding: 0;
+    margin-bottom: 24px;
     text-decoration: none;
+    min-width: 200px;
 }
 
 .brand-text {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-primary-dark);
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--color-text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Household Switcher Card */
+.household-switcher {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background-color: #f0fdf4;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    min-width: 200px;
+}
+
+.sidebar:hover .household-switcher, .sidebar.pinned .household-switcher {
+    padding: 12px;
+}
+
+.household-switcher:hover {
+    border-color: #bbf7d0;
+}
+.household-icon {
+    width: 32px;
+    height: 32px;
+    background-color: #dcfce7;
+    color: #16a34a;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .nav-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     flex-grow: 1;
+    min-width: 200px;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px 16px;
+    gap: 12px;
+    padding: 10px;
     text-decoration: none;
     color: var(--color-text-muted);
-    border-radius: 12px;
+    border-radius: 8px;
     font-weight: 500;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.sidebar:hover .nav-item, .sidebar.pinned .nav-item {
+    padding: 10px 12px;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    color: inherit;
+    flex-shrink: 0;
 }
 
 .nav-item:hover {
-    background-color: var(--color-gray-bg);
-    color: var(--color-primary-sage);
+    background-color: #f3f4f6;
+    color: var(--color-text-main);
 }
 
 .nav-item.active {
-    background-color: var(--color-gray-bg);
+    background-color: #eff6ff;
+    color: var(--color-primary-sage);
+}
+
+.nav-item.active svg {
     color: var(--color-primary-sage);
 }
 
 .sidebar-footer {
-    border-top: 1px solid var(--color-gray-border);
-    padding-top: 24px;
     margin-top: auto;
+    min-width: 200px;
 }
 
 .user-pill {
@@ -70,26 +165,39 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 12px;
+    padding: 8px;
     border-radius: 12px;
-    background: var(--color-gray-bg);
+    background: transparent;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    overflow: hidden;
 }
 
-.user-name {
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--color-primary-dark);
+.sidebar:hover .user-pill, .sidebar.pinned .user-pill {
+    padding: 8px;
 }
 
-.logout-icon {
-    font-size: 1.2rem;
-    opacity: 0.6;
+.user-pill:hover {
+    background-color: #f3f4f6;
 }
 
+.logout-icon-arrow {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sidebar:hover .logout-icon-arrow, .sidebar.pinned .logout-icon-arrow {
+    opacity: 1;
+}
 .main-content {
     flex: 1;
-    margin-left: 280px;
-    padding: 60px;
+    padding: 32px 48px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.main-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
 }
