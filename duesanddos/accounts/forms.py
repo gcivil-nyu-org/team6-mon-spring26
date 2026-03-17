@@ -60,7 +60,7 @@ class UserUpdateForm(forms.ModelForm):
         model = CustomUser
         fields = ["username", "first_name", "last_name", "email", "phone_number"]
         labels = {
-            "phone_number": "Contact No.",
+            "phone_number": "Phone Number",
         }
 
 

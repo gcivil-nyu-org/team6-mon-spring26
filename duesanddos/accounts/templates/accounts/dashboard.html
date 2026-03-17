@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome back, {{ user.username }}!</h1>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome back, {{ user.first_name|default:user.username }}!</h1>
             <p class="text-gray-500 mt-1 font-medium">Here's what's happening in your household today.</p>
         </div>
         <div class="hidden md:block">
