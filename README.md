@@ -9,6 +9,10 @@ Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spr
 
 **Dues & Do's** is a premium, modern web application designed to simplify household management. Whether you are living with roommates, family, or partners, Dues & Do's helps you stay organized and synchronized.
 
+•⁠  ⁠Development : http://duesanddos-development.us-east-1.elasticbeanstalk.com/
+
+•⁠  ⁠Production: http://duesanddos-prod.eba-k3ekrrfk.us-east-1.elasticbeanstalk.com/accounts/login/
+
 ## 🚀 Key Features
 
 -   **Multi-Household Support**: Create or join multiple households with unique contexts.
