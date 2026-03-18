@@ -7,8 +7,8 @@ from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.forms import PasswordChangeForm
 
-from .models import CustomUser, Profile, Household, HouseholdMember
-from .forms import UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
+from accounts.models import CustomUser, Profile, Household, HouseholdMember
+from accounts.forms import UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
 
 SMALL_GIF = (
     b"\x47\x49\x46\x38\x39\x61\x01\x00"
@@ -22,129 +22,6 @@ SMALL_GIF = (
 TEST_PASSWORD = "TestPass123!"
 NEW_PASSWORD = "NewSecure456!"
 
-
-# ---------------------------------------------------------------------------
-# Model tests
-# ---------------------------------------------------------------------------
-
-
-class CustomUserModelTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="testuser",
-            email="test@example.com",
-            password=TEST_PASSWORD,
-        )
-
-    def test_str_returns_username(self):
-        self.assertEqual(str(self.user), "testuser")
-
-
-class ProfileModelTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="testuser",
-            email="test@example.com",
-            password=TEST_PASSWORD,
-        )
-        self.profile = Profile.objects.create(user=self.user)
-
-    def test_str_returns_formatted_string(self):
-        self.assertEqual(str(self.profile), "testuser's profile")
-
-    def test_default_bio_is_empty(self):
-        self.assertEqual(self.profile.bio, "")
-
-    def test_default_notifications_enabled_is_true(self):
-        self.assertTrue(self.profile.notifications_enabled)
-
-    def test_default_avatar_is_falsy(self):
-        self.assertFalse(self.profile.avatar)
-
-
-# ---------------------------------------------------------------------------
-# Form tests
-# ---------------------------------------------------------------------------
-
-
-class UserUpdateFormTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="testuser",
-            email="test@example.com",
-            password=TEST_PASSWORD,
-            first_name="Test",
-            last_name="User",
-        )
-
-    def test_meta_model_is_custom_user(self):
-        self.assertEqual(UserUpdateForm.Meta.model, CustomUser)
-
-    def test_meta_fields(self):
-        self.assertEqual(
-            list(UserUpdateForm.Meta.fields),
-            ["username", "first_name", "last_name", "email", "phone_number"],
-        )
-
-    def test_valid_data(self):
-        form = UserUpdateForm(
-            data={
-                "username": "newname",
-                "first_name": "New",
-                "last_name": "Name",
-                "email": "new@example.com",
-            },
-            instance=self.user,
-        )
-        self.assertTrue(form.is_valid())
-
-    def test_blank_username_is_invalid(self):
-        form = UserUpdateForm(
-            data={
-                "username": "",
-                "first_name": "Test",
-                "last_name": "User",
-                "email": "test@example.com",
-            },
-            instance=self.user,
-        )
-        self.assertFalse(form.is_valid())
-        self.assertIn("username", form.errors)
-
-
-class ProfileUpdateFormTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="testuser",
-            email="test@example.com",
-            password=TEST_PASSWORD,
-        )
-        self.profile = Profile.objects.create(user=self.user)
-
-    def test_meta_model_is_profile(self):
-        self.assertEqual(ProfileUpdateForm.Meta.model, Profile)
-
-    def test_meta_fields(self):
-        self.assertEqual(
-            list(ProfileUpdateForm.Meta.fields),
-            ["avatar", "bio", "notifications_enabled"],
-        )
-
-    def test_valid_data_with_bio(self):
-        form = ProfileUpdateForm(
-            data={"bio": "A short bio", "notifications_enabled": True},
-            instance=self.profile,
-        )
-        self.assertTrue(form.is_valid())
-
-    def test_empty_data_is_valid(self):
-        form = ProfileUpdateForm(data={}, instance=self.profile)
-        self.assertTrue(form.is_valid())
-
-
-class CustomPasswordChangeFormTests(TestCase):
-    def test_inherits_from_password_change_form(self):
-        self.assertTrue(issubclass(CustomPasswordChangeForm, PasswordChangeForm))
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +114,7 @@ class ProfileViewTests(TestCase):
         self.client.login(username="testuser", password=TEST_PASSWORD)
         response = self.client.get(self.url)
         self.assertContains(response, reverse("profile"))
+
 
 
 # ---------------------------------------------------------------------------
@@ -469,6 +347,7 @@ class EditProfileViewTests(TestCase):
         self.assertTrue(response.context["password_form"].errors)
 
 
+
 # ---------------------------------------------------------------------------
 # register_view tests
 # ---------------------------------------------------------------------------
@@ -559,6 +438,7 @@ class RegisterViewTests(TestCase):
         self.assertEqual(user.last_name, "User")
 
 
+
 # ---------------------------------------------------------------------------
 # dashboard_view tests
 # ---------------------------------------------------------------------------
@@ -587,6 +467,7 @@ class DashboardViewTests(TestCase):
         self.client.login(username="dashuser", password=TEST_PASSWORD)
         response = self.client.get(self.url)
         self.assertTemplateUsed(response, "accounts/dashboard.html")
+
 
 
 # ---------------------------------------------------------------------------
@@ -618,6 +499,7 @@ class StaticPageViewTests(TestCase):
     def test_privacy_uses_correct_template(self):
         response = self.client.get(reverse("privacy"))
         self.assertTemplateUsed(response, "accounts/privacy.html")
+
 
 
 # ---------------------------------------------------------------------------
@@ -669,6 +551,7 @@ class LogoutViewTests(TestCase):
     def test_post_redirects_to_login(self):
         response = self.client.post(self.url)
         self.assertRedirects(response, reverse("login"))
+
 
 
 # ---------------------------------------------------------------------------
@@ -1054,6 +937,7 @@ class HouseholdSettingsViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+
 # ---------------------------------------------------------------------------
 # delete_account_view tests
 # ---------------------------------------------------------------------------
@@ -1112,141 +996,3 @@ class DeleteAccountViewTests(TestCase):
         self.assertFalse(Household.objects.filter(id=hh.id).exists())
 
 
-# ---------------------------------------------------------------------------
-# Model: UploadToPath and Household tests
-# ---------------------------------------------------------------------------
-
-
-class HouseholdModelTests(TestCase):
-    def test_str_returns_name(self):
-        hh = Household.objects.create(name="Test House")
-        self.assertEqual(str(hh), "Test House")
-
-
-class HouseholdMemberModelTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="memtest",
-            email="memtest@example.com",
-            password=TEST_PASSWORD,
-        )
-        self.hh = Household.objects.create(name="Member House")
-        self.member = HouseholdMember.objects.create(
-            user=self.user, household=self.hh, role="Admin"
-        )
-
-    def test_str_returns_formatted_string(self):
-        expected = "memtest - Member House (Admin)"
-        self.assertEqual(str(self.member), expected)
-
-
-class UploadToPathTests(TestCase):
-    def setUp(self):
-        self.user = CustomUser.objects.create_user(
-            username="uploadtest",
-            email="upload@example.com",
-            password=TEST_PASSWORD,
-        )
-        self.profile = Profile.objects.create(user=self.user)
-
-    def test_upload_path_has_correct_category(self):
-        from .models import UploadToPath
-
-        uploader = UploadToPath("test_cat")
-        path = uploader(self.profile, "photo.jpg")
-        self.assertTrue(path.startswith("test_cat/"))
-
-    def test_upload_path_includes_user_pk(self):
-        from .models import UploadToPath
-
-        uploader = UploadToPath("test_cat")
-        path = uploader(self.profile, "photo.jpg")
-        self.assertIn(f"uid_{self.user.pk}", path)
-
-    def test_upload_path_ends_with_jpg(self):
-        from .models import UploadToPath
-
-        uploader = UploadToPath("test_cat")
-        path = uploader(self.profile, "photo.png")
-        self.assertTrue(path.endswith(".png"))
-
-    def test_upload_path_no_extension_defaults_to_jpg(self):
-        from .models import UploadToPath
-
-        uploader = UploadToPath("test_cat")
-        path = uploader(self.profile, "noext")
-        self.assertTrue(path.endswith(".jpg"))
-
-    def test_deconstruct_returns_correct_path(self):
-        from .models import UploadToPath
-
-        uploader = UploadToPath("mycat")
-        name, args, kwargs = uploader.deconstruct()
-        self.assertEqual(name, "accounts.models.UploadToPath")
-        self.assertEqual(args, ["mycat"])
-        self.assertEqual(kwargs, {})
-
-
-# ---------------------------------------------------------------------------
-# RegisterForm tests
-# ---------------------------------------------------------------------------
-
-
-class RegisterFormTests(TestCase):
-    def setUp(self):
-        self.valid_data = {
-            "username": "formuser",
-            "firstName": "Form",
-            "lastName": "User",
-            "email": "formuser@example.com",
-            "password": "StrongPass123!",
-            "confirmPassword": "StrongPass123!",
-        }
-
-    def _get_form(self, **overrides):
-        from .forms import RegisterForm
-
-        data = dict(self.valid_data, **overrides)
-        return RegisterForm(data=data)
-
-    def test_valid_form_is_valid(self):
-        form = self._get_form()
-        self.assertTrue(form.is_valid())
-
-    def test_duplicate_username_invalid(self):
-        CustomUser.objects.create_user(
-            username="formuser",
-            email="other@example.com",
-            password="x",
-        )
-        form = self._get_form()
-        self.assertFalse(form.is_valid())
-        self.assertIn("username", form.errors)
-
-    def test_duplicate_email_invalid(self):
-        CustomUser.objects.create_user(
-            username="other",
-            email="formuser@example.com",
-            password="x",
-        )
-        form = self._get_form()
-        self.assertFalse(form.is_valid())
-        self.assertIn("email", form.errors)
-
-    def test_mismatched_passwords_invalid(self):
-        form = self._get_form(confirmPassword="DifferentPass!")
-        self.assertFalse(form.is_valid())
-        self.assertIn("confirmPassword", form.errors)
-
-    def test_weak_password_invalid(self):
-        form = self._get_form(password="123", confirmPassword="123")
-        self.assertFalse(form.is_valid())
-        self.assertIn("password", form.errors)
-
-    def test_blank_username_invalid(self):
-        form = self._get_form(username="")
-        self.assertFalse(form.is_valid())
-
-    def test_invalid_email_invalid(self):
-        form = self._get_form(email="notanemail")
-        self.assertFalse(form.is_valid())
