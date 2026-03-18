@@ -62,6 +62,8 @@ class CustomUser(AbstractUser):
 class Household(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    default_rules = models.TextField(blank=True)
     invite_code = models.CharField(max_length=12, unique=True, null=True, blank=True)
     invite_code_expires = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

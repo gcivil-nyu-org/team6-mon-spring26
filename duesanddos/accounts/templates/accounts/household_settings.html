@@ -49,11 +49,19 @@
                 </div>
                 <form method="POST" action="{% url 'household_settings' %}" style="margin:0;">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="update_name" />
+                    <input type="hidden" name="action" value="update_general" />
+                    
                     <label style="font-size: 0.85rem; color: var(--color-text-main); font-weight: 600; margin-bottom: 8px; display: block;">Household Name</label>
-                    <div class="input-with-button">
-                        <input type="text" name="name" value="{{ active_household.name }}" {% if not is_admin %}disabled{% endif %} required />
-                        <button type="submit" class="btn-primary" {% if not is_admin %}style="opacity: 0.6; cursor: default;" disabled{% endif %}>Save</button>
+                    <input type="text" name="name" value="{{ active_household.name }}" {% if not is_admin %}disabled{% endif %} required style="width: 100%; appearance: none; background-color: var(--color-white); border: 1px solid var(--color-gray-border); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 16px; color: var(--color-text-main);" />
+
+                    <label style="font-size: 0.85rem; color: var(--color-text-main); font-weight: 600; margin-bottom: 8px; display: block;">Description</label>
+                    <textarea name="description" rows="3" {% if not is_admin %}disabled{% endif %} style="width: 100%; appearance: none; background-color: var(--color-white); border: 1px solid var(--color-gray-border); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 16px; resize: vertical; color: var(--color-text-main);">{{ active_household.description }}</textarea>
+
+                    <label style="font-size: 0.85rem; color: var(--color-text-main); font-weight: 600; margin-bottom: 8px; display: block;">Default Rules (Chores/Expenses)</label>
+                    <textarea name="default_rules" rows="3" {% if not is_admin %}disabled{% endif %} style="width: 100%; appearance: none; background-color: var(--color-white); border: 1px solid var(--color-gray-border); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 16px; resize: vertical; color: var(--color-text-main);">{{ active_household.default_rules }}</textarea>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn-primary" {% if not is_admin %}style="opacity: 0.6; cursor: default;" disabled{% endif %}>Save Changes</button>
                     </div>
                 </form>
             </div>
@@ -119,7 +127,7 @@
 
                 <div class="members-scroll-area">
                     {% for member in members %}
-                    <div class="member-row" {% if member.user == request.user %}style="margin: 0 -24px; padding: 12px 24px; border-bottom: 1px solid var(--color-gray-border, #f3f4f6);"{% endif %}>
+                    <div class="member-row {% if member.user == request.user %}member-row-current{% endif %}">
                         <div class="member-info">
                             {% if member.user.profile.avatar %}
                                 <img src="{{ member.user.profile.avatar.url }}" class="member-avatar" style="object-fit: cover;">
@@ -137,18 +145,18 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="update_role" />
                                     <input type="hidden" name="user_id" value="{{ member.user.id }}" />
-                                    <div style="position: relative; display: inline-block;">
-                                        <select class="role-select {% if member.role == 'Admin' %}role-admin{% else %}role-member{% endif %}" name="role" onchange="this.form.submit()" style="appearance: none; background: {% if member.role == 'Admin' %}#051f52{% else %}#f3f4f6{% endif %}; color: {% if member.role == 'Admin' %}white{% else %}#4b5563{% endif %}; border: 1px solid {% if member.role == 'Admin' %}#051f52{% else %}#e5e7eb{% endif %}; padding: 6px 30px 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; cursor: pointer; outline: none; transition: all 0.2s;">
+                                    <div class="role-select-container">
+                                        <select class="role-select {% if member.role == 'Admin' %}role-admin{% else %}role-member{% endif %}" name="role" onchange="this.form.submit()">
                                             <option value="Member" {% if member.role == 'Member' %}selected{% endif %} style="background: white; color: #334155;">Member</option>
                                             <option value="Admin" {% if member.role == 'Admin' %}selected{% endif %} style="background: white; color: #334155;">Admin</option>
                                         </select>
-                                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: {% if member.role == 'Admin' %}rgba(255,255,255,0.8){% else %}#9ca3af{% endif %};">
+                                        <div class="role-select-chevron">
                                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                         </div>
                                     </div>
                                 </form>
                             {% else %}
-                                <span class="household-badge" {% if member.role == 'Admin' %}style="background-color: #051f52; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;"{% else %}style="background-color: #f3f4f6; color: #4b5563; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;"{% endif %}>{{ member.role }}</span>
+                                <span class="household-badge {% if member.role == 'Admin' %}role-admin{% else %}role-member{% endif %}">{{ member.role }}</span>
                             {% endif %}
                             
                             {% if is_admin and member.user != request.user %}
@@ -166,7 +174,7 @@
                                 <input type="hidden" name="action" value="remove_member" />
                                 <input type="hidden" name="user_id" value="{{ member.user.id }}" />
                                 <input type="hidden" name="new_admin_id" id="new_admin_id_input" value="" />
-                                <button type="button" class="btn-outline" style="border-color: #fca5a5; color: #dc2626; padding: 4px 10px; font-size: 0.75rem;" onclick="openLeaveModal('{{ is_admin }}' === 'True', parseInt('{{ members|length }}'))">
+                                <button type="button" class="btn-outline btn-leave" onclick="openLeaveModal('{{ is_admin }}' === 'True', parseInt('{{ members|length }}'))">
                                     Leave
                                 </button>
                             </form>
@@ -197,7 +205,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button type="button" class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="revealCode('{{ active_invite_code }}')">View</button>
-                            <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem;" id="copyButton" style="display:none;" onclick="copyCode('{{ active_invite_code }}')">Copy</button>
+                             <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; display: none;" id="copyButton" onclick="copyCode('{{ active_invite_code }}')">Copy</button>
                         </div>
                     </div>
                 {% endif %}

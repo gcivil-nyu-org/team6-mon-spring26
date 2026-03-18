@@ -23,7 +23,6 @@ TEST_PASSWORD = "TestPass123!"
 NEW_PASSWORD = "NewSecure456!"
 
 
-
 # ---------------------------------------------------------------------------
 # profile_view tests
 # ---------------------------------------------------------------------------
@@ -114,7 +113,6 @@ class ProfileViewTests(TestCase):
         self.client.login(username="testuser", password=TEST_PASSWORD)
         response = self.client.get(self.url)
         self.assertContains(response, reverse("profile"))
-
 
 
 # ---------------------------------------------------------------------------
@@ -347,7 +345,6 @@ class EditProfileViewTests(TestCase):
         self.assertTrue(response.context["password_form"].errors)
 
 
-
 # ---------------------------------------------------------------------------
 # register_view tests
 # ---------------------------------------------------------------------------
@@ -438,7 +435,6 @@ class RegisterViewTests(TestCase):
         self.assertEqual(user.last_name, "User")
 
 
-
 # ---------------------------------------------------------------------------
 # dashboard_view tests
 # ---------------------------------------------------------------------------
@@ -467,7 +463,6 @@ class DashboardViewTests(TestCase):
         self.client.login(username="dashuser", password=TEST_PASSWORD)
         response = self.client.get(self.url)
         self.assertTemplateUsed(response, "accounts/dashboard.html")
-
 
 
 # ---------------------------------------------------------------------------
@@ -499,7 +494,6 @@ class StaticPageViewTests(TestCase):
     def test_privacy_uses_correct_template(self):
         response = self.client.get(reverse("privacy"))
         self.assertTemplateUsed(response, "accounts/privacy.html")
-
 
 
 # ---------------------------------------------------------------------------
@@ -551,7 +545,6 @@ class LogoutViewTests(TestCase):
     def test_post_redirects_to_login(self):
         response = self.client.post(self.url)
         self.assertRedirects(response, reverse("login"))
-
 
 
 # ---------------------------------------------------------------------------
@@ -692,12 +685,22 @@ class HouseholdSettingsViewTests(TestCase):
 
     # -- POST: update_name ----------------------------------------------------
 
-    def test_update_name_as_admin_succeeds(self):
-        self.client.post(self.url, {"action": "update_name", "name": "Renamed House"})
+    def test_update_general_as_admin_succeeds(self):
+        self.client.post(
+            self.url,
+            {
+                "action": "update_general",
+                "name": "Renamed House",
+                "description": "New desc",
+                "default_rules": "No rules",
+            },
+        )
         self.household.refresh_from_db()
         self.assertEqual(self.household.name, "Renamed House")
+        self.assertEqual(self.household.description, "New desc")
+        self.assertEqual(self.household.default_rules, "No rules")
 
-    def test_update_name_as_non_admin_fails(self):
+    def test_update_general_as_non_admin_fails(self):
         member_user = CustomUser.objects.create_user(
             username="member2",
             email="member2@example.com",
@@ -709,9 +712,17 @@ class HouseholdSettingsViewTests(TestCase):
         )
         self.client.logout()
         self.client.login(username="member2", password=TEST_PASSWORD)
-        self.client.post(self.url, {"action": "update_name", "name": "Hacked Name"})
+        self.client.post(
+            self.url,
+            {
+                "action": "update_general",
+                "name": "Hacked Name",
+                "description": "Hacked desc",
+            },
+        )
         self.household.refresh_from_db()
         self.assertNotEqual(self.household.name, "Hacked Name")
+        self.assertNotEqual(self.household.description, "Hacked desc")
 
     # -- POST: join_household (invite code) -----------------------------------
 
@@ -927,7 +938,7 @@ class HouseholdSettingsViewTests(TestCase):
         self.profile.active_household = None
         self.profile.save()
         response = self.client.post(
-            self.url, {"action": "update_name", "name": "Nope"}, follow=True
+            self.url, {"action": "update_general", "name": "Nope"}, follow=True
         )
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("no active household" in str(m).lower() for m in msgs))
@@ -935,7 +946,6 @@ class HouseholdSettingsViewTests(TestCase):
     def test_unrecognized_action_redirects(self):
         response = self.client.post(self.url, {"action": "bogus_action"})
         self.assertEqual(response.status_code, 302)
-
 
 
 # ---------------------------------------------------------------------------
@@ -994,5 +1004,3 @@ class DeleteAccountViewTests(TestCase):
         self.profile_hh = hh
         self.client.post(self.url, {"confirmation": TEST_PASSWORD})
         self.assertFalse(Household.objects.filter(id=hh.id).exists())
-
-

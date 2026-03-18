@@ -23,7 +23,6 @@ TEST_PASSWORD = "TestPass123!"
 NEW_PASSWORD = "NewSecure456!"
 
 
-
 # ---------------------------------------------------------------------------
 # Form tests
 # ---------------------------------------------------------------------------
@@ -107,7 +106,6 @@ class ProfileUpdateFormTests(TestCase):
 class CustomPasswordChangeFormTests(TestCase):
     def test_inherits_from_password_change_form(self):
         self.assertTrue(issubclass(CustomPasswordChangeForm, PasswordChangeForm))
-
 
 
 # ---------------------------------------------------------------------------

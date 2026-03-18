@@ -23,7 +23,6 @@ TEST_PASSWORD = "TestPass123!"
 NEW_PASSWORD = "NewSecure456!"
 
 
-
 # ---------------------------------------------------------------------------
 # Model tests
 # ---------------------------------------------------------------------------
@@ -63,7 +62,6 @@ class ProfileModelTests(TestCase):
         self.assertFalse(self.profile.avatar)
 
 
-
 # ---------------------------------------------------------------------------
 # Model: UploadToPath and Household tests
 # ---------------------------------------------------------------------------
@@ -73,6 +71,21 @@ class HouseholdModelTests(TestCase):
     def test_str_returns_name(self):
         hh = Household.objects.create(name="Test House")
         self.assertEqual(str(hh), "Test House")
+
+    def test_default_fields_are_empty(self):
+        hh = Household.objects.create(name="Empty House")
+        self.assertEqual(hh.description, "")
+        self.assertEqual(hh.default_rules, "")
+
+    def test_fields_can_be_saved(self):
+        hh = Household.objects.create(
+            name="Filled House",
+            description="A nice house",
+            default_rules="No shoes inside",
+        )
+        hh.refresh_from_db()
+        self.assertEqual(hh.description, "A nice house")
+        self.assertEqual(hh.default_rules, "No shoes inside")
 
 
 class HouseholdMemberModelTests(TestCase):
@@ -137,5 +150,3 @@ class UploadToPathTests(TestCase):
         self.assertEqual(name, "accounts.models.UploadToPath")
         self.assertEqual(args, ["mycat"])
         self.assertEqual(kwargs, {})
-
-
