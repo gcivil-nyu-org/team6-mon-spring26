@@ -1,13 +1,7 @@
-import tempfile
-import shutil
-
-from django.test import TestCase, override_settings
-from django.urls import reverse
-from django.contrib.messages import get_messages
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
 from django.contrib.auth.forms import PasswordChangeForm
 
-from accounts.models import CustomUser, Profile, Household, HouseholdMember
+from accounts.models import CustomUser, Profile
 from accounts.forms import UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
 
 SMALL_GIF = (
