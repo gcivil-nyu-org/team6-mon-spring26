@@ -647,11 +647,28 @@ class LogoutViewTests(TestCase):
         self.client.logout()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
+
+    def test_unauthenticated_post_redirects(self):
+        self.client.logout()
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
 
     def test_post_logs_out_user(self):
         self.client.post(self.url)
         response = self.client.get(reverse("profile"))
         self.assertEqual(response.status_code, 302)
+
+    def test_get_does_not_log_out_user(self):
+        self.client.get(self.url)
+        # Verify the user is still logged in by fetching the profile page
+        response = self.client.get(reverse("profile"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_redirects_to_login(self):
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("login"))
 
 
 # ---------------------------------------------------------------------------
