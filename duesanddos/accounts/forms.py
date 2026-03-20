@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import PasswordChangeForm
-from .models import CustomUser, Profile
+from .models import CustomUser, Profile, Household
 
 class RegisterForm(forms.Form):
     username = forms.CharField(max_length=150)
@@ -10,7 +10,9 @@ class RegisterForm(forms.Form):
     lastName = forms.CharField(label="Last Name")
     email = forms.EmailField(widget=forms.EmailInput())
     password = forms.CharField(widget=forms.PasswordInput())
-    confirmPassword = forms.CharField(widget=forms.PasswordInput(), label="Confirm Password")
+    confirmPassword = forms.CharField(
+        widget=forms.PasswordInput(), label="Confirm Password"
+    )
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
@@ -50,7 +52,8 @@ class RegisterForm(forms.Form):
                 self.add_error("password", e)
 
         return cleaned_data
-    
+
+
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
@@ -65,3 +68,14 @@ class ProfileUpdateForm(forms.ModelForm):
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     pass
+
+class HouseholdForm(forms.ModelForm):
+    class Meta:
+        model = Household
+        fields = ['name', 'description']
+        
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name or name.strip() == "":
+            raise ValidationError("Household name cannot be empty.") # System validates non-empty
+        return name

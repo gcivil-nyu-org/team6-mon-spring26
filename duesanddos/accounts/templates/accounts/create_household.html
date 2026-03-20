@@ -1,0 +1,11 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<div class="login-content-wrapper">
+    <h2 class="form-title">Create a New Household</h2>
+    <form method="POST" class="custom-django-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="login-action-btn">Create Household</button>
+    </form>
+</div>
+{% endblock %}

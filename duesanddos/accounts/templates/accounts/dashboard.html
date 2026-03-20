@@ -5,6 +5,27 @@
 {% block content %}
 <div class="dashboard-container">
     <h1 style="color: var(--color-primary-sage);">Welcome, {{ user.username }}!</h1>
+    <div style="margin: 20px 0;">
+        <a href="{% url 'create_household' %}" class="brand-action-btn">
+            + Create New Household
+        </a>
+    </div>
+
+    <h3>Your Households</h3>
+    {% if households %}
+        <ul>
+        {% for household in households %}
+            <li style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                <strong>{{ household.name }}</strong> 
+                {% if household.description %}
+                    - {{ household.description }}
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>You haven't created any households yet.</p>
+    {% endif %}
     <p>You have successfully logged in to your dashboard.</p>
 </div>
 {% endblock %}

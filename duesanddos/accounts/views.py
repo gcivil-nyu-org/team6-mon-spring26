@@ -5,8 +5,15 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
 from django.db import transaction
-from .models import CustomUser, Profile
-from .forms import RegisterForm, UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
+from .models import CustomUser, Profile, Household
+from .forms import (
+    RegisterForm,
+    UserUpdateForm,
+    ProfileUpdateForm,
+    CustomPasswordChangeForm,
+    HouseholdForm,
+)
+
 
 @transaction.atomic
 def register_view(request):
@@ -26,7 +33,7 @@ def register_view(request):
                 first_name=first_name,
                 last_name=last_name,
             )
-            
+
             Profile.objects.get_or_create(user=user)
 
             login(request, user)
@@ -36,6 +43,7 @@ def register_view(request):
         form = RegisterForm()
 
     return render(request, "accounts/register.html", {"form": form})
+
 
 @login_required
 def profile_view(request):
@@ -50,7 +58,9 @@ def edit_profile_view(request):
     if request.method == "POST":
         if "save_profile" in request.POST:
             user_form = UserUpdateForm(request.POST, instance=request.user)
-            profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+            profile_form = ProfileUpdateForm(
+                request.POST, request.FILES, instance=profile
+            )
             password_form = CustomPasswordChangeForm(request.user)
 
             if user_form.is_valid() and profile_form.is_valid():
@@ -84,9 +94,12 @@ def edit_profile_view(request):
         },
     )
 
+
 @login_required
 def dashboard_view(request):
-    return render(request, "accounts/dashboard.html")
+    households = Household.objects.filter(admin=request.user)
+    return render(request, "accounts/dashboard.html", {"households": households})
+
 
 class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
     template_name = "accounts/logout.html"
@@ -94,3 +107,18 @@ class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
     def get(self, request, *args, **kwargs):
         # Allow GET requests to render the template
         return self.render_to_response(self.get_context_data())
+
+@login_required
+def create_household(request):
+    if request.method == 'POST':
+        form = HouseholdForm(request.POST)
+        if form.is_valid():
+            household = form.save(commit=False)
+            household.admin = request.user  # Assign creator as Admin
+            household.save()
+            messages.success(request, f"Household '{household.name}' created successfully!")
+            return redirect('dashboard') # Redirect to dashboard
+    else:
+        form = HouseholdForm()
+    
+    return render(request, 'accounts/create_household.html', {'form': form})
