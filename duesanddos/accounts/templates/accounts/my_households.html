@@ -1,0 +1,28 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}My Households - Dues & Dos{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1 style="color: var(--color-primary-sage);">My Households</h1>
+    
+    <div style="margin: 20px 0;">
+        <a href="{% url 'create_household' %}" class="brand-action-btn">+ Create New Household</a>
+    </div>
+
+    {% if households %}
+        <ul style="list-style: none; padding: 0;">
+        {% for household in households %}
+            <li style="margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                <strong>{{ household.name }}</strong>
+                {% if household.description %}
+                    <p style="margin: 5px 0 0; color: #666;">{{ household.description }}</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>You haven't created any households yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

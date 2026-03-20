@@ -53,6 +53,9 @@
 
             <nav class="nav-list">
                 <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{% url 'my_households' %}" class="nav-item {% if request.resolver_match.url_name == 'my_households' %}active{% endif %}">
+                    My Households
+                </a>
                 <a href="#" class="nav-item">Expenses</a>
                 <a href="#" class="nav-item">Chores</a>
                 <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">Profile</a>

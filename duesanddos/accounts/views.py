@@ -97,8 +97,7 @@ def edit_profile_view(request):
 
 @login_required
 def dashboard_view(request):
-    households = Household.objects.filter(admin=request.user)
-    return render(request, "accounts/dashboard.html", {"households": households})
+    return render(request, "accounts/dashboard.html")
 
 
 class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
@@ -109,16 +108,20 @@ class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
         return self.render_to_response(self.get_context_data())
 
 @login_required
+def my_households_view(request):
+    # This finds the households linked to your account
+    households = Household.objects.filter(admin=request.user)
+    return render(request, "accounts/my_households.html", {"households": households})
+
+@login_required
 def create_household(request):
     if request.method == 'POST':
         form = HouseholdForm(request.POST)
         if form.is_valid():
             household = form.save(commit=False)
-            household.admin = request.user  # Assign creator as Admin
+            household.admin = request.user
             household.save()
-            messages.success(request, f"Household '{household.name}' created successfully!")
-            return redirect('dashboard') # Redirect to dashboard
+            return redirect('my_households')  # Redirects to your new list page
     else:
         form = HouseholdForm()
-    
     return render(request, 'accounts/create_household.html', {'form': form})
