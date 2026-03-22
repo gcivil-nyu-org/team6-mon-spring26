@@ -128,6 +128,12 @@
     padding: 12px 0;
     border-bottom: 1px solid var(--color-gray-border, #f3f4f6);
 }
+.member-row-current {
+    margin: 0 -24px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--color-gray-border, #f3f4f6);
+    background-color: #f8fafc;
+}
 .member-row:last-child { border-bottom: none; padding-bottom: 0; }
 .member-row:first-child { padding-top: 0; }
 
@@ -154,14 +160,64 @@
 }
 
 .role-select {
-    padding: 6px 10px;
-    border: 1px solid var(--color-gray-border, #f3f4f6);
-    border-radius: 8px;
-    background-color: var(--color-white, #fff);
-    font-size: 0.85rem;
-    color: var(--color-text-main, #1f2937);
-    outline: none;
+    appearance: none;
+    padding: 6px 30px 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.role-admin {
+    background-color: #051f52;
+    color: white;
+    border-color: #051f52;
+}
+
+.role-member {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border-color: #e5e7eb;
+}
+
+.role-select-container {
+    position: relative;
+    display: inline-block;
+}
+
+.role-select-chevron {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #9ca3af;
+}
+
+.role-admin + .role-select-chevron {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.household-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.btn-leave {
+    border-color: #fca5a5;
+    color: #dc2626;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
+.btn-leave:hover {
+    background-color: #fef2f2;
 }
 
 .danger-zone {

@@ -207,16 +207,20 @@ def household_settings_view(request):
             user=request.user, household=active_household, role="Admin"
         ).exists()
 
-        # 4. Update Name
-        if action == "update_name":
+        # 4. Update General Settings
+        if action == "update_general":
             if is_admin:
                 new_name = request.POST.get("name", "").strip()
+                description = request.POST.get("description", "").strip()
+                default_rules = request.POST.get("default_rules", "").strip()
                 if new_name:
                     active_household.name = new_name
+                    active_household.description = description
+                    active_household.default_rules = default_rules
                     active_household.save()
-                    messages.success(request, "Household name updated.")
+                    messages.success(request, "Household settings updated.")
             else:
-                messages.error(request, "Only Admins can change the household name.")
+                messages.error(request, "Only Admins can change household settings.")
 
         # 5. Generate Invite Code
         elif action == "generate_invite":
