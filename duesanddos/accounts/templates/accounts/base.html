@@ -61,10 +61,10 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
-                <button onclick="showComingSoon('Expenses')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Expenses">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    <span class="sidebar-text">Expenses</span>
-                </button>
+                <a href="{% url 'expenses_list' %}" class="nav-item {% if 'expenses' in request.resolver_match.url_name %}active{% endif %}" title="Expenses">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                <span class="sidebar-text">Expenses</span>
+                </a>
                 <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chores">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <span class="sidebar-text">Chores</span>
