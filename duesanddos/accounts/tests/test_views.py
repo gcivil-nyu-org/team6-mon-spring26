@@ -1003,3 +1003,28 @@ class DeleteAccountViewTests(TestCase):
         self.profile_hh = hh
         self.client.post(self.url, {"confirmation": TEST_PASSWORD})
         self.assertFalse(Household.objects.filter(id=hh.id).exists())
+
+    def test_add_expense_pro_splitting(self):
+        from django.urls import reverse
+        from accounts.models import Household, HouseholdMember, Profile
+
+        hh = Household.objects.create(name="Test House")
+        HouseholdMember.objects.create(user=self.user, household=hh, role='Admin')
+        
+        profile, _ = Profile.objects.get_or_create(user=self.user)
+        profile.active_household = hh
+        profile.save()
+
+        self.client.login(username='testuser', password='password')
+        url = reverse('add_expense_pro')
+        
+        post_data = {
+            'title': 'Test Split',
+            'amount': '100.00',
+            'payer': self.user.id,
+            'split_type': 'EQUAL',
+            'participants': [self.user.id]
+        }
+        response = self.client.post(url, post_data)
+        
+        self.assertEqual(response.status_code, 302)
