@@ -127,24 +127,33 @@ class Profile(models.Model):
 
 class Expense(models.Model):
     SPLIT_CHOICES = (
-        ('EQUAL', 'Split Equally'),
-        ('PERCENT', 'Split by Percentage'),
+        ("EQUAL", "Split Equally"),
+        ("PERCENT", "Split by Percentage"),
     )
     title = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='expenses_paid')
-    household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='expenses')
-    split_type = models.CharField(max_length=10, choices=SPLIT_CHOICES, default='EQUAL')
+    payer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="expenses_paid"
+    )
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="expenses"
+    )
+    split_type = models.CharField(max_length=10, choices=SPLIT_CHOICES, default="EQUAL")
     date_spent = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} (${self.amount})"
 
+
 class ExpenseSplit(models.Model):
-    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name='splits')
+    expense = models.ForeignKey(
+        Expense, on_delete=models.CASCADE, related_name="splits"
+    )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount_owed = models.DecimalField(max_digits=10, decimal_places=2) # The calculated share
+    amount_owed = models.DecimalField(
+        max_digits=10, decimal_places=2
+    )  # The calculated share
 
     def __str__(self):
         return f"{self.user.username} owes ${self.amount_owed} for {self.expense.title}"
