@@ -1009,22 +1009,22 @@ class DeleteAccountViewTests(TestCase):
         from accounts.models import Household, HouseholdMember, Profile
 
         hh = Household.objects.create(name="Test House")
-        HouseholdMember.objects.create(user=self.user, household=hh, role='Admin')
-        
+        HouseholdMember.objects.create(user=self.user, household=hh, role="Admin")
+
         profile, _ = Profile.objects.get_or_create(user=self.user)
         profile.active_household = hh
         profile.save()
 
-        self.client.login(username='testuser', password='password')
-        url = reverse('add_expense_pro')
-        
+        self.client.login(username="testuser", password="password")
+        url = reverse("add_expense_pro")
+
         post_data = {
-            'title': 'Test Split',
-            'amount': '100.00',
-            'payer': self.user.id,
-            'split_type': 'EQUAL',
-            'participants': [self.user.id]
+            "title": "Test Split",
+            "amount": "100.00",
+            "payer": self.user.id,
+            "split_type": "EQUAL",
+            "participants": [self.user.id],
         }
         response = self.client.post(url, post_data)
-        
+
         self.assertEqual(response.status_code, 302)
