@@ -7,7 +7,8 @@ from django.contrib.auth.views import LogoutView
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
-
+from .models import CustomUser, Profile, Household, HouseholdMember, Expense, ExpenseSplit
+from django.db import models
 from datetime import timedelta
 from .models import CustomUser, Profile, Household, HouseholdMember
 from .forms import (
@@ -103,11 +104,6 @@ def profile_view(request):
             "memberships": memberships,
         },
     )
-
-
-@login_required
-def dashboard_view(request):
-    return render(request, "accounts/dashboard.html")
 
 
 def faq_view(request):
@@ -401,3 +397,150 @@ def delete_account_view(request):
         return redirect("login")
 
     return redirect("profile")
+
+
+@login_required
+def expenses_list_view(request):
+    active_hh = request.user.profile.active_household
+    if not active_hh:
+        return redirect('household_settings')
+    
+    expenses = active_hh.expenses.all().order_by('-date_spent')
+    members = active_hh.members.select_related('user')
+    
+    return render(request, "accounts/expenses.html", {
+        "expenses": expenses,
+        "members": members,
+        "active_household": active_hh
+    })
+
+@login_required
+@transaction.atomic
+def add_expense_pro(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        amount_raw = request.POST.get("amount")
+        payer_id = request.POST.get("payer")
+        split_type = request.POST.get("split_type")
+        participant_ids = request.POST.getlist("participants")
+
+        if not amount_raw or not participant_ids:
+            messages.error(request, "Please provide an amount and select at least one person.")
+            return redirect("expenses_list")
+
+        total_amount = float(amount_raw)
+        hh = request.user.profile.active_household
+        payer = CustomUser.objects.get(id=payer_id)
+
+        expense = Expense.objects.create(
+            title=title, 
+            amount=total_amount, 
+            payer=payer, 
+            household=hh, 
+            split_type=split_type,
+            date_spent=timezone.now().date()
+        )
+
+        total_entered_pct = 0
+        if split_type == 'PERCENT':
+            total_entered_pct = sum([float(request.POST.get(f"percent_{p_id}", 0)) for p_id in participant_ids])
+
+        num_people = len(participant_ids)
+        for p_id in participant_ids:
+            user = CustomUser.objects.get(id=p_id)
+            
+            if split_type == 'EQUAL':
+                share = total_amount / num_people
+            else:
+                raw_pct = float(request.POST.get(f"percent_{p_id}", 0))
+                if total_entered_pct > 0:
+                    share = (raw_pct / total_entered_pct) * total_amount
+                else:
+                    share = total_amount / num_people
+            
+            ExpenseSplit.objects.create(
+                expense=expense, 
+                user=user, 
+                amount_owed=round(share, 2)
+            )
+
+        messages.success(request, f"Expense '{title}' added and split successfully!")
+    return redirect("expenses_list")
+
+
+@login_required
+def dashboard_view(request):
+    from django.db import models
+    profile = request.user.profile
+    active_hh = profile.active_household
+    
+    if not active_hh:
+        return render(request, "accounts/dashboard.html", {"no_household": True})
+
+    expenses = active_hh.expenses.all()
+    total_spent = sum(e.amount for e in expenses)
+    members = active_hh.members.select_related('user')
+    
+    summary = []
+    user_net = 0.0
+
+    for member in members:
+        paid = float(sum(e.amount for e in expenses if e.payer == member.user))
+        owed = float(ExpenseSplit.objects.filter(
+            user=member.user, 
+            expense__household=active_hh
+        ).aggregate(models.Sum('amount_owed'))['amount_owed__sum'] or 0)
+    
+        net = paid - owed
+        summary.append({
+            'user_id': member.user.id, 
+            'username': member.user.username, 
+            'paid': paid, 
+            'balance': net
+        })
+    
+        if member.user == request.user:
+            user_net = net
+
+    owed_breakdown = []
+    owe_to_breakdown = []
+    
+    if user_net != 0:
+        for s in summary:
+            if s['username'] != request.user.username:
+                if user_net > 0 and s['balance'] < 0:
+                    owed_breakdown.append({'name': s['username'], 'amount': abs(s['balance'])})
+                elif user_net < 0 and s['balance'] > 0:
+                    owe_to_breakdown.append({'name': s['username'], 'amount': s['balance']})
+
+    context = {
+        "active_household": active_hh,
+        "total_spent": total_spent,
+        "you_are_owed": max(0, user_net),
+        "you_owe": abs(min(0, user_net)),
+        "owed_breakdown": owed_breakdown,
+        "owe_to_breakdown": owe_to_breakdown,
+        "summary": summary,
+    }
+    return render(request, "accounts/dashboard.html", context)
+
+
+
+
+@login_required
+def add_expense(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        amount = request.POST.get("amount")
+        hh = request.user.profile.active_household
+        
+        if hh and title and amount:
+            from .models import Expense 
+            Expense.objects.create(
+                title=title,
+                amount=amount,
+                payer=request.user,
+                household=hh
+            )
+            messages.success(request, f"Added ${amount} for {title}!")
+    return redirect("dashboard")
