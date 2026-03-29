@@ -163,9 +163,6 @@
                         <div class="form-group">
                             {{ field.label_tag }}
                             {{ field }}
-                            {% if field.name == 'bio' and not profile.bio %}
-                            <p class="helptext bio-default-hint">No bio added yet.</p>
-                            {% endif %}
                             {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
                             {{ field.errors }}
                         </div>
@@ -226,7 +223,7 @@
             <!-- Danger Zone -->
             <section class="edit-profile-card border-red-200 mt-auto shrink-0" style="border: 1px solid #fecaca; background-color: #fef2f2;">
                 <div class="card-header pb-2 border-b-0">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="15"></line></svg>
                     <h3 class="card-title text-red-600 font-bold" style="color: #dc2626;">Danger Zone</h3>
                 </div>
                 <div class="px-5 pb-5">
@@ -244,7 +241,7 @@
 <div id="deleteAccountModal" data-requires-text="{% if user.has_usable_password %}false{% else %}true{% endif %}" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50" style="backdrop-filter: blur(2px);">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
         <div class="flex items-center gap-3 mb-4 text-red-600">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="15"></line></svg>
             <h2 class="text-xl font-bold">Delete Account</h2>
         </div>
         

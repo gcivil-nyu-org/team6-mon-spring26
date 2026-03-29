@@ -51,4 +51,7 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    path("dashboard/add/", views.add_expense, name="add_expense"),
+    path("expenses/", views.expenses_list_view, name="expenses_list"),
+    path("expenses/add/", views.add_expense_pro, name="add_expense_pro"),
 ]

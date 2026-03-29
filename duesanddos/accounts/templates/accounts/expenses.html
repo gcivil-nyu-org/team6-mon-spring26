@@ -1,0 +1,295 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Expenses | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Expenses</h1>
+        <button
+            id="openExpenseButton"
+            type="button"
+            onclick="openExpenseModal()"
+            class="btn-primary"
+            style="width: auto; padding: 10px 24px; margin-top: 0;"
+        >
+            + Add Expense
+        </button>
+    </div>
+
+    <div id="addExpenseModal" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
+        <h3 class="text-xl font-black mb-6">New Shared Expense</h3>
+
+        <form method="POST" action="{% url 'add_expense_pro' %}" class="space-y-4" onsubmit="validateExpenseForm(event)">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" name="title" placeholder="What was it for?" required>
+                <input type="number" step="0.01" min="0" name="amount" placeholder="Total Amount ($)" required>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Who Paid?</label>
+                <select name="payer" class="mt-1 expense-select">
+                    {% for member in members %}
+                        <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
+                            {{ member.user.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Split Method</label>
+                <select name="split_type" id="splitType" class="mt-1 expense-select" onchange="toggleSplitInputs()">
+                    <option value="EQUAL">Split Equally</option>
+                    <option value="PERCENT">Split by Percentage (%)</option>
+                    <option value="AMOUNT">Split by Amount ($)</option>
+                </select>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-[1.5rem]">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Include Roommates</label>
+
+                <div class="mt-4 space-y-3">
+                    {% for member in members %}
+                    <div class="participant-row flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                name="participants"
+                                value="{{ member.user.id }}"
+                                checked
+                                onchange="toggleSplitInputs()"
+                                class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                            >
+                            <span class="font-bold text-gray-700">{{ member.user.username }}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <div class="percent-input hidden">
+                                <input
+                                    type="number"
+                                    name="percent_{{ member.user.id }}"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    value="0"
+                                    placeholder="%"
+                                    class="split-input"
+                                >
+                            </div>
+
+                            <div class="amount-input hidden">
+                                <input
+                                    type="number"
+                                    name="amount_{{ member.user.id }}"
+                                    step="0.01"
+                                    min="0"
+                                    value="0.00"
+                                    placeholder="$"
+                                    class="split-input"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button
+                    type="button"
+                    onclick="closeExpenseModal()"
+                    class="btn-outline"
+                    style="margin-top: 0;"
+                >
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn-primary" style="margin-top: 0;">
+                    Save Shared Expense
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+            <h3 class="text-xl font-black text-gray-900 tracking-tight">Expense History</h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                        <th class="pb-4">Date</th>
+                        <th class="pb-4">Title</th>
+                        <th class="pb-4">Payer</th>
+                        <th class="pb-4">Total</th>
+                        <th class="pb-4 text-right">Your Share</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for exp in expenses %}
+                    <tr class="group hover:bg-gray-50 transition-colors">
+                        <td class="py-4 text-gray-500 text-sm">{{ exp.created_at|date:"M d, Y" }}</td>
+                        <td class="py-4 font-bold text-gray-900">{{ exp.title }}</td>
+                        <td class="py-4 text-gray-600">{{ exp.payer.username }}</td>
+                        <td class="py-4 font-black text-gray-900">${{ exp.amount|floatformat:2 }}</td>
+                        <td class="py-4 text-right">
+                            {% for split in exp.splits.all %}
+                                {% if split.user == request.user %}
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-tighter">
+                                        ${{ split.amount_owed|floatformat:2 }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-12 text-center text-gray-400 font-medium">No expenses recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openExpenseModal() {
+        document.getElementById('addExpenseModal').classList.remove('hidden');
+        document.getElementById('openExpenseButton').classList.add('hidden');
+    }
+
+    function closeExpenseModal() {
+        document.getElementById('addExpenseModal').classList.add('hidden');
+        document.getElementById('openExpenseButton').classList.remove('hidden');
+    }
+
+    function toggleSplitInputs() {
+        const type = document.getElementById('splitType').value;
+        const participantRows = document.querySelectorAll('.participant-row');
+        const checkedParticipants = document.querySelectorAll('input[name="participants"]:checked');
+        const checkedCount = checkedParticipants.length;
+
+        participantRows.forEach(row => {
+            const checkbox = row.querySelector('input[name="participants"]');
+            const percentDiv = row.querySelector('.percent-input');
+            const amountDiv = row.querySelector('.amount-input');
+            const percentInput = percentDiv.querySelector('input');
+            const amountInput = amountDiv.querySelector('input');
+
+            percentDiv.classList.add('hidden');
+            amountDiv.classList.add('hidden');
+
+            if (!checkbox.checked) {
+                percentInput.value = 0;
+                amountInput.value = '0.00';
+                return;
+            }
+
+            if (type === 'PERCENT') {
+                percentDiv.classList.remove('hidden');
+                if (!percentInput.dataset.userEdited) {
+                    percentInput.value = checkedCount > 0 ? (100 / checkedCount).toFixed(0) : 0;
+                }
+            }
+
+            if (type === 'AMOUNT') {
+                amountDiv.classList.remove('hidden');
+            }
+        });
+    }
+
+    function validateExpenseForm(event) {
+        const splitType = document.getElementById('splitType').value;
+        const totalAmount = parseFloat(document.querySelector('input[name="amount"]').value || '0');
+
+        if (!totalAmount || totalAmount <= 0) {
+            event.preventDefault();
+            showNotificationToast('error', 'Please enter a valid total amount.');
+            return false;
+        }
+
+        const checkedParticipants = document.querySelectorAll('input[name="participants"]:checked');
+        if (checkedParticipants.length === 0) {
+            event.preventDefault();
+            showNotificationToast('error', 'Please select at least one participant.');
+            return false;
+        }
+
+        if (splitType === 'AMOUNT') {
+            const visibleAmountInputs = Array.from(
+                document.querySelectorAll('.participant-row input[name="participants"]:checked')
+            ).map(checkbox => {
+                const row = checkbox.closest('.participant-row');
+                return row.querySelector('.amount-input input');
+            });
+
+            const splitTotal = visibleAmountInputs.reduce((sum, input) => {
+                return sum + (parseFloat(input.value || '0') || 0);
+            }, 0);
+
+            if (Math.abs(splitTotal - totalAmount) > 0.009) {
+                event.preventDefault();
+                showNotificationToast('error', 
+                    `Split amounts must add up to $${totalAmount.toFixed(2)}. ` +
+                    `Current total is $${splitTotal.toFixed(2)}.`
+                );
+                return false;
+            }
+        }
+
+        if (splitType === 'PERCENT') {
+            const visiblePercentInputs = Array.from(
+                document.querySelectorAll('.participant-row input[name="participants"]:checked')
+            ).map(checkbox => {
+                const row = checkbox.closest('.participant-row');
+                return row.querySelector('.percent-input input');
+            });
+
+            const percentTotal = visiblePercentInputs.reduce((sum, input) => {
+                return sum + (parseFloat(input.value || '0') || 0);
+            }, 0);
+
+            if (Math.abs(percentTotal - 100) > 0.009) {
+                event.preventDefault();
+                showNotificationToast('error', `Percentages must add up to 100. Current total is ${percentTotal.toFixed(2)}.`);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.name && e.target.name.startsWith('percent_')) {
+            e.target.dataset.userEdited = 'true';
+
+            const changedInput = e.target;
+            const allVisiblePercentInputs = Array.from(document.querySelectorAll('.percent-input:not(.hidden) input'));
+            const otherInputs = allVisiblePercentInputs.filter(i => i !== changedInput);
+
+            if (otherInputs.length > 0) {
+                const remaining = 100 - (parseFloat(changedInput.value) || 0);
+                const shareForOthers = Math.max(0, remaining / otherInputs.length);
+
+                otherInputs.forEach(i => {
+                    if (!i.dataset.userEdited || i === changedInput) {
+                        i.value = shareForOthers.toFixed(0);
+                    }
+                });
+            }
+        }
+    });
+
+    window.onload = toggleSplitInputs;
+</script>
+{% endblock %}
