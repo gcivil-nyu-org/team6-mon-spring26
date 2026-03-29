@@ -7,6 +7,7 @@ from accounts.models import Profile
 
 User = get_user_model()
 
+
 class SignalTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -23,10 +24,10 @@ class SignalTests(TestCase):
         mock_get.return_value = mock_response
 
         # Setup social account
-        social_account = SocialAccount.objects.create(
+        SocialAccount.objects.create(
             user=self.user,
             provider="google",
-            extra_data={"picture": "http://example.com/photo.jpg"}
+            extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
         # Triger the signal
@@ -45,11 +46,7 @@ class SignalTests(TestCase):
 
     @patch("accounts.signals.requests.get")
     def test_fetch_gmail_photo_no_picture_url(self, mock_get):
-        SocialAccount.objects.create(
-            user=self.user,
-            provider="google",
-            extra_data={}
-        )
+        SocialAccount.objects.create(user=self.user, provider="google", extra_data={})
         user_signed_up.send(sender=User, request=None, user=self.user)
         mock_get.assert_not_called()
 
@@ -63,12 +60,12 @@ class SignalTests(TestCase):
         SocialAccount.objects.create(
             user=self.user,
             provider="google",
-            extra_data={"picture": "http://example.com/photo.jpg"}
+            extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
         # Should not crash
         user_signed_up.send(sender=User, request=None, user=self.user)
-        
+
         self.profile.refresh_from_db()
         self.assertFalse(bool(self.profile.avatar))
 
@@ -79,7 +76,7 @@ class SignalTests(TestCase):
         SocialAccount.objects.create(
             user=self.user,
             provider="google",
-            extra_data={"picture": "http://example.com/photo.jpg"}
+            extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
         # Should not crash
