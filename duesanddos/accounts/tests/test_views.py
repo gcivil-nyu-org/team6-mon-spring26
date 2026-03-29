@@ -5,8 +5,9 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
+from decimal import Decimal
 
-from accounts.models import CustomUser, Profile, Household, HouseholdMember
+from accounts.models import CustomUser, Profile, Household, HouseholdMember, Expense
 from accounts.forms import UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
 
 SMALL_GIF = (
@@ -997,27 +998,203 @@ class DeleteAccountViewTests(TestCase):
         self.client.post(self.url, {"confirmation": TEST_PASSWORD})
         self.assertFalse(Household.objects.filter(id=hh.id).exists())
 
-    def test_add_expense_pro_splitting(self):
-        from django.urls import reverse
-        from accounts.models import Household, HouseholdMember, Profile
 
-        hh = Household.objects.create(name="Test House")
-        HouseholdMember.objects.create(user=self.user, household=hh, role="Admin")
+class AddExpenseProViewTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="payeruser",
+            email="payer@example.com",
+            password=TEST_PASSWORD,
+        )
+        self.user2 = CustomUser.objects.create_user(
+            username="roommate1",
+            email="roommate1@example.com",
+            password=TEST_PASSWORD,
+        )
+        self.user3 = CustomUser.objects.create_user(
+            username="roommate2",
+            email="roommate2@example.com",
+            password=TEST_PASSWORD,
+        )
 
-        profile, _ = Profile.objects.get_or_create(user=self.user)
-        profile.active_household = hh
-        profile.save()
+        self.hh = Household.objects.create(name="Expense Test House")
 
-        self.client.login(username="testuser", password="password")
-        url = reverse("add_expense_pro")
+        HouseholdMember.objects.create(user=self.user, household=self.hh, role="Admin")
+        HouseholdMember.objects.create(
+            user=self.user2, household=self.hh, role="Member"
+        )
+        HouseholdMember.objects.create(
+            user=self.user3, household=self.hh, role="Member"
+        )
 
-        post_data = {
-            "title": "Test Split",
-            "amount": "100.00",
-            "payer": self.user.id,
-            "split_type": "EQUAL",
-            "participants": [self.user.id],
-        }
-        response = self.client.post(url, post_data)
+        Profile.objects.create(user=self.user, active_household=self.hh)
+        Profile.objects.create(user=self.user2, active_household=self.hh)
+        Profile.objects.create(user=self.user3, active_household=self.hh)
+
+        self.client.login(username="payeruser", password=TEST_PASSWORD)
+        self.url = reverse("add_expense_pro")
+
+    def test_equal_split_creates_expense_and_splits(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Groceries",
+                "amount": "90.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+            },
+        )
 
         self.assertEqual(response.status_code, 302)
+        expense = Expense.objects.get(title="Groceries")
+        self.assertEqual(expense.split_type, "EQUAL")
+        self.assertEqual(expense.amount, Decimal("90.00"))
+        self.assertEqual(expense.splits.count(), 3)
+        self.assertEqual(
+            sum(split.amount_owed for split in expense.splits.all()),
+            Decimal("90.00"),
+        )
+
+    def test_percent_split_creates_expected_amounts(self):
+        self.client.post(
+            self.url,
+            {
+                "title": "Utilities",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "PERCENT",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+                f"percent_{self.user.id}": "50",
+                f"percent_{self.user2.id}": "30",
+                f"percent_{self.user3.id}": "20",
+            },
+        )
+
+        expense = Expense.objects.get(title="Utilities")
+        splits = {
+            split.user.username: split.amount_owed for split in expense.splits.all()
+        }
+        self.assertEqual(splits["payeruser"], Decimal("50.00"))
+        self.assertEqual(splits["roommate1"], Decimal("30.00"))
+        self.assertEqual(splits["roommate2"], Decimal("20.00"))
+
+    def test_percent_split_rejects_total_not_100(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Bad Percent",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "PERCENT",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+                f"percent_{self.user.id}": "40",
+                f"percent_{self.user2.id}": "30",
+                f"percent_{self.user3.id}": "20",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Bad Percent").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("100" in str(m) for m in msgs))
+
+    def test_amount_split_creates_exact_entered_amounts(self):
+        self.client.post(
+            self.url,
+            {
+                "title": "Dinner",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+                f"amount_{self.user.id}": "40.00",
+                f"amount_{self.user2.id}": "35.00",
+                f"amount_{self.user3.id}": "25.00",
+            },
+        )
+
+        expense = Expense.objects.get(title="Dinner")
+        self.assertEqual(expense.split_type, "AMOUNT")
+        splits = {
+            split.user.username: split.amount_owed for split in expense.splits.all()
+        }
+        self.assertEqual(splits["payeruser"], Decimal("40.00"))
+        self.assertEqual(splits["roommate1"], Decimal("35.00"))
+        self.assertEqual(splits["roommate2"], Decimal("25.00"))
+
+    def test_amount_split_rejects_when_total_does_not_match(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Bad Amount",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+                f"amount_{self.user.id}": "40.00",
+                f"amount_{self.user2.id}": "35.00",
+                f"amount_{self.user3.id}": "20.00",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Bad Amount").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("add up" in str(m).lower() for m in msgs))
+
+    def test_rejects_invalid_split_type(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Invalid Split",
+                "amount": "50.00",
+                "payer": self.user.id,
+                "split_type": "BOGUS",
+                "participants": [self.user.id, self.user2.id],
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Invalid Split").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("invalid split type" in str(m).lower() for m in msgs))
+
+    def test_rejects_no_participants(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Nobody Included",
+                "amount": "50.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Nobody Included").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("at least one" in str(m).lower() for m in msgs))
+
+    def test_rejects_payer_not_in_active_household(self):
+        outsider = CustomUser.objects.create_user(
+            username="outsider",
+            email="outsider@example.com",
+            password=TEST_PASSWORD,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Wrong Payer",
+                "amount": "25.00",
+                "payer": outsider.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id, self.user2.id],
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Wrong Payer").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("payer" in str(m).lower() for m in msgs))
