@@ -1,4 +1,7 @@
 /* Consolidated styles for Dues & Do's static site */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
+
 :root {
   --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
   --font-fraunces: "Fraunces", serif;
@@ -27,6 +30,19 @@ body {
   font-family: var(--font-plus-jakarta);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.btn-primary, .btn-secondary, .btn-outline,
+.form-label,
+.nav-list a,
+.nav-item,
+nav a,
+table th,
+button,
+input::placeholder,
+.sidebar-text {
+  text-transform: capitalize;
 }
 
 .font-display {

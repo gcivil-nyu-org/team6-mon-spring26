@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create your account | Dues & Do's</title>
+    <title>Create Your Account | Dues & Do's</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -63,9 +63,7 @@
         </div>
 
         <a href="{% url 'home' %}" class="relative flex items-center gap-2">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-            <span class="text-sm font-bold" style="color: #051f52;">D</span>
-          </div>
+          <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-8 rounded-lg object-contain bg-white">
           <span class="font-display text-lg font-semibold text-white">
             Dues <span style="color: #38bdf8;">&</span> Do's
           </span>
@@ -94,7 +92,7 @@
 
         <div class="w-full max-w-md">
           <div class="mb-6">
-            <h1 class="font-display text-3xl font-semibold text-stone-900">Create your account</h1>
+            <h1 class="font-display text-3xl font-semibold text-stone-900">Create Your Account</h1>
             <p class="mt-2 text-sm text-stone-500">Set up your household and invite roommates in minutes.</p>
           </div>
           
@@ -156,10 +154,10 @@
                 <p class="text-xs text-stone-400 mt-1">Passwords must match.</p>
             </div>
 
-            <button type="submit" class="btn-primary w-full py-3">Create account</button>
+            <button type="submit" class="btn-primary w-full py-3">Create Account</button>
 
             <p class="text-center text-sm text-stone-500">
-              Already have an account? <a href="{% url 'login' %}" class="font-medium hover:underline" style="color: #051f52;">Log in</a>
+              Already have an account? <a href="{% url 'login' %}" class="font-medium hover:underline" style="color: #051f52;">Log In</a>
             </p>
 
             <p class="text-center text-xs text-stone-400">

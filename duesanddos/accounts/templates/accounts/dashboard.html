@@ -17,7 +17,7 @@
         <div class="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-lg flex items-center gap-4">
             <form method="POST" action="{% url 'add_expense_pro' %}" class="flex items-center gap-2">
                 {% csrf_token %}
-                <input type="text" name="title" placeholder="Quick Add: What for?" class="p-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <input type="text" name="title" placeholder="Quick Add: What For?" class="p-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
                 <input type="number" step="1" name="amount" placeholder="$ Amount" class="w-24 p-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
                 
                 <input type="hidden" name="payer" value="{{ user.id }}">
@@ -36,7 +36,7 @@
 
     {% if no_household %}
     <div class="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100 text-yellow-800 text-center">
-        <p class="font-bold text-xl mb-2">You aren't in a household yet!</p>
+        <p class="font-bold text-xl mb-2">You Aren't In A Household Yet!</p>
         <p>Go to <a href="{% url 'household_settings' %}" class="underline font-bold">Household Settings</a> to create one.</p>
     </div>
     {% else %}
@@ -49,13 +49,13 @@
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
-            <span class="text-xs font-black text-green-500 uppercase tracking-widest">You are Owed</span>
+            <span class="text-xs font-black text-green-500 uppercase tracking-widest">You Are Owed</span>
             <h2 class="text-3xl font-black text-[#10b981] mt-2">${{ you_are_owed|floatformat:2 }}</h2>
             <div class="mt-2 space-y-1">
                 {% for item in owed_breakdown %}
                     <p class="text-[10px] font-bold text-gray-500 uppercase">{{ item.name }} owes you ${{ item.amount|floatformat:2 }}</p>
                 {% empty %}
-                    <p class="text-[10px] text-gray-400">Everyone is settled up</p>
+                    <p class="text-[10px] text-gray-400">Everyone Is Settled Up</p>
                 {% endfor %}
             </div>
         </div>
@@ -67,7 +67,7 @@
                 {% for item in owe_to_breakdown %}
                     <p class="text-[10px] font-bold text-gray-500 uppercase">You owe {{ item.name }} ${{ item.amount|floatformat:2 }}</p>
                 {% empty %}
-                    <p class="text-[10px] text-gray-400">You have no debts</p>
+                    <p class="text-[10px] text-gray-400">You Have No Debts</p>
                 {% endfor %}
             </div>
         </div>
@@ -101,7 +101,7 @@
                             {% if person.balance > 0 %}
                                 <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-tighter">Owed Money</span>
                             {% elif person.balance < 0 %}
-                                <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black uppercase tracking-tighter">Needs to Pay</span>
+                                <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black uppercase tracking-tighter">Needs To Pay</span>
                             {% else %}
                                 <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-[10px] font-black uppercase tracking-tighter">Settled</span>
                             {% endif %}
