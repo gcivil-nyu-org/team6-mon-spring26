@@ -498,9 +498,7 @@ def add_expense_pro(request):
 
     if split_type == "EQUAL":
         num_people = len(participants)
-        equal_share = (total_amount / num_people).quantize(
-            cent, rounding=ROUND_HALF_UP
-        )
+        equal_share = (total_amount / num_people).quantize(cent, rounding=ROUND_HALF_UP)
 
         splits = []
         running_total = Decimal("0.00")
@@ -608,6 +606,7 @@ def add_expense_pro(request):
 
     messages.success(request, f"Expense '{title}' added and split successfully!")
     return redirect("expenses_list")
+
 
 @login_required
 def dashboard_view(request):
