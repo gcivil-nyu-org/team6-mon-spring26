@@ -10,7 +10,7 @@
 
 @media (min-width: 1024px) {
     .settings-grid {
-        grid-template-columns: 0.8fr 1.4fr 0.8fr;
+        grid-template-columns: 0.8fr 1.4fr;
         /* Give more width to the members list */
     }
 }
