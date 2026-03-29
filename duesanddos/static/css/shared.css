@@ -156,7 +156,6 @@ input:focus, select:focus {
     cursor: pointer;
     box-shadow: var(--btn-shadow);
     transition: all 0.2s ease;
-    margin-top: 1rem;
 }
 
 .btn-primary:hover {

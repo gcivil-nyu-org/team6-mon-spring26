@@ -101,13 +101,6 @@ class ProfileViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, "Hello world")
 
-    def test_shows_default_text_when_bio_empty(self):
-        self.profile.bio = ""
-        self.profile.save()
-        self.client.login(username="testuser", password=TEST_PASSWORD)
-        response = self.client.get(self.url)
-        self.assertContains(response, "No bio added yet.")
-
     def test_edit_profile_link_present(self):
         self.client.login(username="testuser", password=TEST_PASSWORD)
         response = self.client.get(self.url)

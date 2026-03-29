@@ -163,9 +163,6 @@
                         <div class="form-group">
                             {{ field.label_tag }}
                             {{ field }}
-                            {% if field.name == 'bio' and not profile.bio %}
-                            <p class="helptext bio-default-hint">No bio added yet.</p>
-                            {% endif %}
                             {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
                             {{ field.errors }}
                         </div>

@@ -75,11 +75,11 @@
                 </div>
                 <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 16px;">You can be a member of multiple households simultaneously.</p>
                 <div id="action-buttons" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <button type="button" class="btn-primary" style="flex: 1; justify-content: center; padding: 10px;" onclick="document.getElementById('create-form').style.display='block'; document.getElementById('action-buttons').style.display='none';">
+                    <button type="button" class="btn-primary action-btn" style="flex: 1; justify-content: center; padding: 10px;" onclick="document.getElementById('create-form').style.display='block'; document.getElementById('action-buttons').style.display='none';">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Create
                     </button>
-                    <button type="button" class="btn-outline" style="flex: 1; justify-content: center; padding: 10px;" onclick="document.getElementById('join-form').style.display='block'; document.getElementById('action-buttons').style.display='none';">
+                    <button type="button" class="btn-outline action-btn" style="flex: 1; justify-content: center; padding: 10px;" onclick="document.getElementById('join-form').style.display='block'; document.getElementById('action-buttons').style.display='none';">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                         Join
                     </button>
@@ -213,7 +213,6 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="generate_invite" />
                     <button type="button" class="btn-primary mb-3 w-full" {% if not is_admin %}disabled style="opacity:0.6;"{% endif %} onclick="openInviteConfirmModal()">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                         Generate Invite Code
                     </button>
                 </form>
