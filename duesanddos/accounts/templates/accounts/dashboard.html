@@ -9,8 +9,11 @@
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
                 {% if active_household %}{{ active_household.name }}{% else %}My Household{% endif %}
             </h1>
+            {% if active_household %}
             <p class="text-gray-500 mt-1 font-medium">Here's the financial split for your household.</p>
+            {% endif %}
         </div>
+        {% if active_household %}
         <div class="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-lg flex items-center gap-4">
             <form method="POST" action="{% url 'add_expense_pro' %}" class="flex items-center gap-2">
                 {% csrf_token %}
@@ -28,6 +31,7 @@
                 </button>
             </form>
         </div>
+        {% endif %}
     </div>
 
     {% if no_household %}
