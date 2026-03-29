@@ -687,3 +687,23 @@ def add_expense(request):
             )
             messages.success(request, f"Added ${amount} for {title}!")
     return redirect("dashboard")
+
+@login_required
+def expense_history_view(request):
+    profile = request.user.profile
+    active_household = profile.active_household
+
+    if not active_household:
+        messages.warning(request, "Please select a household to see expenses.")
+        return redirect("household_settings")
+
+    # Acceptance Criteria: List of all past expenses, sorted newest first
+    # This retrieves every expense ever logged for this house
+    all_expenses = Expense.objects.filter(
+        household=active_household
+    ).select_related('payer').order_by('-date_spent', '-created_at')
+
+    return render(request, "accounts/expense_history.html", {
+        "expenses": all_expenses,
+        "active_household": active_household,
+    })
