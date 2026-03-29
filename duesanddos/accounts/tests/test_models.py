@@ -9,6 +9,8 @@ from accounts.models import (
     ExpenseSplit,
 )
 
+from unittest.mock import Mock, patch
+
 SMALL_GIF = (
     b"\x47\x49\x46\x38\x39\x61\x01\x00"
     b"\x01\x00\x80\x00\x00\x00\x00\x00"
@@ -59,6 +61,22 @@ class ProfileModelTests(TestCase):
 
     def test_default_avatar_is_falsy(self):
         self.assertFalse(self.profile.avatar)
+
+    def test_save_deletes_old_avatar_when_avatar_changes(self):
+        old_file = Mock()
+        old_file.name = "profile_pics/old.gif"
+        old_file.storage.delete = Mock()
+
+        new_file = Mock()
+
+        with patch("accounts.models.Profile.objects.get") as mock_get, patch(
+            "django.db.models.Model.save", return_value=None
+        ):
+            mock_get.return_value = Mock(avatar=old_file)
+            self.profile.avatar = new_file
+            self.profile.save()
+
+        old_file.storage.delete.assert_called_once_with("profile_pics/old.gif")
 
 
 # ---------------------------------------------------------------------------
@@ -149,6 +167,16 @@ class UploadToPathTests(TestCase):
         self.assertEqual(name, "accounts.models.UploadToPath")
         self.assertEqual(args, ["mycat"])
         self.assertEqual(kwargs, {})
+
+    def test_upload_path_falls_back_to_unknown_without_user_or_user_id(self):
+        from accounts.models import UploadToPath
+
+        class DummyInstance:
+            pass
+
+        uploader = UploadToPath("test_cat")
+        path = uploader(DummyInstance(), "photo.jpg")
+        self.assertIn("uid_unknown", path)
 
 
 class ExpenseModelTests(TestCase):

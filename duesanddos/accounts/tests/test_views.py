@@ -7,7 +7,13 @@ from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 
-from accounts.models import CustomUser, Profile, Household, HouseholdMember, Expense
+from accounts.models import (
+    CustomUser,
+    Profile,
+    Household,
+    HouseholdMember,
+    Expense,
+)
 from accounts.forms import UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
 
 SMALL_GIF = (
@@ -1017,7 +1023,7 @@ class AddExpenseProViewTests(TestCase):
             password=TEST_PASSWORD,
         )
 
-        self.hh = Household.objects.create(name="Expense Test House")
+        self.hh = Household.objects.create(name="Expense House")
 
         HouseholdMember.objects.create(user=self.user, household=self.hh, role="Admin")
         HouseholdMember.objects.create(
@@ -1033,6 +1039,10 @@ class AddExpenseProViewTests(TestCase):
 
         self.client.login(username="payeruser", password=TEST_PASSWORD)
         self.url = reverse("add_expense_pro")
+
+    def test_get_redirects(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
 
     def test_equal_split_creates_expense_and_splits(self):
         response = self.client.post(
@@ -1054,6 +1064,24 @@ class AddExpenseProViewTests(TestCase):
         self.assertEqual(
             sum(split.amount_owed for split in expense.splits.all()),
             Decimal("90.00"),
+        )
+
+    def test_equal_split_handles_rounding(self):
+        self.client.post(
+            self.url,
+            {
+                "title": "Rounding Equal",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id, self.user2.id, self.user3.id],
+            },
+        )
+
+        expense = Expense.objects.get(title="Rounding Equal")
+        self.assertEqual(
+            sum(split.amount_owed for split in expense.splits.all()),
+            Decimal("100.00"),
         )
 
     def test_percent_split_creates_expected_amounts(self):
@@ -1099,6 +1127,44 @@ class AddExpenseProViewTests(TestCase):
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("100" in str(m) for m in msgs))
 
+    def test_percent_split_rejects_negative_percentage(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Negative Percent",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "PERCENT",
+                "participants": [self.user.id, self.user2.id],
+                f"percent_{self.user.id}": "-10",
+                f"percent_{self.user2.id}": "110",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Negative Percent").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("negative" in str(m).lower() for m in msgs))
+
+    def test_percent_split_rejects_non_numeric_percentage(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Bad Percent Input",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "split_type": "PERCENT",
+                "participants": [self.user.id, self.user2.id],
+                f"percent_{self.user.id}": "abc",
+                f"percent_{self.user2.id}": "50",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Bad Percent Input").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("percentage" in str(m).lower() for m in msgs))
+
     def test_amount_split_creates_exact_entered_amounts(self):
         self.client.post(
             self.url,
@@ -1143,6 +1209,44 @@ class AddExpenseProViewTests(TestCase):
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("add up" in str(m).lower() for m in msgs))
 
+    def test_amount_split_rejects_negative_amount(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Negative Split",
+                "amount": "50.00",
+                "payer": self.user.id,
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id],
+                f"amount_{self.user.id}": "-5.00",
+                f"amount_{self.user2.id}": "55.00",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Negative Split").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("negative" in str(m).lower() for m in msgs))
+
+    def test_amount_split_rejects_non_numeric_amount(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Bad Amount Input",
+                "amount": "50.00",
+                "payer": self.user.id,
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id],
+                f"amount_{self.user.id}": "abc",
+                f"amount_{self.user2.id}": "50.00",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Bad Amount Input").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("valid amount" in str(m).lower() for m in msgs))
+
     def test_rejects_invalid_split_type(self):
         response = self.client.post(
             self.url,
@@ -1159,49 +1263,6 @@ class AddExpenseProViewTests(TestCase):
         self.assertFalse(Expense.objects.filter(title="Invalid Split").exists())
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("invalid split type" in str(m).lower() for m in msgs))
-
-    def test_rejects_no_participants(self):
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Nobody Included",
-                "amount": "50.00",
-                "payer": self.user.id,
-                "split_type": "EQUAL",
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Nobody Included").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("at least one" in str(m).lower() for m in msgs))
-
-    def test_rejects_payer_not_in_active_household(self):
-        outsider = CustomUser.objects.create_user(
-            username="outsider",
-            email="outsider@example.com",
-            password=TEST_PASSWORD,
-        )
-
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Wrong Payer",
-                "amount": "25.00",
-                "payer": outsider.id,
-                "split_type": "EQUAL",
-                "participants": [self.user.id, self.user2.id],
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Wrong Payer").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("payer" in str(m).lower() for m in msgs))
-
-    def test_add_expense_pro_get_redirects(self):
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 302)
 
     def test_rejects_missing_title(self):
         response = self.client.post(
@@ -1254,6 +1315,22 @@ class AddExpenseProViewTests(TestCase):
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("greater than 0" in str(m).lower() for m in msgs))
 
+    def test_rejects_no_participants(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Nobody Included",
+                "amount": "50.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Nobody Included").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("at least one" in str(m).lower() for m in msgs))
+
     def test_rejects_invalid_payer_id(self):
         response = self.client.post(
             self.url,
@@ -1268,6 +1345,29 @@ class AddExpenseProViewTests(TestCase):
         )
 
         self.assertFalse(Expense.objects.filter(title="Invalid Payer").exists())
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("payer" in str(m).lower() for m in msgs))
+
+    def test_rejects_payer_not_in_active_household(self):
+        outsider = CustomUser.objects.create_user(
+            username="outsider",
+            email="outsider@example.com",
+            password=TEST_PASSWORD,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Wrong Payer",
+                "amount": "25.00",
+                "payer": outsider.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id, self.user2.id],
+            },
+            follow=True,
+        )
+
+        self.assertFalse(Expense.objects.filter(title="Wrong Payer").exists())
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("payer" in str(m).lower() for m in msgs))
 
@@ -1299,82 +1399,6 @@ class AddExpenseProViewTests(TestCase):
             )
         )
 
-    def test_percent_split_rejects_negative_percentage(self):
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Negative Percent",
-                "amount": "100.00",
-                "payer": self.user.id,
-                "split_type": "PERCENT",
-                "participants": [self.user.id, self.user2.id],
-                f"percent_{self.user.id}": "-10",
-                f"percent_{self.user2.id}": "110",
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Negative Percent").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("negative" in str(m).lower() for m in msgs))
-
-    def test_percent_split_rejects_non_numeric_percentage(self):
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Bad Percent Input",
-                "amount": "100.00",
-                "payer": self.user.id,
-                "split_type": "PERCENT",
-                "participants": [self.user.id, self.user2.id],
-                f"percent_{self.user.id}": "abc",
-                f"percent_{self.user2.id}": "50",
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Bad Percent Input").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("percentage" in str(m).lower() for m in msgs))
-
-    def test_amount_split_rejects_negative_amount(self):
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Negative Split",
-                "amount": "50.00",
-                "payer": self.user.id,
-                "split_type": "AMOUNT",
-                "participants": [self.user.id, self.user2.id],
-                f"amount_{self.user.id}": "-5.00",
-                f"amount_{self.user2.id}": "55.00",
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Negative Split").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("negative" in str(m).lower() for m in msgs))
-
-    def test_amount_split_rejects_non_numeric_amount(self):
-        response = self.client.post(
-            self.url,
-            {
-                "title": "Bad Amount Input",
-                "amount": "50.00",
-                "payer": self.user.id,
-                "split_type": "AMOUNT",
-                "participants": [self.user.id, self.user2.id],
-                f"amount_{self.user.id}": "abc",
-                f"amount_{self.user2.id}": "50.00",
-            },
-            follow=True,
-        )
-
-        self.assertFalse(Expense.objects.filter(title="Bad Amount Input").exists())
-        msgs = list(get_messages(response.wsgi_request))
-        self.assertTrue(any("valid amount" in str(m).lower() for m in msgs))
-
     def test_rejects_when_no_active_household(self):
         profile = self.user.profile
         profile.active_household = None
@@ -1395,22 +1419,3 @@ class AddExpenseProViewTests(TestCase):
         self.assertFalse(Expense.objects.filter(title="No Household").exists())
         msgs = list(get_messages(response.wsgi_request))
         self.assertTrue(any("active household" in str(m).lower() for m in msgs))
-
-    def test_equal_split_handles_rounding(self):
-        self.client.post(
-            self.url,
-            {
-                "title": "Rounding Equal",
-                "amount": "100.00",
-                "payer": self.user.id,
-                "split_type": "EQUAL",
-                "participants": [self.user.id, self.user2.id, self.user3.id],
-            },
-        )
-
-        expense = Expense.objects.get(title="Rounding Equal")
-        splits = list(expense.splits.order_by("user__username"))
-        total = sum(split.amount_owed for split in splits)
-
-        self.assertEqual(total, Decimal("100.00"))
-        self.assertEqual(len(splits), 3)
