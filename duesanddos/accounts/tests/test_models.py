@@ -198,8 +198,16 @@ class ExpenseSplitModelTests(TestCase):
             email="split@example.com",
             password=TEST_PASSWORD,
         )
+        self.user2 = CustomUser.objects.create_user(
+            username="splituser2",
+            email="split2@example.com",
+            password=TEST_PASSWORD,
+        )
         self.hh = Household.objects.create(name="Split House")
         HouseholdMember.objects.create(user=self.user, household=self.hh, role="Admin")
+        HouseholdMember.objects.create(
+            user=self.user2, household=self.hh, role="Member"
+        )
         self.expense = Expense.objects.create(
             title="Internet",
             amount="60.00",
@@ -218,3 +226,20 @@ class ExpenseSplitModelTests(TestCase):
             str(split),
             "splituser owes $60.00 for Internet",
         )
+
+    def test_expense_split_count_for_created_expense(self):
+        expense = Expense.objects.create(
+            title="Test Expense",
+            amount="30.00",
+            payer=self.user,
+            household=self.hh,
+            split_type="AMOUNT",
+        )
+        ExpenseSplit.objects.create(
+            expense=expense, user=self.user, amount_owed="10.00"
+        )
+        ExpenseSplit.objects.create(
+            expense=expense, user=self.user2, amount_owed="20.00"
+        )
+
+        self.assertEqual(expense.splits.count(), 2)
