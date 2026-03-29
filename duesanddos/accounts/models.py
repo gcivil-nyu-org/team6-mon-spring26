@@ -129,7 +129,9 @@ class Expense(models.Model):
     SPLIT_CHOICES = (
         ("EQUAL", "Split Equally"),
         ("PERCENT", "Split by Percentage"),
+        ("AMOUNT", "Split by Amount ($)"),
     )
+
     title = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payer = models.ForeignKey(
@@ -151,9 +153,7 @@ class ExpenseSplit(models.Model):
         Expense, on_delete=models.CASCADE, related_name="splits"
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount_owed = models.DecimalField(
-        max_digits=10, decimal_places=2
-    )  # The calculated share
+    amount_owed = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return f"{self.user.username} owes ${self.amount_owed} for {self.expense.title}"

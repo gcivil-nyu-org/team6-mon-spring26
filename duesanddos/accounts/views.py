@@ -8,6 +8,7 @@ from django.contrib.auth.views import LogoutView
 from django.db import transaction, models
 from django.utils.crypto import get_random_string
 from django.utils import timezone
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from .models import (
     CustomUser,
@@ -424,61 +425,189 @@ def expenses_list_view(request):
 @login_required
 @transaction.atomic
 def add_expense_pro(request):
-    if request.method == "POST":
-        title = request.POST.get("title")
-        amount_raw = request.POST.get("amount")
-        payer_id = request.POST.get("payer")
-        split_type = request.POST.get("split_type")
-        participant_ids = request.POST.getlist("participants")
+    if request.method != "POST":
+        return redirect("expenses_list")
 
-        if not amount_raw or not participant_ids:
+    title = (request.POST.get("title") or "").strip()
+    amount_raw = (request.POST.get("amount") or "").strip()
+    payer_id = request.POST.get("payer")
+    split_type = request.POST.get("split_type")
+    participant_ids = request.POST.getlist("participants")
+
+    hh = request.user.profile.active_household
+    if not hh:
+        messages.error(request, "Please select an active household first.")
+        return redirect("household_settings")
+
+    if not title:
+        messages.error(request, "Please enter a title for the expense.")
+        return redirect("expenses_list")
+
+    if not amount_raw or not participant_ids:
+        messages.error(
+            request, "Please provide an amount and select at least one person."
+        )
+        return redirect("expenses_list")
+
+    try:
+        total_amount = Decimal(amount_raw).quantize(Decimal("0.01"))
+    except (InvalidOperation, TypeError):
+        messages.error(request, "Please enter a valid total amount.")
+        return redirect("expenses_list")
+
+    if total_amount <= 0:
+        messages.error(request, "Total amount must be greater than 0.")
+        return redirect("expenses_list")
+
+    try:
+        payer = CustomUser.objects.get(id=payer_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Selected payer was not found.")
+        return redirect("expenses_list")
+
+    # Make sure payer belongs to active household
+    if not HouseholdMember.objects.filter(user=payer, household=hh).exists():
+        messages.error(request, "Selected payer is not part of the active household.")
+        return redirect("expenses_list")
+
+    participants = list(
+        CustomUser.objects.filter(
+            id__in=participant_ids,
+            memberships__household=hh,
+        ).distinct()
+    )
+
+    if len(participants) != len(participant_ids):
+        messages.error(request, "One or more selected participants are invalid.")
+        return redirect("expenses_list")
+
+    if split_type not in ["EQUAL", "PERCENT", "AMOUNT"]:
+        messages.error(request, "Invalid split type.")
+        return redirect("expenses_list")
+
+    expense = Expense.objects.create(
+        title=title,
+        amount=total_amount,
+        payer=payer,
+        household=hh,
+        split_type=split_type,
+        date_spent=timezone.now().date(),
+    )
+
+    cent = Decimal("0.01")
+
+    if split_type == "EQUAL":
+        num_people = len(participants)
+        equal_share = (total_amount / num_people).quantize(
+            cent, rounding=ROUND_HALF_UP
+        )
+
+        splits = []
+        running_total = Decimal("0.00")
+
+        for index, user in enumerate(participants):
+            share = equal_share
+            if index == num_people - 1:
+                share = total_amount - running_total
+            else:
+                running_total += share
+
+            splits.append((user, share))
+
+        for user, share in splits:
+            ExpenseSplit.objects.create(
+                expense=expense,
+                user=user,
+                amount_owed=share,
+            )
+
+    elif split_type == "PERCENT":
+        entered_percentages = []
+        percent_total = Decimal("0")
+
+        for user in participants:
+            raw_pct = (request.POST.get(f"percent_{user.id}") or "0").strip()
+            try:
+                pct = Decimal(raw_pct)
+            except (InvalidOperation, TypeError):
+                expense.delete()
+                messages.error(
+                    request, f"Please enter a valid percentage for {user.username}."
+                )
+                return redirect("expenses_list")
+
+            if pct < 0:
+                expense.delete()
+                messages.error(request, "Percentages cannot be negative.")
+                return redirect("expenses_list")
+
+            entered_percentages.append((user, pct))
+            percent_total += pct
+
+        if percent_total != Decimal("100"):
+            expense.delete()
+            messages.error(request, "Percentages must add up to exactly 100.")
+            return redirect("expenses_list")
+
+        running_total = Decimal("0.00")
+
+        for index, (user, pct) in enumerate(entered_percentages):
+            share = ((pct / Decimal("100")) * total_amount).quantize(
+                cent, rounding=ROUND_HALF_UP
+            )
+
+            if index == len(entered_percentages) - 1:
+                share = total_amount - running_total
+            else:
+                running_total += share
+
+            ExpenseSplit.objects.create(
+                expense=expense,
+                user=user,
+                amount_owed=share,
+            )
+
+    elif split_type == "AMOUNT":
+        entered_amounts = []
+        amount_total = Decimal("0.00")
+
+        for user in participants:
+            raw_amount = (request.POST.get(f"amount_{user.id}") or "0").strip()
+            try:
+                split_amount = Decimal(raw_amount).quantize(cent)
+            except (InvalidOperation, TypeError):
+                expense.delete()
+                messages.error(
+                    request, f"Please enter a valid amount for {user.username}."
+                )
+                return redirect("expenses_list")
+
+            if split_amount < 0:
+                expense.delete()
+                messages.error(request, "Split amounts cannot be negative.")
+                return redirect("expenses_list")
+
+            entered_amounts.append((user, split_amount))
+            amount_total += split_amount
+
+        if amount_total != total_amount:
+            expense.delete()
             messages.error(
-                request, "Please provide an amount and select at least one person."
+                request,
+                f"Split amounts must add up to ${total_amount:.2f}. "
+                f"Current total is ${amount_total:.2f}.",
             )
             return redirect("expenses_list")
 
-        total_amount = float(amount_raw)
-        hh = request.user.profile.active_household
-        payer = CustomUser.objects.get(id=payer_id)
-
-        expense = Expense.objects.create(
-            title=title,
-            amount=total_amount,
-            payer=payer,
-            household=hh,
-            split_type=split_type,
-            date_spent=timezone.now().date(),
-        )
-
-        total_entered_pct = 0
-        if split_type == "PERCENT":
-            total_entered_pct = sum(
-                [
-                    float(request.POST.get(f"percent_{p_id}", 0))
-                    for p_id in participant_ids
-                ]
-            )
-
-        num_people = len(participant_ids)
-        for p_id in participant_ids:
-            user = CustomUser.objects.get(id=p_id)
-
-            if split_type == "EQUAL":
-                share = total_amount / num_people
-            else:
-                raw_pct = float(request.POST.get(f"percent_{p_id}", 0))
-                if total_entered_pct > 0:
-                    share = (raw_pct / total_entered_pct) * total_amount
-                else:
-                    share = total_amount / num_people
-
+        for user, split_amount in entered_amounts:
             ExpenseSplit.objects.create(
-                expense=expense, user=user, amount_owed=round(share, 2)
+                expense=expense,
+                user=user,
+                amount_owed=split_amount,
             )
 
-        messages.success(request, f"Expense '{title}' added and split successfully!")
+    messages.success(request, f"Expense '{title}' added and split successfully!")
     return redirect("expenses_list")
-
 
 @login_required
 def dashboard_view(request):

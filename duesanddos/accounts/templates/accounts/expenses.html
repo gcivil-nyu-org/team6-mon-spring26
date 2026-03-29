@@ -25,7 +25,7 @@
     <div id="addExpenseModal" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
         <h3 class="text-xl font-black mb-6">New Shared Expense</h3>
 
-        <form method="POST" action="{% url 'add_expense_pro' %}" class="space-y-4">
+        <form method="POST" action="{% url 'add_expense_pro' %}" class="space-y-4" onsubmit="validateExpenseForm(event)">
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,6 +206,67 @@
                 amountDiv.classList.remove('hidden');
             }
         });
+    }
+
+    function validateExpenseForm(event) {
+        const splitType = document.getElementById('splitType').value;
+        const totalAmount = parseFloat(document.querySelector('input[name="amount"]').value || '0');
+
+        if (!totalAmount || totalAmount <= 0) {
+            event.preventDefault();
+            showNotificationToast('error', 'Please enter a valid total amount.');
+            return false;
+        }
+
+        const checkedParticipants = document.querySelectorAll('input[name="participants"]:checked');
+        if (checkedParticipants.length === 0) {
+            event.preventDefault();
+            showNotificationToast('error', 'Please select at least one participant.');
+            return false;
+        }
+
+        if (splitType === 'AMOUNT') {
+            const visibleAmountInputs = Array.from(
+                document.querySelectorAll('.participant-row input[name="participants"]:checked')
+            ).map(checkbox => {
+                const row = checkbox.closest('.participant-row');
+                return row.querySelector('.amount-input input');
+            });
+
+            const splitTotal = visibleAmountInputs.reduce((sum, input) => {
+                return sum + (parseFloat(input.value || '0') || 0);
+            }, 0);
+
+            if (Math.abs(splitTotal - totalAmount) > 0.009) {
+                event.preventDefault();
+                showNotificationToast('error', 
+                    `Split amounts must add up to $${totalAmount.toFixed(2)}. ` +
+                    `Current total is $${splitTotal.toFixed(2)}.`
+                );
+                return false;
+            }
+        }
+
+        if (splitType === 'PERCENT') {
+            const visiblePercentInputs = Array.from(
+                document.querySelectorAll('.participant-row input[name="participants"]:checked')
+            ).map(checkbox => {
+                const row = checkbox.closest('.participant-row');
+                return row.querySelector('.percent-input input');
+            });
+
+            const percentTotal = visiblePercentInputs.reduce((sum, input) => {
+                return sum + (parseFloat(input.value || '0') || 0);
+            }, 0);
+
+            if (Math.abs(percentTotal - 100) > 0.009) {
+                event.preventDefault();
+                showNotificationToast('error', `Percentages must add up to 100. Current total is ${percentTotal.toFixed(2)}.`);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     document.addEventListener('input', function (e) {
