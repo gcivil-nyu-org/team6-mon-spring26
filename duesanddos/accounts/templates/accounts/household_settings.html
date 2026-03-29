@@ -91,19 +91,23 @@
                     <label style="font-size:0.8rem; font-weight:600; color: var(--color-text-main); margin-bottom: 6px; display:block;">New Household Name</label>
                     <div class="input-with-button">
                         <input type="text" name="household_name" required placeholder="My Awesome Apartment" />
-                        <button type="submit" class="btn-primary">Create</button>
-                        <button type="button" class="btn-outline" onclick="document.getElementById('create-form').style.display='none'; document.getElementById('action-buttons').style.display='flex';">Cancel</button>
+                        <div>
+                            <button type="submit" class="btn-primary">Create</button>
+                            <button type="button" class="btn-outline" onclick="document.getElementById('create-form').style.display='none'; document.getElementById('action-buttons').style.display='flex';">Cancel</button>
+                        </div>
                     </div>
                 </form>
 
                 <form id="join-form" method="POST" action="{% url 'household_settings' %}" style="display:none; margin-top:12px;" onsubmit="if(!this.checkValidity()) return false;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="join_household" />
-                    <label style="font-size:0.8rem; font-weight:600; color: var(--color-text-main); margin-bottom: 6px; display:block;">10-Digit Invite Code</label>
+                    <label style="font-size:0.8rem; font-weight:600; color: var(--color-text-main); margin-bottom: 6px; display:block;">10-Character Invite Code</label>
                     <div class="input-with-button">
                         <input type="text" name="invite_code" required maxlength="12" placeholder="A1B2C3D4E5" style="text-transform:uppercase;" />
-                        <button type="submit" class="btn-primary">Join</button>
-                        <button type="button" class="btn-outline" onclick="document.getElementById('join-form').style.display='none'; document.getElementById('action-buttons').style.display='flex';">Cancel</button>
+                        <div>
+                            <button type="submit" class="btn-primary">Join</button>
+                            <button type="button" class="btn-outline" onclick="document.getElementById('join-form').style.display='none'; document.getElementById('action-buttons').style.display='flex';">Cancel</button>
+                        </div>
                     </div>
                 </form>
             </div>

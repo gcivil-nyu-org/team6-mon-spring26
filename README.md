@@ -17,7 +17,7 @@ Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spr
 
 -   **Multi-Household Support**: Create or join multiple households with unique contexts.
 -   **Secure Authentication**: robust login/signup system with **Google OAuth2** integration for a seamless experience.
--   **Household Invites**: Easily invite members using unique, time-limited 10-digit invite codes.
+-   **Household Invites**: Easily invite members using unique, time-limited 10-character invite codes.
 -   **Dynamic User Profiles**: Personalized profiles with high-quality avatar support (powered by Amazon S3).
 -   **Premium UI/UX**: A state-of-the-art interface featuring:
     -   **Glassmorphism** and vibrant modern color palettes.
