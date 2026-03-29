@@ -54,4 +54,5 @@ urlpatterns = [
     path("dashboard/add/", views.add_expense, name="add_expense"),
     path("expenses/", views.expenses_list_view, name="expenses_list"),
     path("expenses/add/", views.add_expense_pro, name="add_expense_pro"),
+    path("expense-history/", views.expense_history_view, name="expense_history"),
 ]

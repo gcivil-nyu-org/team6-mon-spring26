@@ -61,7 +61,7 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
-                <a href="{% url 'expense_history' %}" class="nav-item {% if request.resolver_match.url_name == 'expense_history' %}active{% endif %}" title="Expenses">
+                <a href="{% url 'expenses_list' %}" class="nav-item {% if request.resolver_match.url_name == 'expenses_list' %}active{% endif %}" title="Expenses">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -238,14 +238,24 @@
                 }, 400);
             }, 4500);
         }
+    </script>
+ 
+    <!-- Hidden Message Container to avoid IDE errors in script block -->
+    {% if messages %}
+    <div id="django-messages" style="display: none;" aria-hidden="true">
+        {% for message in messages %}
+            <span class="django-message" data-tags="{{ message.tags }}" data-content="{{ message }}"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-        // Catch Django messages from backend
+    <script>
+        // Catch and show Django messages from the backend
         document.addEventListener('DOMContentLoaded', function() {
-            {% if messages %}
-                {% for message in messages %}
-                    showNotificationToast("{{ message.tags|escapejs }}", "{{ message|escapejs }}");
-                {% endfor %}
-            {% endif %}
+            const messages = document.querySelectorAll('.django-message');
+            messages.forEach(el => {
+                showNotificationToast(el.dataset.tags, el.dataset.content);
+            });
         });
 
         function toggleLogout() {
