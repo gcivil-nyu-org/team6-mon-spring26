@@ -166,7 +166,10 @@ class ExpenseSplit(models.Model):
 
     def __str__(self):
         status = " (Settled)" if self.is_settled else ""
-        return f"{self.user.username} owes ${self.amount_owed} for {self.expense.title}{status}"
+        return (
+            f"{self.user.username} owes ${self.amount_owed} "
+            f"for {self.expense.title}{status}"
+        )
 
 
 class ActivityLog(models.Model):

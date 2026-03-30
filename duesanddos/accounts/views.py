@@ -189,13 +189,15 @@ def household_settings_view(request):
                         if created:
                             profile.active_household = household
                             profile.save()
-                            
+
                             # Log Activity
                             ActivityLog.objects.create(
                                 user=request.user,
                                 household=household,
                                 action="HOUSEHOLD_JOINED",
-                                details=f"{request.user.username} joined the household."
+                                details=(
+                                    f"{request.user.username} joined the household."
+                                ),
                             )
 
                             messages.success(
@@ -306,7 +308,8 @@ def household_settings_view(request):
                             else:
                                 messages.error(
                                     request,
-                                    "As the only admin, you must either assign another admin or delete the household instead.",  # noqa: E501
+                                    "As the only admin, you must either assign another "
+                                    "admin or delete the household instead.",  # noqa: E501
                                 )
                                 return redirect("household_settings")
 
@@ -329,12 +332,12 @@ def household_settings_view(request):
                     msg = f"{member_link.user.username} was removed from the household."
                     if str(request.user.id) == str(target_user_id):
                         msg = f"{member_link.user.username} left the household."
-                    
+
                     ActivityLog.objects.create(
-                        user=request.user, 
+                        user=request.user,
                         household=active_household,
                         action="MEMBER_REMOVED",
-                        details=msg
+                        details=msg,
                     )
             else:
                 messages.error(request, "Only Admins can remove other members.")
@@ -435,7 +438,12 @@ def expenses_list_view(request):
     if not active_hh:
         return redirect("household_settings")
 
-    expenses = active_hh.expenses.all().select_related("payer").prefetch_related("splits", "splits__user").order_by("-date_spent")
+    expenses = (
+        active_hh.expenses.all()
+        .select_related("payer")
+        .prefetch_related("splits", "splits__user")
+        .order_by("-date_spent")
+    )
     members = active_hh.members.select_related("user")
 
     return render(
@@ -620,6 +628,7 @@ def add_expense_pro(request):
             )
             return redirect("expenses_list")
 
+        for user, share in entered_amounts:
             ExpenseSplit.objects.create(
                 expense=expense,
                 user=user,
@@ -671,40 +680,67 @@ def dashboard_view(request):
     user_net = 0.0
 
     # 2. Filter Outstanding Debts within the time period
-    owed_results = ExpenseSplit.objects.filter(
-        expense__payer=request.user,
-        expense__household=active_hh,
-        expense__date_spent__range=(start_date, end_date),
-        is_settled=False,
-    ).exclude(user=request.user).values('user__username').annotate(total=models.Sum('amount_owed'))
+    owed_results = (
+        ExpenseSplit.objects.filter(
+            expense__payer=request.user,
+            expense__household=active_hh,
+            expense__date_spent__range=(start_date, end_date),
+            is_settled=False,
+        )
+        .exclude(user=request.user)
+        .values("user__username")
+        .annotate(total=models.Sum("amount_owed"))
+    )
 
-    owed_breakdown = [{'name': r['user__username'], 'amount': float(r['total'])} for r in owed_results]
+    owed_breakdown = [
+        {"name": r["user__username"], "amount": float(r["total"])} for r in owed_results
+    ]
 
-    owe_results = ExpenseSplit.objects.filter(
-        user=request.user,
-        expense__household=active_hh,
-        expense__date_spent__range=(start_date, end_date),
-        is_settled=False,
-    ).exclude(expense__payer=request.user).values('expense__payer__username').annotate(total=models.Sum('amount_owed'))
+    owe_results = (
+        ExpenseSplit.objects.filter(
+            user=request.user,
+            expense__household=active_hh,
+            expense__date_spent__range=(start_date, end_date),
+            is_settled=False,
+        )
+        .exclude(expense__payer=request.user)
+        .values("expense__payer__username")
+        .annotate(total=models.Sum("amount_owed"))
+    )
 
-    owe_to_breakdown = [{'name': r['expense__payer__username'], 'amount': float(r['total'])} for r in owe_results]
+    owe_to_breakdown = [
+        {"name": r["expense__payer__username"], "amount": float(r["total"])}
+        for r in owe_results
+    ]
 
     for member in members:
-        paid_in_period = float(sum(e.amount for e in expenses if e.payer == member.user))
+        paid_in_period = float(
+            sum(e.amount for e in expenses if e.payer == member.user)
+        )
 
-        to_me = float(ExpenseSplit.objects.filter(
-            expense__payer=member.user,
-            expense__household=active_hh,
-            expense__date_spent__range=(start_date, end_date),
-            is_settled=False
-        ).exclude(user=member.user).aggregate(models.Sum("amount_owed"))["amount_owed__sum"] or 0)
+        to_me = float(
+            ExpenseSplit.objects.filter(
+                expense__payer=member.user,
+                expense__household=active_hh,
+                expense__date_spent__range=(start_date, end_date),
+                is_settled=False,
+            )
+            .exclude(user=member.user)
+            .aggregate(models.Sum("amount_owed"))["amount_owed__sum"]
+            or 0
+        )
 
-        by_me = float(ExpenseSplit.objects.filter(
-            user=member.user,
-            expense__household=active_hh,
-            expense__date_spent__range=(start_date, end_date),
-            is_settled=False
-        ).exclude(expense__payer=member.user).aggregate(models.Sum("amount_owed"))["amount_owed__sum"] or 0)
+        by_me = float(
+            ExpenseSplit.objects.filter(
+                user=member.user,
+                expense__household=active_hh,
+                expense__date_spent__range=(start_date, end_date),
+                is_settled=False,
+            )
+            .exclude(expense__payer=member.user)
+            .aggregate(models.Sum("amount_owed"))["amount_owed__sum"]
+            or 0
+        )
 
         net = to_me - by_me
 
@@ -744,42 +780,49 @@ def activity_log_view(request):
     today = timezone.now().date()
     default_start = today.replace(day=1)
     default_end = today
-    
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-    action_filter = request.GET.get('action')
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+    action_filter = request.GET.get("action")
 
     try:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else default_start
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else default_end
+        start_date = (
+            datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            if start_date_str
+            else default_start
+        )
+        end_date = (
+            datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            if end_date_str
+            else default_end
+        )
     except ValueError:
         start_date, end_date = default_start, default_end
 
     raw_activities = ActivityLog.objects.filter(
-        household=active_hh,
-        timestamp__date__range=(start_date, end_date)
+        household=active_hh, timestamp__date__range=(start_date, end_date)
     )
 
     if action_filter:
         raw_activities = raw_activities.filter(action=action_filter)
 
     raw_activities = raw_activities.order_by("-timestamp")
-    
-    page_number = request.GET.get('page')
+
+    page_number = request.GET.get("page")
     paginator = Paginator(raw_activities, 10)
     activities_page = paginator.get_page(page_number)
 
     return render(
-        request, 
-        "accounts/activity.html", 
+        request,
+        "accounts/activity.html",
         {
-            "activities": activities_page, 
+            "activities": activities_page,
             "active_household": active_hh,
             "start_date": start_date,
             "end_date": end_date,
             "current_action": action_filter,
-            "action_choices": ActivityLog.ACTION_CHOICES
-        }
+            "action_choices": ActivityLog.ACTION_CHOICES,
+        },
     )
 
 
@@ -787,15 +830,17 @@ def activity_log_view(request):
 @transaction.atomic
 def settle_split_view(request, split_id):
     active_hh = request.user.profile.active_household
-    referer = request.META.get('HTTP_REFERER', 'dashboard')
-    
+    referer = request.META.get("HTTP_REFERER", "dashboard")
+
     if not active_hh:
         messages.error(request, "Please set an active household first.")
         return redirect(referer)
 
-    split = ExpenseSplit.objects.filter(
-        id=split_id, expense__household=active_hh
-    ).select_related("expense", "user", "expense__payer").first()
+    split = (
+        ExpenseSplit.objects.filter(id=split_id, expense__household=active_hh)
+        .select_related("expense", "user", "expense__payer")
+        .first()
+    )
 
     if not split:
         messages.error(request, "Split not found.")
@@ -815,12 +860,14 @@ def settle_split_view(request, split_id):
     split.settled_by = request.user
     split.save()
 
-    # Log Activity
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
         action="PAYMENT_SETTLED",
-        details=f"Settled ${split.amount_owed} for '{split.expense.title}' ({split.user.username} with {split.expense.payer.username})",
+        details=(
+            f"Settled ${split.amount_owed} for '{split.expense.title}' "
+            f"({split.user.username} with {split.expense.payer.username})"
+        ),
     )
 
     messages.success(request, f"Payment of ${split.amount_owed} settled!")
@@ -879,7 +926,7 @@ def delete_expense_pro(request, expense_id):
 
     profile = request.user.profile
     active_hh = profile.active_household
-    referer = request.META.get('HTTP_REFERER', 'expenses_list')
+    referer = request.META.get("HTTP_REFERER", "expenses_list")
 
     if not active_hh:
         messages.error(request, "Please select an active household first.")
@@ -893,18 +940,24 @@ def delete_expense_pro(request, expense_id):
 
     # Security: Only the payer can delete the expense
     if expense.payer != request.user:
-        messages.error(request, "You do not have permission to delete this expense. Only the payer can delete it.")
+        messages.error(
+            request,
+            "You do not have permission to delete this expense. "
+            "Only the payer can delete it.",
+        )
         return redirect(referer)
 
     title = expense.title
     amount = expense.amount
 
-    # Log Activity
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
         action="EXPENSE_DELETED",
-        details=f"Deleted expense '{title}' for ${amount}. All associated debts removed.",
+        details=(
+            f"Deleted expense '{title}' for ${amount}. "
+            f"All associated debts removed."
+        ),
     )
 
     expense.delete()
@@ -916,9 +969,9 @@ def delete_expense_pro(request, expense_id):
 @login_required
 @transaction.atomic
 def edit_expense_pro(request, expense_id):
-    referer = request.META.get('HTTP_REFERER', 'expenses_list')
+    referer = request.META.get("HTTP_REFERER", "expenses_list")
     active_hh = request.user.profile.active_household
-    
+
     if not active_hh:
         messages.error(request, "Please select an active household first.")
         return redirect(referer)
@@ -959,44 +1012,83 @@ def edit_expense_pro(request, expense_id):
     expense.save()
 
     # 2. Update Splits (Delete and Recreate)
-    # We must be careful if any splits were already settled. 
-    # For now, we allow the edit but warn that it might've affected settled records if they existed.
+    # For now, we allow the edit but warn that it might've affected
+    # settled records if they existed.
     expense.splits.all().delete()
 
-    participants = CustomUser.objects.filter(id__in=participant_ids, memberships__household=active_hh).distinct()
+    participants = CustomUser.objects.filter(
+        id__in=participant_ids, memberships__household=active_hh
+    ).distinct()
     cent = Decimal("0.01")
-    
+
     if split_type == "EQUAL":
         num_people = len(participants)
         equal_share = (total_amount / num_people).quantize(cent, rounding=ROUND_HALF_UP)
         running_total = Decimal("0.00")
         for index, user in enumerate(participants):
-            share = equal_share if index < num_people - 1 else total_amount - running_total
+            share = (
+                equal_share if index < num_people - 1 else total_amount - running_total
+            )
             running_total += share
             ExpenseSplit.objects.create(expense=expense, user=user, amount_owed=share)
 
     elif split_type == "PERCENT":
-        percent_total = Decimal("0")
         running_total = Decimal("0.00")
         for index, user in enumerate(participants):
             pct = Decimal(request.POST.get(f"percent_{user.id}") or "0")
-            share = ((pct / Decimal("100")) * total_amount).quantize(cent, rounding=ROUND_HALF_UP)
+            share = ((pct / Decimal("100")) * total_amount).quantize(
+                cent, rounding=ROUND_HALF_UP
+            )
             if index == len(participants) - 1:
                 share = total_amount - running_total
             running_total += share
             ExpenseSplit.objects.create(expense=expense, user=user, amount_owed=share)
 
     elif split_type == "AMOUNT":
+        entered_amounts = []
+        amount_total = Decimal("0.00")
+
         for user in participants:
-            share = Decimal(request.POST.get(f"amount_{user.id}") or "0").quantize(cent)
-            ExpenseSplit.objects.create(expense=expense, user=user, amount_owed=share)
+            raw_amount = (request.POST.get(f"amount_{user.id}") or "0").strip()
+            try:
+                split_amount = Decimal(raw_amount).quantize(cent)
+            except (InvalidOperation, TypeError):
+                messages.error(
+                    request, f"Please enter a valid amount for {user.username}."
+                )
+                return redirect(referer)
+
+            if split_amount < 0:
+                messages.error(request, "Split amounts cannot be negative.")
+                return redirect(referer)
+
+            entered_amounts.append((user, split_amount))
+            amount_total += split_amount
+
+        if amount_total != total_amount:
+            messages.error(
+                request,
+                f"Split amounts must add up to ${total_amount:.2f}. "
+                f"Current total is ${amount_total:.2f}.",
+            )
+            return redirect(referer)
+
+        for user, share in entered_amounts:
+            ExpenseSplit.objects.create(
+                expense=expense,
+                user=user,
+                amount_owed=share,
+            )
 
     # 3. Log Activity
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
         action="EXPENSE_EDITED",
-        details=f"Edited expense '{title}'. (Was: '{old_title}' for ${old_amount} -> Now: ${total_amount})",
+        details=(
+            f"Edited expense '{title}'. (Was: '{old_title}' "
+            f"for ${old_amount} -> Now: ${total_amount})"
+        ),
     )
 
     messages.success(request, f"Expense '{title}' updated successfully.")
