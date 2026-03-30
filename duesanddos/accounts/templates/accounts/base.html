@@ -72,10 +72,10 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <span class="sidebar-text">Chores</span>
                 </button>
-                <button onclick="showComingSoon('My Activity')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="My Activity">
+                <a href="{% url 'activity_log' %}" class="nav-item {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}" title="Activity Hub">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                    <span class="sidebar-text">My Activity</span>
-                </button>
+                    <span class="sidebar-text">Activity Hub</span>
+                </a>
                 <button onclick="showComingSoon('Chat')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chat">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                     <span class="sidebar-text">Chat</span>

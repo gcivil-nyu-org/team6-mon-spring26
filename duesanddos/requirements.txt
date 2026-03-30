@@ -33,7 +33,7 @@ coverage==7.10.7
     # via
     #   duesanddos (pyproject.toml)
     #   coveralls
-coveralls==4.0.1
+coveralls>=4.0.1
     # via duesanddos (pyproject.toml)
 cryptography==46.0.6
     # via duesanddos (pyproject.toml)
