@@ -164,6 +164,94 @@ class AdditionalHouseholdBranchTests(TestCase):
             ).exists()
         )
 
+    def test_join_household_invalid_code_shows_error(self):
+        response = self.client.post(
+            self.url,
+            {"action": "join_household", "invite_code": "INVALID"},
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Invalid invite code.", messages)
+
+    def test_join_household_expired_code_shows_error(self):
+        from django.utils import timezone
+        from datetime import timedelta
+
+        self.household.invite_code = "EXPIRED"
+        self.household.invite_code_expires = timezone.now() - timedelta(days=1)
+        self.household.save()
+        response = self.client.post(
+            self.url,
+            {"action": "join_household", "invite_code": "EXPIRED"},
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("This invite code has expired.", messages)
+
+    def test_non_admin_cannot_update_general_settings(self):
+        self.client.logout()
+        self.client.login(username="otheruser", password=TEST_PASSWORD)
+        response = self.client.post(
+            self.url, {"action": "update_general", "name": "New Name"}, follow=True
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Only Admins can change household settings.", messages)
+
+    def test_non_admin_cannot_generate_invite_code(self):
+        self.client.logout()
+        self.client.login(username="otheruser", password=TEST_PASSWORD)
+        response = self.client.post(
+            self.url, {"action": "generate_invite"}, follow=True
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Only Admins can generate invite codes.", messages)
+
+    def test_non_admin_cannot_delete_household(self):
+        self.client.logout()
+        self.client.login(username="otheruser", password=TEST_PASSWORD)
+        response = self.client.post(
+            self.url, {"action": "delete_household"}, follow=True
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Only Admins can delete the household.", messages)
+
+    def test_last_admin_cannot_demote_themselves(self):
+        response = self.client.post(
+            self.url,
+            {"action": "update_role", "user_id": str(self.user.id), "role": "Member"},
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("You cannot demote yourself as the only admin.", messages)
+        self.assertEqual(
+            HouseholdMember.objects.get(user=self.user, household=self.household).role,
+            "Admin",
+        )
+
+    def test_member_can_leave_household(self):
+        self.client.logout()
+        self.client.login(username="otheruser", password=TEST_PASSWORD)
+        response = self.client.post(
+            self.url,
+            {"action": "remove_member", "user_id": str(self.other.id)},
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("You left the household.", messages)
+        self.assertFalse(
+            HouseholdMember.objects.filter(
+                user=self.other, household=self.household
+            ).exists()
+        )
+        # Check if fallback worked
+        # (other user from setUp has active_household=self.household,
+        # after leaving they belong to no more households in setUp,
+        # but the code says "fall back to another household if available")
+        # In setUp, otheruser only belongs to self.household.
+        # Profile.objects.create(user=self.other, active_household=self.household)
+        other_profile = Profile.objects.get(user=self.other)
+        self.assertIsNone(other_profile.active_household)
+
 
 class DeleteAccountNoPasswordTests(TestCase):
     def setUp(self):
@@ -181,6 +269,21 @@ class DeleteAccountNoPasswordTests(TestCase):
 
         messages = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertIn("please type as it is - case sensitive", messages)
+        self.assertTrue(User.objects.filter(username="socialuser").exists())
+
+    def test_incorrect_password_deletion_fails(self):
+        # Refetch user to ensure status is clean
+        user = User.objects.get(username="socialuser")
+        user.set_password(TEST_PASSWORD)
+        user.save()
+        # Re-login to update session with new password context if necessary
+        self.client.login(username="socialuser", password=TEST_PASSWORD)
+
+        response = self.client.post(
+            self.url, {"confirmation": "WrongPass"}, follow=True
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("Incorrect password" in m for m in messages))
         self.assertTrue(User.objects.filter(username="socialuser").exists())
 
     def test_non_password_account_can_delete_with_exact_delete_confirmation(self):

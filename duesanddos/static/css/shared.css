@@ -60,6 +60,21 @@ body {
   background-color: var(--color-gray-bg);
 }
 
+h1, h2, h3, h4, h5, h6,
+.btn-primary, .btn-secondary, .btn-outline,
+.form-label,
+.nav-list a,
+.nav-item,
+nav a,
+table th,
+button,
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="password"]::placeholder,
+.sidebar-text {
+  text-transform: capitalize;
+}
+
 
 input[type="text"], 
 input[type="number"], 

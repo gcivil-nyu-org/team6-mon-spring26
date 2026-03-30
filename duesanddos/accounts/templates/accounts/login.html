@@ -4,15 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log in | Dues & Do's</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <title>Log In | Dues & Do's</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.1">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=1.1">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['Fraunces', 'serif'],
+                    },
                     colors: {
                         brand: {
                             50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
@@ -24,6 +32,13 @@
         }
     </script>
     <style>
+        /* Force brand fonts */
+        body, input, button, select, textarea {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+        .font-display, h1, h2, h3, blockquote {
+            font-family: 'Fraunces', serif !important;
+        }
         /* Custom styles to match the new color scheme and fix button text */
         .btn-primary {
             background-color: #051f52 !important;
@@ -49,9 +64,7 @@
         </div>
 
         <a href="{% url 'home' %}" class="relative flex items-center gap-2">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-            <span class="text-sm font-bold" style="color: #051f52;">D</span>
-          </div>
+          <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-8 rounded-lg object-contain bg-white">
           <span class="font-display text-lg font-semibold text-white">
             Dues <span style="color: #38bdf8;">&</span> Do's
           </span>
@@ -91,8 +104,8 @@
 
         <div class="w-full max-w-md">
           <div class="mb-8 text-center sm:text-left">
-            <h1 class="font-display text-3xl font-semibold text-stone-900">Welcome back</h1>
-            <p class="mt-2 text-sm text-stone-500">Log in to see your household's expenses and chores.</p>
+            <h1 class="font-display text-3xl font-semibold text-stone-900">Welcome Back</h1>
+            <p class="mt-2 text-sm text-stone-500">Log In to see your household's expenses and chores.</p>
           </div>
           
           {% if form.errors %}
@@ -130,10 +143,10 @@
                 <input type="password" name="password" id="id_password" class="input-field" placeholder="Your password" required>
             </div>
 
-            <button type="submit" class="btn-primary w-full py-3">Log in</button>
+            <button type="submit" class="btn-primary w-full py-3">Log In</button>
 
             <p class="text-center text-sm text-stone-500">
-              Don't have an account? <a href="{% url 'register' %}" class="font-medium hover:underline" style="color: #051f52;">Sign up</a>
+              Don't have an account? <a href="{% url 'register' %}" class="font-medium hover:underline" style="color: #051f52;">Sign Up</a>
             </p>
           </form>
         </div>

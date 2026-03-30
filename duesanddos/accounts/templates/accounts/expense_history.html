@@ -1,0 +1,38 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<div class="p-6 max-w-5xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Expense History</h1>
+        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            {{ active_household.name }}
+        </span>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Date</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Description</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Payer</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for expense in expenses %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ expense.date_spent|date:"M d, Y" }}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ expense.title }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ expense.payer.username }}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-gray-900">${{ expense.amount }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-10 text-center text-gray-500">No expenses found for this household.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -61,9 +61,12 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
-                <a href="{% url 'expenses_list' %}" class="nav-item {% if 'expenses' in request.resolver_match.url_name %}active{% endif %}" title="Expenses">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                <span class="sidebar-text">Expenses</span>
+                <a href="{% url 'expenses_list' %}" class="nav-item {% if request.resolver_match.url_name == 'expenses_list' %}active{% endif %}" title="Expenses">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span class="sidebar-text">Expenses</span>
                 </a>
                 <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chores">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -108,7 +111,7 @@
                         {% csrf_token %}
                         <button type="submit" style="background:none; border:none; color:#ef4444; width: 100%; text-align: left; cursor:pointer; font-weight:600; font-size: 0.85rem; padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            <span>Sign out</span>
+                            <span>Sign Out</span>
                         </button>
                     </form>
                 </div>
@@ -148,7 +151,7 @@
                 <div style="background-color: #eff6ff; color: var(--color-primary-sage, #3b82f6); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                 </div>
-                <span><strong style="color: var(--color-text-main, #1e293b);">${feature}</strong> <span style="color: var(--color-text-muted, #64748b);">is coming soon!</span></span>
+                <span><strong style="color: var(--color-text-main, #1e293b);">${feature}</strong> <span style="color: var(--color-text-muted, #64748b);">Is Coming Soon!</span></span>
             `;
             
             container.appendChild(toast);
@@ -235,14 +238,24 @@
                 }, 400);
             }, 4500);
         }
+    </script>
+ 
+    <!-- Hidden Message Container to avoid IDE errors in script block -->
+    {% if messages %}
+    <div id="django-messages" style="display: none;" aria-hidden="true">
+        {% for message in messages %}
+            <span class="django-message" data-tags="{{ message.tags }}" data-content="{{ message }}"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-        // Catch Django messages from backend
+    <script>
+        // Catch and show Django messages from the backend
         document.addEventListener('DOMContentLoaded', function() {
-            {% if messages %}
-                {% for message in messages %}
-                    showNotificationToast("{{ message.tags|escapejs }}", "{{ message|escapejs }}");
-                {% endfor %}
-            {% endif %}
+            const messages = document.querySelectorAll('.django-message');
+            messages.forEach(el => {
+                showNotificationToast(el.dataset.tags, el.dataset.content);
+            });
         });
 
         function toggleLogout() {
