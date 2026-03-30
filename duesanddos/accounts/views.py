@@ -685,6 +685,7 @@ def dashboard_view(request):
             expense__payer=request.user,
             expense__household=active_hh,
             is_settled=False,
+            expense__date_spent__range=(start_date, end_date),
         )
         .exclude(user=request.user)
         .values("user__username")
@@ -700,6 +701,7 @@ def dashboard_view(request):
             user=request.user,
             expense__household=active_hh,
             is_settled=False,
+            expense__date_spent__range=(start_date, end_date),
         )
         .exclude(expense__payer=request.user)
         .values("expense__payer__username")
@@ -721,6 +723,7 @@ def dashboard_view(request):
                 expense__payer=member.user,
                 expense__household=active_hh,
                 is_settled=False,
+                expense__date_spent__range=(start_date, end_date),
             )
             .exclude(user=member.user)
             .aggregate(models.Sum("amount_owed"))["amount_owed__sum"]
@@ -732,6 +735,7 @@ def dashboard_view(request):
                 user=member.user,
                 expense__household=active_hh,
                 is_settled=False,
+                expense__date_spent__range=(start_date, end_date),
             )
             .exclude(expense__payer=member.user)
             .aggregate(models.Sum("amount_owed"))["amount_owed__sum"]
