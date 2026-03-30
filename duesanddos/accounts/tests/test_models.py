@@ -303,4 +303,3 @@ class ActivityLogModelTests(TestCase):
         logs = ActivityLog.objects.all()
         # Ordering is -timestamp, so log2 should be first
         self.assertEqual(logs[0], log2)
-

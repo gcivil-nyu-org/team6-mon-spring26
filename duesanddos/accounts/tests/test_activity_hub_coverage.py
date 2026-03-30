@@ -151,7 +151,7 @@ class ActivityHubCoverageTests(TestCase):
         )
         url = reverse("edit_expense_pro", args=[expense.id])
 
-        response = self.client.post(
+        self.client.post(
             url,
             {
                 "title": "New Title",
@@ -176,7 +176,7 @@ class ActivityHubCoverageTests(TestCase):
         )
         url = reverse("edit_expense_pro", args=[expense.id])
 
-        response = self.client.post(
+        self.client.post(
             url,
             {
                 "title": "Lunch Edited",
@@ -227,7 +227,7 @@ class ActivityHubCoverageTests(TestCase):
         )
         url = reverse("edit_expense_pro", args=[expense.id])
 
-        response = self.client.post(
+        self.client.post(
             url,
             {
                 "title": "Bill Edited",
