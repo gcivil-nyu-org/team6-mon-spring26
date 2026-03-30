@@ -140,6 +140,33 @@ class ActivityHubCoverageTests(TestCase):
         messages = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertIn("not found", messages[0].lower())
 
+    def test_delete_expense_pro_not_post(self):
+        expense = Expense.objects.create(
+            title="GET Delete",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("delete_expense_pro", args=[expense.id])
+        response = self.client.get(url, follow=True)
+        # Should redirect quietly, not delete
+        self.assertTrue(Expense.objects.filter(id=expense.id).exists())
+        self.assertRedirects(response, reverse("expenses_list"))
+
+    def test_delete_expense_pro_no_household(self):
+        expense = Expense.objects.create(
+            title="Orphan Delete",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        self.profile.active_household = None
+        self.profile.save()
+        url = reverse("delete_expense_pro", args=[expense.id])
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("active household", messages[0].lower())
+
     # --- Edit Expense Pro View Tests ---
 
     def test_edit_expense_pro_success_equal(self):
@@ -244,6 +271,110 @@ class ActivityHubCoverageTests(TestCase):
             expense.splits.get(user=self.user2).amount_owed, Decimal("30.00")
         )
 
+    def test_edit_expense_pro_no_household(self):
+        expense = Expense.objects.create(
+            title="Edit Orphan",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        self.profile.active_household = None
+        self.profile.save()
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("active household", messages[0].lower())
+
+    def test_edit_expense_pro_not_post(self):
+        expense = Expense.objects.create(
+            title="GET Edit",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        self.client.get(url, follow=True)
+        self.assertEqual(expense.title, "GET Edit")
+
+    def test_edit_expense_pro_missing_fields(self):
+        expense = Expense.objects.create(
+            title="Missing Edit",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(url, {"title": ""}, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("required" in m.lower() for m in messages))
+
+    def test_edit_expense_pro_invalid_amount_raw(self):
+        expense = Expense.objects.create(
+            title="Bad Amt",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "Bad Amt Edited",
+                "amount": "abc",
+                "split_type": "EQUAL",
+                "participants": [self.user.id],
+            },
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("invalid amount" in m.lower() for m in messages))
+
+    def test_edit_expense_pro_amount_split_invalid_split_value(self):
+        expense = Expense.objects.create(
+            title="Lunch",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "Lunch Edited",
+                "amount": "15.00",
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id],
+                f"amount_{self.user.id}": "abc",
+                f"amount_{self.user2.id}": "15.00",
+            },
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("valid amount" in m.lower() for m in messages))
+
+    def test_edit_expense_pro_amount_split_negative_amount(self):
+        expense = Expense.objects.create(
+            title="Lunch",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "Lunch Edited",
+                "amount": "15.00",
+                "split_type": "AMOUNT",
+                "participants": [self.user.id, self.user2.id],
+                f"amount_{self.user.id}": "-5.00",
+                f"amount_{self.user2.id}": "20.00",
+            },
+            follow=True,
+        )
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("negative" in m.lower() for m in messages))
+
     # --- Settle Split View Tests ---
 
     def test_settle_split_success_by_payee(self):
@@ -284,6 +415,53 @@ class ActivityHubCoverageTests(TestCase):
         response = self.client.post(url, follow=True)
         messages = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertIn("already settled", messages[0].lower())
+
+    def test_settle_split_no_household(self):
+        expense = Expense.objects.create(
+            title="Not Home",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        split = ExpenseSplit.objects.create(
+            expense=expense, user=self.user2, amount_owed=Decimal("10.00")
+        )
+        self.profile.active_household = None
+        self.profile.save()
+        url = reverse("settle_split", args=[split.id])
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("active household" in m.lower() for m in messages))
+
+    def test_settle_split_not_found(self):
+        url = reverse("settle_split", args=[99999])
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("not found" in m.lower() for m in messages))
+
+    def test_settle_split_unauthorized(self):
+        # A 3rd user trying to settle User 2's debt to User 1
+        user3 = User.objects.create_user(username="stranger", password=TEST_PASSWORD)
+        Profile.objects.create(user=user3, active_household=self.household)
+        HouseholdMember.objects.create(
+            user=user3, household=self.household, role="Member"
+        )
+
+        expense = Expense.objects.create(
+            title="Debt",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        split = ExpenseSplit.objects.create(
+            expense=expense, user=self.user2, amount_owed=Decimal("10.00")
+        )
+        url = reverse("settle_split", args=[split.id])
+
+        self.client.login(username="stranger", password=TEST_PASSWORD)
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("permission" in m.lower() for m in messages))
 
     # --- Dashboard View Date Filtering ---
 
