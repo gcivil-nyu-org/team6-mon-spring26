@@ -303,3 +303,9 @@ class ActivityLogModelTests(TestCase):
         logs = ActivityLog.objects.all()
         # Ordering is -timestamp, so log2 should be first
         self.assertEqual(logs[0], log2)
+
+    def test_activity_log_str(self):
+        expected_str = (
+            f"{self.user.username} - {self.log.action} at {self.log.timestamp}"
+        )
+        self.assertEqual(str(self.log), expected_str)

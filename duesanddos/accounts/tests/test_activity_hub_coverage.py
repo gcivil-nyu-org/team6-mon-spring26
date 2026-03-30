@@ -271,6 +271,25 @@ class ActivityHubCoverageTests(TestCase):
             expense.splits.get(user=self.user2).amount_owed, Decimal("30.00")
         )
 
+    def test_edit_expense_pro_not_found(self):
+        url = reverse("edit_expense_pro", args=[99999])
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("not found" in m.lower() for m in messages))
+
+    def test_edit_expense_pro_unauthorized(self):
+        expense = Expense.objects.create(
+            title="Edit Auth",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        self.client.login(username="roommate1", password=TEST_PASSWORD)
+        response = self.client.post(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("payer can edit" in m.lower() for m in messages))
+
     def test_edit_expense_pro_no_household(self):
         expense = Expense.objects.create(
             title="Edit Orphan",
@@ -501,3 +520,31 @@ class ActivityHubCoverageTests(TestCase):
 
         self.assertEqual(response.context["total_spent"], Decimal("10.00"))
         self.assertEqual(response.context["you_are_owed"], 5.0)
+
+    def test_dashboard_invalid_date_fallback(self):
+        url = reverse("dashboard")
+        response = self.client.get(url, {"start_date": "bad-date", "end_date": "worse"})
+        self.assertEqual(response.status_code, 200)
+
+    # --- Expense History View Tests ---
+
+    def test_expense_history_view_success(self):
+        Expense.objects.create(
+            title="Old",
+            amount=Decimal("10.00"),
+            payer=self.user,
+            household=self.household,
+        )
+        url = reverse("expense_history")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/expense_history.html")
+        self.assertEqual(len(response.context["expenses"]), 1)
+
+    def test_expense_history_view_no_household(self):
+        self.profile.active_household = None
+        self.profile.save()
+        url = reverse("expense_history")
+        response = self.client.get(url, follow=True)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("select a household", messages[0].lower())
