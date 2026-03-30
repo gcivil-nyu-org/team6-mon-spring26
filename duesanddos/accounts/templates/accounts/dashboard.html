@@ -99,6 +99,12 @@
                     <p class="text-[10px] text-gray-400">Everyone Is Settled Up</p>
                 {% endfor %}
             </div>
+            <div class="mt-4 pt-4 border-t border-gray-50">
+                <a href="{% url 'expenses_list' %}" class="text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 transition-colors tracking-widest flex items-center gap-2">
+                    Manage & Settle 
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+            </div>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
@@ -110,6 +116,12 @@
                 {% empty %}
                     <p class="text-[10px] text-gray-400">You Have No Debts</p>
                 {% endfor %}
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-50">
+                <a href="{% url 'expenses_list' %}" class="text-[10px] font-black uppercase text-[#ef4444] hover:text-red-700 transition-colors tracking-widest flex items-center gap-2">
+                    Pay & Settle
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
             </div>
         </div>
     </div>

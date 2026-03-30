@@ -684,7 +684,6 @@ def dashboard_view(request):
         ExpenseSplit.objects.filter(
             expense__payer=request.user,
             expense__household=active_hh,
-            expense__date_spent__range=(start_date, end_date),
             is_settled=False,
         )
         .exclude(user=request.user)
@@ -700,7 +699,6 @@ def dashboard_view(request):
         ExpenseSplit.objects.filter(
             user=request.user,
             expense__household=active_hh,
-            expense__date_spent__range=(start_date, end_date),
             is_settled=False,
         )
         .exclude(expense__payer=request.user)
@@ -722,7 +720,6 @@ def dashboard_view(request):
             ExpenseSplit.objects.filter(
                 expense__payer=member.user,
                 expense__household=active_hh,
-                expense__date_spent__range=(start_date, end_date),
                 is_settled=False,
             )
             .exclude(user=member.user)
@@ -734,7 +731,6 @@ def dashboard_view(request):
             ExpenseSplit.objects.filter(
                 user=member.user,
                 expense__household=active_hh,
-                expense__date_spent__range=(start_date, end_date),
                 is_settled=False,
             )
             .exclude(expense__payer=member.user)
