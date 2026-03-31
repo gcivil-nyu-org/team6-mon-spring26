@@ -16,6 +16,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Accounts app routes
     path("accounts/", include("accounts.urls")),
+    path("accounts/", include("households.urls")),
+    path("accounts/", include("expenses.urls")),
+    path("accounts/", include("activities.urls")),
     # Allauth routes (e.g., google/login/, etc.)
     path("accounts/", include("allauth.urls")),
 ]
