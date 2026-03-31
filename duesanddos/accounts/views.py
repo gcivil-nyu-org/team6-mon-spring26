@@ -151,7 +151,12 @@ def delete_account_view(request):
 @login_required
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
-    active_hh = profile.active_household
+    try:
+        active_hh = profile.active_household
+    except Household.DoesNotExist:
+        active_hh = None
+        profile.active_household = None
+        profile.save(update_fields=["active_household"])
 
     if not active_hh:
         return render(request, "accounts/dashboard.html", {"no_household": True})
