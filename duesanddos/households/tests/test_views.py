@@ -379,3 +379,73 @@ class HouseholdSettingsViewTests(TestCase):
     def test_unrecognized_action_redirects(self):
         response = self.client.post(self.url, {"action": "bogus_action"})
         self.assertEqual(response.status_code, 302)
+
+    def test_update_role_non_admin_fails(self):
+        member_user = CustomUser.objects.create_user(
+            username="nonadmin",
+            email="nonadmin@example.com",
+            password=TEST_PASSWORD,
+        )
+        Profile.objects.create(user=member_user, active_household=self.household)
+        HouseholdMember.objects.create(
+            user=member_user, household=self.household, role="Member"
+        )
+        self.client.logout()
+        self.client.login(username="nonadmin", password=TEST_PASSWORD)
+        response = self.client.post(
+            self.url,
+            {
+                "action": "update_role",
+                "user_id": str(self.user.id),
+                "role": "Member",
+            },
+            follow=True,
+        )
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(
+            any("only admins can manage roles" in str(m).lower() for m in msgs)
+        )
+
+    def test_last_admin_leave_successor_not_found(self):
+        response = self.client.post(
+            self.url,
+            {
+                "action": "remove_member",
+                "user_id": str(self.user.id),
+                "new_admin_id": "9999",  # Non-existent successor
+            },
+            follow=True,
+        )
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("successor not found" in str(m).lower() for m in msgs))
+
+    def test_remove_member_non_admin_fails(self):
+        victim = CustomUser.objects.create_user(
+            username="victim2",
+            email="victim2@example.com",
+            password=TEST_PASSWORD,
+        )
+        HouseholdMember.objects.create(
+            user=victim, household=self.household, role="Member"
+        )
+
+        leaver = CustomUser.objects.create_user(
+            username="leaver2",
+            email="leaver2@example.com",
+            password=TEST_PASSWORD,
+        )
+        Profile.objects.create(user=leaver, active_household=self.household)
+        HouseholdMember.objects.create(
+            user=leaver, household=self.household, role="Member"
+        )
+
+        self.client.logout()
+        self.client.login(username="leaver2", password=TEST_PASSWORD)
+        # Try to remove someone else
+        response = self.client.post(
+            self.url,
+            {"action": "remove_member", "user_id": str(victim.id)},
+            follow=True,
+        )
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("only admins can remove" in str(m).lower() for m in msgs))
