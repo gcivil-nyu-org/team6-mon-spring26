@@ -153,7 +153,47 @@ class ExpenseSplit(models.Model):
         Expense, on_delete=models.CASCADE, related_name="splits"
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount_owed = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_owed = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_settled = models.BooleanField(default=False)
+    settled_at = models.DateTimeField(null=True, blank=True)
+    settled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="settlements_made",
+    )
 
     def __str__(self):
-        return f"{self.user.username} owes ${self.amount_owed} for {self.expense.title}"
+        status = " (Settled)" if self.is_settled else ""
+        return (
+            f"{self.user.username} owes ${self.amount_owed} "
+            f"for {self.expense.title}{status}"
+        )
+
+
+class ActivityLog(models.Model):
+    ACTION_CHOICES = (
+        ("EXPENSE_ADDED", "Expense Added"),
+        ("PAYMENT_SETTLED", "Payment Settled"),
+        ("HOUSEHOLD_JOINED", "Joined Household"),
+        ("MEMBER_REMOVED", "Member Removed"),
+        ("EXPENSE_DELETED", "Expense Deleted"),
+        ("EXPENSE_EDITED", "Expense Edited"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activities"
+    )
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="activities"
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    details = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.action} at {self.timestamp}"
