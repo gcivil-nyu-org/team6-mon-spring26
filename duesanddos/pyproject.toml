@@ -43,3 +43,21 @@ dependencies = [
     "typing-extensions==4.15.0",
     "urllib3==2.6.3",
 ]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "duesanddos/settings.py",
+    "duesanddos/wsgi.py",
+    "duesanddos/asgi.py",
+    "manage.py",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

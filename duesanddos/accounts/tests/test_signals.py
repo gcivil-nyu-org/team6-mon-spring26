@@ -82,3 +82,21 @@ class SignalTests(TestCase):
         # Should not crash
         user_signed_up.send(sender=User, request=None, user=self.user)
         self.assertFalse(bool(self.profile.avatar))
+
+    @patch("accounts.signals.requests.get")
+    def test_fetch_gmail_photo_existing_avatar(self, mock_get):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.profile.avatar = SimpleUploadedFile(
+            "existing.jpg", b"old image", content_type="image/jpeg"
+        )
+        self.profile.save()
+
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="google",
+            extra_data={"picture": "http://example.com/photo.jpg"},
+        )
+
+        user_signed_up.send(sender=User, request=None, user=self.user)
+        mock_get.assert_not_called()
