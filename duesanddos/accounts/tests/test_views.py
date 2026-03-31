@@ -3,6 +3,7 @@ import shutil
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from accounts.models import CustomUser, Profile
+from households.models import Household
 
 TEST_PASSWORD = "TestPass123!"
 NEW_PASSWORD = "NewSecure456!"
@@ -40,11 +41,108 @@ class AuthAndProfileTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/edit_profile.html")
 
+    def test_profile_view_post_save_profile(self):
+        url = reverse("profile")
+        data = {
+            "save_profile": "1",
+            "first_name": "NewFirst",
+            "last_name": "NewLast",
+            "email": self.user.email,
+            "username": self.user.username,
+            "bio": "New Bio",
+            "notifications_enabled": True,
+        }
+        response = self.client.post(url, data)
+        self.assertRedirects(response, url)
+
+    def test_profile_view_post_change_password(self):
+        url = reverse("profile")
+        data = {
+            "change_password": "1",
+            "old_password": TEST_PASSWORD,
+            "new_password1": NEW_PASSWORD,
+            "new_password2": NEW_PASSWORD,
+        }
+        response = self.client.post(url, data)
+        self.assertRedirects(response, url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(NEW_PASSWORD))
+
+    def test_profile_view_post_invalid(self):
+        url = reverse("profile")
+        response = self.client.post(url, {"something_else": "1"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_logout_get(self):
+        url = reverse("logout")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/logout.html")
+
+    def test_delete_account_view_get(self):
+        url = reverse("delete_account")
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_delete_account_view_post_wrong_password(self):
+        url = reverse("delete_account")
+        response = self.client.post(url, {"confirmation": "wrongpass"})
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_delete_account_view_post_no_password_wrong_word(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        url = reverse("delete_account")
+        response = self.client.post(url, {"confirmation": "delete"})
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_delete_account_view_post_correct_password(self):
+        url = reverse("delete_account")
+        response = self.client.post(url, {"confirmation": TEST_PASSWORD})
+        self.assertRedirects(response, reverse("login"))
+        self.assertFalse(CustomUser.objects.filter(username="testuser").exists())
+
     def test_dashboard_view_get(self):
         url = reverse("dashboard")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/dashboard.html")
+
+    def test_dashboard_valid_dates(self):
+        h = Household.objects.create(name="Test HH", invite_code="TEST2")
+        from households.models import HouseholdMember
+
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+        url = reverse("dashboard")
+        response = self.client.get(
+            url, {"start_date": "2024-01-01", "end_date": "2024-01-31"}
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_household_does_not_exist(self):
+        self.profile.active_household_id = 99999
+        self.profile.save()
+        url = reverse("dashboard")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.active_household)
+
+    def test_dashboard_invalid_dates(self):
+        h = Household.objects.create(name="Test HH", invite_code="TEST1")
+        from households.models import HouseholdMember
+
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+        url = reverse("dashboard")
+        response = self.client.get(
+            url, {"start_date": "invalid", "end_date": "invalid"}
+        )
+        self.assertEqual(response.status_code, 200)
 
     def test_logout(self):
         url = reverse("logout")
