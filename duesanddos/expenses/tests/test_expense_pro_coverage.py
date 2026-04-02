@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
-from accounts.models import Profile, Household, HouseholdMember
+from accounts.models import Profile
+from households.models import Household, HouseholdMember
 
 User = get_user_model()
 TEST_PASSWORD = "TestPass123!"

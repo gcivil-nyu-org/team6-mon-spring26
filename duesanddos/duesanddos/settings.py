@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "storages",
     "accounts",
+    "households",
+    "expenses",
+    "activities",
     # django-allauth
     "allauth",
     "allauth.account",

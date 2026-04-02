@@ -75,6 +75,11 @@ input[type="password"]::placeholder,
   text-transform: capitalize;
 }
 
+/* Utility classes to override unwanted text-transform rules (e.g. for displaying emails) */
+.normal-case { text-transform: none !important; }
+.lowercase { text-transform: lowercase !important; }
+.email-text { text-transform: none !important; }
+
 
 input[type="text"], 
 input[type="number"], 
