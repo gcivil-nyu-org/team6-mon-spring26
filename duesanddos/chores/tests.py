@@ -63,6 +63,17 @@ class ChoresBaseTestCase(TestCase):
             chore.assignees.set(assignees)
         return chore
 
+    def test_create_chore_helper_sets_assignees(self):
+        chore = self.create_chore(
+            description="Assigned helper chore",
+            assignees=[self.user, self.other_user],
+        )
+
+        self.assertEqual(
+            set(chore.assignees.all()),
+            {self.user, self.other_user},
+        )
+
 
 class ChoreAdminAndConfigTests(TestCase):
     def test_app_config_values(self):
