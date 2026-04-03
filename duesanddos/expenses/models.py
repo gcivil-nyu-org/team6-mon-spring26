@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-
 class Expense(models.Model):
     SPLIT_CHOICES = (
         ("EQUAL", "Split Equally"),
@@ -21,6 +20,9 @@ class Expense(models.Model):
     split_type = models.CharField(max_length=10, choices=SPLIT_CHOICES, default="EQUAL")
     date_spent = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_spent', '-created_at']
 
     def __str__(self):
         return f"{self.title} (${self.amount})"
@@ -48,3 +50,29 @@ class ExpenseSplit(models.Model):
             f"{self.user.username} owes ${self.amount_owed} "
             f"for {self.expense.title}{status}"
         )
+
+
+class Settlement(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Confirmation'),
+        ('CONFIRMED', 'Confirmed'),
+        ('REJECTED', 'Rejected'),
+        ('DELETE_PENDING', 'Deletion Requested'),
+    )
+
+    payer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="payments_sent")
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="payments_received")
+    # Using "households.Household" because it is in a different app now
+    household = models.ForeignKey("households.Household", on_delete=models.CASCADE, related_name="settlements")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    
+    related_splits = models.ManyToManyField('ExpenseSplit', blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.payer.username} -> {self.receiver.username}: ${self.amount} ({self.status})"
