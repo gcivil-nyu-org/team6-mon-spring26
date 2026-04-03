@@ -6,11 +6,6 @@ urlpatterns = [
     path("expenses/", views.expenses_list_view, name="expenses_list"),
     path("expenses/add/", views.add_expense_pro, name="add_expense_pro"),
     path(
-        "settle-split/<int:settlement_id>/",
-        views.confirm_settlement,
-        name="settle_split",
-    ),
-    path(
         "expenses/delete/<int:expense_id>/",
         views.delete_expense_pro,
         name="delete_expense_pro",
@@ -31,4 +26,7 @@ urlpatterns = [
         views.approve_delete_settlement,
         name="approve_delete_settlement",
     ),
+    path("history/", views.expenses_list_view, name="expense_history"),
+    path("edit/<int:expense_id>/", views.edit_expense_pro, name="edit_expense_pro"),
+    path("settle-split/<int:split_id>/", views.settle_split, name="settle_split"),
 ]

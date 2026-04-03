@@ -69,7 +69,6 @@ class Settlement(models.Model):
         on_delete=models.CASCADE,
         related_name="payments_received",
     )
-    # Using "households.Household" because it is in a different app now
     household = models.ForeignKey(
         "households.Household", on_delete=models.CASCADE, related_name="settlements"
     )
