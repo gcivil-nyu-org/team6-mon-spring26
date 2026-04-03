@@ -1,0 +1,104 @@
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 9999px;
+    border: 1px solid var(--color-gray-border, #e5e7eb);
+    background: white;
+    color: var(--color-text-main, #1f2937);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+    background: var(--color-gray-bg, #f9fafb);
+}
+
+.filter-chip.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 9999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.status-pill.subtle {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.weekday-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: white;
+    border: 1px solid var(--color-gray-border, #e5e7eb);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-main, #1f2937);
+}
+
+.weekday-pill input {
+    width: 18px;
+    height: 18px;
+}
+
+#choresCalendar .fc {
+    font-family: 'Inter', sans-serif;
+}
+
+#choresCalendar .fc-toolbar-title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #111827;
+}
+
+#choresCalendar .fc-button {
+    border-radius: 14px !important;
+    padding: 0.55rem 0.9rem !important;
+    border: 1px solid #e5e7eb !important;
+    background: white !important;
+    color: #1f2937 !important;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    box-shadow: none !important;
+}
+
+#choresCalendar .fc-button:hover {
+    background: #f9fafb !important;
+}
+
+#choresCalendar .fc-button-primary:not(:disabled).fc-button-active {
+    background: #2563eb !important;
+    color: white !important;
+    border-color: #2563eb !important;
+}
+
+#choresCalendar .fc-daygrid-event,
+#choresCalendar .fc-timegrid-event {
+    border-radius: 10px;
+    border: none;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 700;
+}

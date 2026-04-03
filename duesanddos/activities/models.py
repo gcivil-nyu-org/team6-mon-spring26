@@ -10,6 +10,8 @@ class ActivityLog(models.Model):
         ("MEMBER_REMOVED", "Member Removed"),
         ("EXPENSE_DELETED", "Expense Deleted"),
         ("EXPENSE_EDITED", "Expense Edited"),
+        ("CHORE_CREATED", "Chore Created"),
+        ("CHORE_UPDATED", "Chore Updated"),
     )
 
     user = models.ForeignKey(

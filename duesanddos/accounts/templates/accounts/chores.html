@@ -1,0 +1,306 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Chores | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/chores.css' %}?v=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Chores</h1>
+        <button
+            type="button"
+            onclick="toggleChoreForm()"
+            class="btn-primary"
+            style="width: auto; padding: 10px 24px; margin-top: 0;"
+        >
+            + Add Chore
+        </button>
+    </div>
+
+    <div id="choreFormCard" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
+        <h3 class="text-xl font-black mb-6">New Chore</h3>
+
+        <form method="POST" action="{% url 'add_chore' %}" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <input type="text" name="description" placeholder="Chore description" required>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Chore Type</label>
+                    <select name="repeat_type" id="repeatType" class="mt-1 expense-select" onchange="toggleRepeatFields()">
+                        <option value="ONE_TIME">One-time</option>
+                        <option value="DAILY">Recurring - Daily</option>
+                        <option value="WEEKLY">Recurring - Weekly</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 font-bold text-gray-700">
+                        <input
+                            type="checkbox"
+                            name="has_due_date"
+                            id="hasDueDate"
+                            onchange="toggleDueFields()"
+                            class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                        >
+                        <span>Has due date</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="dueFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Date</label>
+                    <input type="date" name="due_date" id="dueDateField" class="mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Time (Optional)</label>
+                    <input type="time" name="due_time" class="mt-1">
+                </div>
+            </div>
+
+            <div id="recurringFields" class="hidden bg-gray-50 p-6 rounded-[1.5rem] space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Date</label>
+                        <input type="date" name="start_date" id="startDateField" class="mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Date (Optional)</label>
+                        <input type="date" name="end_date" class="mt-1">
+                    </div>
+                </div>
+
+                <div id="weeklyFields" class="hidden">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Repeat On</label>
+                    <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_monday"> Monday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_tuesday"> Tuesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_wednesday"> Wednesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_thursday"> Thursday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_friday"> Friday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_saturday"> Saturday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_sunday"> Sunday</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-[1.5rem]">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assign Household Members</label>
+                <div class="mt-4 space-y-3">
+                    {% for member in members %}
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                        <label class="flex items-center gap-3 w-full">
+                            <input
+                                type="checkbox"
+                                name="assignees"
+                                value="{{ member.user.id }}"
+                                class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                            >
+                            <span class="font-bold text-gray-700">
+                                {{ member.user.get_full_name|default:member.user.username }}
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button
+                    type="button"
+                    onclick="toggleChoreForm()"
+                    class="btn-outline"
+                    style="margin-top: 0;"
+                >
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn-primary" style="margin-top: 0;">
+                    Save Chore
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
+        <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+                <h3 class="text-xl font-black text-gray-900 tracking-tight">To-Do List</h3>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="?time_filter=today&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'today' %}active{% endif %}">
+                    Today
+                </a>
+                <a href="?time_filter=week&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'week' %}active{% endif %}">
+                    This Week
+                </a>
+                <a href="?time_filter=all&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'all' %}active{% endif %}">
+                    All Chores
+                </a>
+            </div>
+        </div>
+
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <input type="hidden" name="time_filter" value="{{ time_filter }}">
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Scope</label>
+                <select name="scope" class="mt-1 expense-select">
+                    <option value="household" {% if scope == "household" %}selected{% endif %}>Entire Household</option>
+                    <option value="mine" {% if scope == "mine" %}selected{% endif %}>My Chores</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member</label>
+                <select name="member" class="mt-1 expense-select">
+                    <option value="">All Members</option>
+                    {% for member in members %}
+                    <option value="{{ member.user.id }}" {% if member_filter == member.user.id|stringformat:"s" %}selected{% endif %}>
+                        {{ member.user.get_full_name|default:member.user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="btn-primary" style="margin-top: 0;">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+
+        <div class="space-y-3">
+            {% for item in occurrences %}
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <div class="font-bold text-gray-900 text-lg">{{ item.chore.description }}</div>
+
+                        <div class="text-sm text-gray-500 mt-1">
+                            {% if item.is_unscheduled %}
+                                Unscheduled
+                            {% elif item.date %}
+                                {{ item.date|date:"D, M j, Y" }}
+                                {% if item.chore.due_time %}
+                                    at {{ item.chore.due_time|time:"g:i A" }}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <div class="text-xs text-gray-400 mt-2">
+                            Assigned to:
+                            {% for user in item.chore.assignees.all %}
+                                {{ user.username }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                Unassigned
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="status-pill">
+                            {{ item.chore.get_repeat_type_display }}
+                        </span>
+
+                        {% if item.chore.has_due_date and item.chore.repeat_type == "ONE_TIME" %}
+                            <span class="status-pill subtle">Due Date</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="py-12 text-center text-gray-400 font-medium">
+                No chores found for this filter.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+            <h3 class="text-xl font-black text-gray-900 tracking-tight">Calendar</h3>
+        </div>
+        <div id="choresCalendar"></div>
+    </div>
+</div>
+
+<script>
+function toggleChoreForm() {
+    document.getElementById("choreFormCard").classList.toggle("hidden");
+}
+
+function toggleRepeatFields() {
+    const repeatType = document.getElementById("repeatType").value;
+    const recurringFields = document.getElementById("recurringFields");
+    const weeklyFields = document.getElementById("weeklyFields");
+    const startDateField = document.getElementById("startDateField");
+
+    if (repeatType === "ONE_TIME") {
+        recurringFields.classList.add("hidden");
+        weeklyFields.classList.add("hidden");
+        startDateField.required = false;
+    } else {
+        recurringFields.classList.remove("hidden");
+        startDateField.required = true;
+
+        if (repeatType === "WEEKLY") {
+            weeklyFields.classList.remove("hidden");
+        } else {
+            weeklyFields.classList.add("hidden");
+        }
+    }
+}
+
+function toggleDueFields() {
+    const hasDueDate = document.getElementById("hasDueDate").checked;
+    const dueFields = document.getElementById("dueFields");
+    const repeatType = document.getElementById("repeatType").value;
+    const dueDateField = document.getElementById("dueDateField");
+
+    if (hasDueDate) {
+        dueFields.classList.remove("hidden");
+        dueDateField.required = repeatType === "ONE_TIME";
+    } else {
+        dueFields.classList.add("hidden");
+        dueDateField.required = false;
+        dueDateField.value = "";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    toggleRepeatFields();
+    toggleDueFields();
+
+    const calendarEl = document.getElementById("choresCalendar");
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,listWeek"
+        },
+        events: "{% url 'chores_calendar_events' %}",
+        height: "auto",
+        dayMaxEvents: true,
+        nowIndicator: true,
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}

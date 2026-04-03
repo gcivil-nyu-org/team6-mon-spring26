@@ -68,10 +68,12 @@
                     </svg>
                     <span class="sidebar-text">Expenses</span>
                 </a>
-                <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chores">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <a href="{% url 'chores_list' %}" class="nav-item {% if request.resolver_match.url_name == 'chores_list' %}active{% endif %}" title="Chores">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
+                        <path d="M20 6L9 17l-5-5"></path>
+                    </svg>
                     <span class="sidebar-text">Chores</span>
-                </button>
+                </a>
                 <a href="{% url 'activity_log' %}" class="nav-item {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}" title="Activity Hub">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     <span class="sidebar-text">Activity Hub</span>

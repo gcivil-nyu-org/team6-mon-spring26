@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "households",
     "expenses",
     "activities",
+    "chores",
     # django-allauth
     "allauth",
     "allauth.account",
