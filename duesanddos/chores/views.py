@@ -47,7 +47,6 @@ def chores_list_view(request):
 
     time_filter = request.GET.get("time_filter", "today")
     member_filter = request.GET.get("member", "").strip()
-    scope = request.GET.get("scope", "household")
 
     if time_filter == "week":
         range_start, range_end = start_of_week, end_of_week
@@ -68,9 +67,6 @@ def chores_list_view(request):
 
     for chore in chores:
         assignee_ids = list(chore.assignees.values_list("id", flat=True))
-
-        if scope == "mine" and request.user.id not in assignee_ids:
-            continue
 
         if member_filter and int(member_filter) not in assignee_ids:
             continue
@@ -93,6 +89,7 @@ def chores_list_view(request):
 
     occurrences.sort(
         key=lambda item: (
+            0 if item["is_unscheduled"] else 1,
             item["date"] or date.max,
             item["chore"].due_time or datetime.min.time(),
             item["chore"].description.lower(),
@@ -110,7 +107,6 @@ def chores_list_view(request):
             "occurrences": occurrences,
             "time_filter": time_filter,
             "member_filter": member_filter,
-            "scope": scope,
             "today": today,
             "active_household": active_hh,
         },

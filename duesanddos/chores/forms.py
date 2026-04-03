@@ -39,6 +39,11 @@ class ChoreForm(forms.ModelForm):
     def __init__(self, *args, household=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.fields["due_date"].required = False
+        self.fields["due_time"].required = False
+        self.fields["start_date"].required = False
+        self.fields["end_date"].required = False
+
         if household is not None:
             self.fields["assignees"].queryset = CustomUser.objects.filter(
                 memberships__household=household

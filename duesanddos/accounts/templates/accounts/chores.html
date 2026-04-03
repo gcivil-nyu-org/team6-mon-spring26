@@ -141,28 +141,20 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <a href="?time_filter=today&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'today' %}active{% endif %}">
+                <a href="?time_filter=all{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'all' %}active{% endif %}">
+                    All Chores
+                </a>
+                <a href="?time_filter=today{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'today' %}active{% endif %}">
                     Today
                 </a>
-                <a href="?time_filter=week&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'week' %}active{% endif %}">
+                <a href="?time_filter=week{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'week' %}active{% endif %}">
                     This Week
-                </a>
-                <a href="?time_filter=all&scope={{ scope }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'all' %}active{% endif %}">
-                    All Chores
                 </a>
             </div>
         </div>
 
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <input type="hidden" name="time_filter" value="{{ time_filter }}">
-
-            <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Scope</label>
-                <select name="scope" class="mt-1 expense-select">
-                    <option value="household" {% if scope == "household" %}selected{% endif %}>Entire Household</option>
-                    <option value="mine" {% if scope == "mine" %}selected{% endif %}>My Chores</option>
-                </select>
-            </div>
 
             <div>
                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member</label>
