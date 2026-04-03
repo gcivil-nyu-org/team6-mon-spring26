@@ -5,7 +5,7 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
-<link rel="stylesheet" href="{% static 'css/chores.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/chores.css' %}?v=2">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 {% endblock %}
@@ -117,12 +117,7 @@
             </div>
 
             <div class="flex flex-col sm:flex-row gap-3">
-                <button
-                    type="button"
-                    onclick="toggleChoreForm()"
-                    class="btn-outline"
-                    style="margin-top: 0;"
-                >
+                <button type="button" onclick="toggleChoreForm()" class="btn-outline" style="margin-top: 0;">
                     Cancel
                 </button>
 
@@ -178,7 +173,7 @@
         <div class="space-y-3">
             {% for item in occurrences %}
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <div class="font-bold text-gray-900 text-lg">{{ item.chore.description }}</div>
 
@@ -203,14 +198,83 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="status-pill">
-                            {{ item.chore.get_repeat_type_display }}
-                        </span>
+                    <div class="flex flex-col md:items-end gap-2">
+                        <div class="flex flex-wrap items-center gap-2 md:justify-end">
+                            <span class="status-pill">
+                                {{ item.chore.get_repeat_type_display }}
+                            </span>
 
-                        {% if item.chore.has_due_date and item.chore.repeat_type == "ONE_TIME" %}
-                            <span class="status-pill subtle">Due Date</span>
-                        {% endif %}
+                            {% if item.chore.has_due_date and item.chore.repeat_type == "ONE_TIME" %}
+                                <span class="status-pill subtle">Due Date</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 md:justify-end">
+                            <a href="{% url 'edit_chore' item.chore.id %}" class="action-link edit-link">
+                                Edit
+                            </a>
+
+                            {% if item.chore.repeat_type == "DAILY" or item.chore.repeat_type == "WEEKLY" %}
+                                <div class="relative inline-block text-left delete-dropdown-wrapper">
+                                    <button
+                                        type="button"
+                                        class="action-link delete-link dropdown-toggle"
+                                        onclick="toggleDeleteMenu(this)"
+                                    >
+                                        Delete ▼
+                                    </button>
+
+                                    <div class="delete-dropdown-menu hidden">
+                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="delete_scope" value="occurrence">
+                                            {% if item.date %}
+                                                <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
+                                            {% endif %}
+                                            <button
+                                                type="submit"
+                                                class="delete-dropdown-item"
+                                                {% if not item.date %}disabled{% endif %}
+                                            >
+                                                Delete Single Occurrence
+                                            </button>
+                                        </form>
+
+                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}" onsubmit="return confirm('Delete all occurrences of this recurring chore?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="delete_scope" value="series">
+                                            {% if item.date %}
+                                                <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
+                                            {% endif %}
+                                            <button type="submit" class="delete-dropdown-item danger">
+                                                Delete All Occurrences
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <form method="POST" action="{% url 'delete_chore' item.chore.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_scope" value="series">
+                                    {% if item.date %}
+                                        <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
+                                    {% endif %}
+                                    <button type="submit" class="action-link delete-link">
+                                        Delete
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            <form method="POST" action="{% url 'complete_chore_occurrence' item.chore.id %}">
+                                {% csrf_token %}
+                                {% if item.date %}
+                                    <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
+                                {% endif %}
+                                <button type="submit" class="action-link complete-link">
+                                    Mark Complete
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -273,6 +337,27 @@ function toggleDueFields() {
         dueDateField.value = "";
     }
 }
+
+function toggleDeleteMenu(button) {
+    const wrapper = button.closest(".delete-dropdown-wrapper");
+    const menu = wrapper.querySelector(".delete-dropdown-menu");
+
+    document.querySelectorAll(".delete-dropdown-menu").forEach((dropdown) => {
+        if (dropdown !== menu) {
+            dropdown.classList.add("hidden");
+        }
+    });
+
+    menu.classList.toggle("hidden");
+}
+
+document.addEventListener("click", function (event) {
+    if (!event.target.closest(".delete-dropdown-wrapper")) {
+        document.querySelectorAll(".delete-dropdown-menu").forEach((menu) => {
+            menu.classList.add("hidden");
+        });
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     toggleRepeatFields();

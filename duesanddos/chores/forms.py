@@ -71,7 +71,9 @@ class ChoreForm(forms.ModelForm):
             self.add_error("due_date", "Please select a due date.")
 
         if repeat_type in ["DAILY", "WEEKLY"] and not start_date:
-            self.add_error("start_date", "Please select a start date for recurring chores.")
+            self.add_error(
+                "start_date", "Please select a start date for recurring chores."
+            )
 
         if repeat_type == "WEEKLY" and not any(weekday_flags):
             raise forms.ValidationError(

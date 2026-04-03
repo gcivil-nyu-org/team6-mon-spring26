@@ -12,6 +12,8 @@ class ActivityLog(models.Model):
         ("EXPENSE_EDITED", "Expense Edited"),
         ("CHORE_CREATED", "Chore Created"),
         ("CHORE_UPDATED", "Chore Updated"),
+        ("CHORE_DELETED", "Chore Deleted"),
+        ("CHORE_COMPLETED", "Chore Completed"),
     )
 
     user = models.ForeignKey(

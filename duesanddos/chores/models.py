@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils import timezone
 
 
 class Chore(models.Model):
@@ -25,13 +24,10 @@ class Chore(models.Model):
     )
 
     has_due_date = models.BooleanField(default=False)
-
-    # One-time chores use due_date (+ optional due_time)
     due_date = models.DateField(null=True, blank=True)
     due_time = models.TimeField(null=True, blank=True)
 
-    # Recurring chores use start_date / end_date
-    start_date = models.DateField(default=timezone.localdate)
+    start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
     repeat_monday = models.BooleanField(default=False)
@@ -67,7 +63,9 @@ class Chore(models.Model):
     def clean(self):
         if self.repeat_type == "ONE_TIME":
             if self.has_due_date and not self.due_date:
-                raise ValidationError("One-time chores with due dates must include a due date.")
+                raise ValidationError(
+                    "One-time chores with due dates must include a due date."
+                )
 
         if self.repeat_type in ["DAILY", "WEEKLY"] and not self.start_date:
             raise ValidationError("Recurring chores must include a start date.")
@@ -84,7 +82,9 @@ class Chore(models.Model):
                     self.repeat_sunday,
                 ]
             ):
-                raise ValidationError("Weekly chores must repeat on at least one weekday.")
+                raise ValidationError(
+                    "Weekly chores must repeat on at least one weekday."
+                )
 
         if self.end_date and self.start_date and self.end_date < self.start_date:
             raise ValidationError("End date cannot be before start date.")
@@ -110,6 +110,9 @@ class Chore(models.Model):
                 return False
             return self.due_date == target_date
 
+        if not self.start_date:
+            return False
+
         if target_date < self.start_date:
             return False
 
@@ -123,3 +126,47 @@ class Chore(models.Model):
             return self.weekly_days.get(target_date.weekday(), False)
 
         return False
+
+
+class ChoreCompletion(models.Model):
+    chore = models.ForeignKey(
+        "chores.Chore",
+        on_delete=models.CASCADE,
+        related_name="completions",
+    )
+    occurrence_date = models.DateField()
+    completed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="completed_chores",
+    )
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("chore", "occurrence_date")
+        ordering = ["-occurrence_date", "-completed_at"]
+
+    def __str__(self):
+        return f"{self.chore.description} completed on {self.occurrence_date}"
+
+
+class ChoreSkip(models.Model):
+    chore = models.ForeignKey(
+        "chores.Chore",
+        on_delete=models.CASCADE,
+        related_name="skips",
+    )
+    occurrence_date = models.DateField()
+    skipped_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="skipped_chores",
+    )
+    skipped_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("chore", "occurrence_date")
+        ordering = ["-occurrence_date", "-skipped_at"]
+
+    def __str__(self):
+        return f"{self.chore.description} skipped on {self.occurrence_date}"
