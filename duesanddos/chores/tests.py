@@ -722,3 +722,23 @@ class ChoreViewTests(ChoresBaseTestCase):
             ActivityLog.objects.filter(action="CHORE_COMPLETED").count(),
             1,
         )
+
+    def test_edit_chore_invalid_post_with_field_error_redirects_back(self):
+        chore = self.create_chore(
+            description="Editable recurring",
+            repeat_type="DAILY",
+            has_due_date=False,
+            due_date=None,
+            start_date=date.today(),
+        )
+
+        response = self.client.post(
+            reverse("edit_chore", args=[chore.id]),
+            {
+                "description": "Still recurring",
+                "repeat_type": "DAILY",
+                # intentionally omit start_date to trigger a field error
+            },
+        )
+
+        self.assertRedirects(response, reverse("edit_chore", args=[chore.id]))
