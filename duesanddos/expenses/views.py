@@ -17,18 +17,15 @@ def expenses_list_view(request):
     if not active_hh:
         return redirect("household_settings")
 
-    # 1. CAPTURE FILTER PARAMETERS FROM URL
     selected_month = request.GET.get("filter_month")
     selected_payer = request.GET.get("filter_payer")
 
-    # 2. FILTERED EXPENSE FETCHING
     expenses = (
         active_hh.expenses.all()
         .select_related("payer")
         .prefetch_related("splits", "splits__user")
     )
 
-    # Apply Month Filter (Expects YYYY-MM from the <input type="month">)
     if selected_month:
         try:
             year, month = selected_month.split('-')
@@ -36,14 +33,11 @@ def expenses_list_view(request):
         except ValueError:
             pass
 
-    # Apply Payer Filter
     if selected_payer:
         expenses = expenses.filter(payer_id=selected_payer)
 
-    # Final ordering for the table
     expenses = expenses.order_by("-date_spent")
     
-    # 3. PERSONALIZED LEDGER LOGIC (Netted per person)
     members = active_hh.members.select_related("user")
     summary = []
     you_are_owed = 0.0
@@ -53,7 +47,6 @@ def expenses_list_view(request):
         if member.user == request.user:
             continue
 
-        # Gross they owe YOU
         they_owe_you = float(ExpenseSplit.objects.filter(
             expense__payer=request.user,
             user=member.user,
@@ -61,7 +54,6 @@ def expenses_list_view(request):
             expense__household=active_hh
         ).aggregate(Sum("amount_owed"))["amount_owed__sum"] or 0)
 
-        # Gross YOU owe them
         you_owe_them = float(ExpenseSplit.objects.filter(
             expense__payer=member.user,
             user=request.user,
@@ -72,7 +64,6 @@ def expenses_list_view(request):
         you_are_owed += they_owe_you
         you_owe += you_owe_them
 
-        # Calculate NET for this person
         net_with_person = they_owe_you - you_owe_them
 
         if abs(net_with_person) > 0.01:
@@ -85,7 +76,6 @@ def expenses_list_view(request):
                 "label": f"{member.user.username} OWES YOU" if net_with_person > 0 else f"YOU OWE {member.user.username}"
             })
 
-    # 4. SETTLEMENT DATA (Sasha/New Logic)
     completed_settlements = Settlement.objects.filter(
         household=active_hh
     ).filter(
@@ -98,7 +88,6 @@ def expenses_list_view(request):
         status='PENDING'
     )
 
-    # 5. RETURN CONTEXT
     return render(
         request,
         "accounts/expenses.html",
@@ -111,8 +100,8 @@ def expenses_list_view(request):
             "you_owe": you_owe,
             "pending_incoming": pending_incoming,
             "completed_settlements": completed_settlements,
-            "selected_month": selected_month,  # Passed back for the input value
-            "selected_payer": selected_payer,  # Passed back for the dropdown selection
+            "selected_month": selected_month, 
+            "selected_payer": selected_payer,  
         },
     )
 
@@ -202,11 +191,8 @@ def request_delete_settlement(request, settlement_id):
 @login_required
 @transaction.atomic
 def approve_delete_settlement(request, settlement_id):
-    # Fetch the settlement - allow both parties to be found
     settlement = get_object_or_404(Settlement, id=settlement_id)
     
-    # SECURITY: In this logic, only the person who RECEIVED the money 
-    # can approve restoring the debt (since they are the one 'losing' the payment)
     if request.user != settlement.receiver:
         messages.error(request, "Only the payment recipient can approve this void request.")
         return redirect('expenses_list')
@@ -278,7 +264,6 @@ def add_expense_pro(request):
             running += s
             ExpenseSplit.objects.create(expense=expense, user=u, amount_owed=s)
 
-    # Note: Percent and Amount logic omitted for brevity but should be merged here if used.
 
     ActivityLog.objects.create(user=payer, household=hh, action="EXPENSE_ADDED", details=f"Added '{title}' for ${total_amount}.")
     messages.success(request, "Expense added!")

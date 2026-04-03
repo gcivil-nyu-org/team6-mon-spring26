@@ -10,9 +10,7 @@
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
     
-    {# --- 1. NOTIFICATION AREA (STRICT USER CHECKS) --- #}
 
-    {# A. NEW SETTLEMENT REQUESTS (Sasha sees buttons, New sees nothing) #}
     {% for p in pending_incoming %}
         {% if request.user == p.receiver %}
         <div class="bg-blue-50 border border-blue-100 p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between mb-8 shadow-sm">
@@ -34,7 +32,6 @@
         {% endif %}
     {% endfor %}
 
-{# B. DELETION REQUESTS #}
 {% for s in completed_settlements %}
     {% if s.status == 'DELETE_PENDING' %}
         <div class="bg-amber-50 border border-amber-100 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between mb-6 shadow-sm">
@@ -50,8 +47,6 @@
                 </div>
             </div>
 
-            {# Only show buttons to the person who did NOT request the deletion #}
-            {# If you don't track 'requested_by' yet, we use the Receiver as the 'Final Boss' of money #}
             {% if request.user == s.receiver %}
                 <form method="POST" action="{% url 'approve_delete_settlement' s.id %}" class="flex gap-3">
                     {% csrf_token %}
@@ -68,7 +63,6 @@
 {% endfor %}
 
 
-    {# --- 2. HEADER SECTION --- #}
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Expenses</h1>
         <div class="flex gap-3">
@@ -82,7 +76,6 @@
     </div>
 
 
-    {# --- 3. FILTER SECTION --- #}
     <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
         <form method="GET" class="flex flex-col md:flex-row items-end gap-4">
             <div class="flex-1 w-full">
@@ -106,7 +99,6 @@
     </div>
 
 
-    {# --- 4. LEDGER SECTION --- #}
     <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Household Ledger</h3>
         <table class="w-full">
@@ -136,7 +128,6 @@
     </div>
 
 
-    {# --- 5. EXPENSE HISTORY --- #}
     <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
         <h3 class="text-xl font-black mb-6 text-gray-900">Expense History</h3>
         <div class="overflow-x-auto">
@@ -168,7 +159,6 @@
     </div>
 
 
-    {# --- 6. SETTLEMENT HISTORY --- #}
     <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
         <h3 class="text-xl font-black mb-6 text-gray-900">Settlement History</h3>
         <div class="overflow-x-auto">
@@ -206,7 +196,6 @@
     </div>
 </div>
 
-{# --- MODALS SECTION --- #}
 
 <div id="globalSettleModal" class="hidden fixed inset-0 z-[1100] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
