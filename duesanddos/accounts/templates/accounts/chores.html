@@ -6,8 +6,6 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
 <link rel="stylesheet" href="{% static 'css/chores.css' %}?v=2">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -285,14 +283,6 @@
             {% endfor %}
         </div>
     </div>
-
-    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
-            <h3 class="text-xl font-black text-gray-900 tracking-tight">Calendar</h3>
-        </div>
-        <div id="choresCalendar"></div>
-    </div>
 </div>
 
 <script>
@@ -362,22 +352,6 @@ document.addEventListener("click", function (event) {
 document.addEventListener("DOMContentLoaded", function () {
     toggleRepeatFields();
     toggleDueFields();
-
-    const calendarEl = document.getElementById("choresCalendar");
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "dayGridMonth",
-        headerToolbar: {
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,listWeek"
-        },
-        events: "{% url 'chores_calendar_events' %}",
-        height: "auto",
-        dayMaxEvents: true,
-        nowIndicator: true,
-    });
-
-    calendar.render();
 });
 </script>
 {% endblock %}

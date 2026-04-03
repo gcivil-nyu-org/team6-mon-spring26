@@ -4,7 +4,6 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from activities.models import ActivityLog
@@ -337,7 +336,10 @@ def delete_chore_view(request, chore_id):
             user=request.user,
             household=active_hh,
             action="CHORE_DELETED",
-            details=f"Deleted occurrence of chore '{chore.description}' on {occurrence_date}.",
+            details=(
+                f"Deleted occurrence of chore '{chore.description}' "
+                f"on {occurrence_date}."
+            ),
         )
 
         messages.success(request, "This occurrence was deleted.")
@@ -396,79 +398,3 @@ def complete_chore_occurrence_view(request, chore_id):
 
     messages.success(request, "Chore marked complete.")
     return redirect("chores_list")
-
-
-@login_required
-def chores_calendar_events(request):
-    active_hh = request.user.profile.active_household
-    if not active_hh:
-        return JsonResponse([], safe=False)
-
-    start_str = request.GET.get("start")
-    end_str = request.GET.get("end")
-
-    if not start_str or not end_str:
-        return JsonResponse([], safe=False)
-
-    start_date = date.fromisoformat(start_str[:10])
-    end_date = date.fromisoformat(end_str[:10])
-
-    chores = (
-        Chore.objects.filter(household=active_hh, is_active=True)
-        .prefetch_related("assignees")
-        .order_by("description")
-    )
-
-    completions = ChoreCompletion.objects.filter(
-        chore__household=active_hh,
-        occurrence_date__gte=start_date,
-        occurrence_date__lte=end_date,
-    )
-
-    skips = ChoreSkip.objects.filter(
-        chore__household=active_hh,
-        occurrence_date__gte=start_date,
-        occurrence_date__lte=end_date,
-    )
-
-    completed_dates_by_chore = defaultdict(set)
-    for completion in completions:
-        completed_dates_by_chore[completion.chore_id].add(completion.occurrence_date)
-
-    skipped_dates_by_chore = defaultdict(set)
-    for skip in skips:
-        skipped_dates_by_chore[skip.chore_id].add(skip.occurrence_date)
-
-    events = []
-
-    for chore in chores:
-        completed_dates = completed_dates_by_chore.get(chore.id, set())
-        skipped_dates = skipped_dates_by_chore.get(chore.id, set())
-
-        for item in get_occurrences_for_range(
-            chore, start_date, end_date, completed_dates, skipped_dates
-        ):
-            assignee_names = (
-                ", ".join(user.username for user in chore.assignees.all())
-                or "Unassigned"
-            )
-
-            if chore.due_time:
-                start_dt = datetime.combine(item["date"], chore.due_time)
-                events.append(
-                    {
-                        "title": f"{chore.description} — {assignee_names}",
-                        "start": start_dt.isoformat(),
-                        "allDay": False,
-                    }
-                )
-            else:
-                events.append(
-                    {
-                        "title": f"{chore.description} — {assignee_names}",
-                        "start": item["date"].isoformat(),
-                        "allDay": True,
-                    }
-                )
-
-    return JsonResponse(events, safe=False)

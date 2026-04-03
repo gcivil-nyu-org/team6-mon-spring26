@@ -11,9 +11,4 @@ urlpatterns = [
         views.complete_chore_occurrence_view,
         name="complete_chore_occurrence",
     ),
-    path(
-        "chores/calendar/events/",
-        views.chores_calendar_events,
-        name="chores_calendar_events",
-    ),
 ]
