@@ -24,6 +24,7 @@ before_script:
   - cd duesanddos
 
 script:
+  - black --diff chores/tests.py
   - black --check .
   - flake8 .
   - coverage run manage.py test
