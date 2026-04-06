@@ -4,6 +4,7 @@ from django.contrib.admin.sites import site
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from accounts.models import CustomUser, Profile
 from activities.models import ActivityLog
@@ -11,7 +12,7 @@ from households.models import Household, HouseholdMember
 from .admin import ChoreAdmin
 from .apps import ChoresConfig
 from .forms import ChoreForm
-from .models import Chore, ChoreCompletion, ChoreSkip
+from .models import Chore, ChoreCompletion, ChoreSkip, ChoreGoogleEvent
 from .views import daterange, get_occurrences_for_range
 
 
@@ -116,6 +117,13 @@ class ChoreModelTests(ChoresBaseTestCase):
         self.assertEqual(str(chore), "Mop floor")
         self.assertIn("completed on", str(completion))
         self.assertIn("skipped on", str(skip))
+
+    def test_google_event_str(self):
+        chore = self.create_chore(description="GCal Chore")
+        event = ChoreGoogleEvent.objects.create(
+            chore=chore, user=self.user, google_event_id="abc12345"
+        )
+        self.assertEqual(str(event), "GCal Sync: GCal Chore for choreuser")
 
     def test_clean_raises_for_missing_one_time_due_date(self):
         chore = Chore(
@@ -434,6 +442,15 @@ class ChoreViewTests(ChoresBaseTestCase):
         response = self.client.post(reverse("add_chore"), {})
         self.assertRedirects(response, reverse("household_settings"))
 
+    @patch("sys.argv", ["runserver"])
+    @patch("chores.views.call_command")
+    def test_run_overdue_sync_execution(self, mock_call):
+        from chores.views import run_overdue_sync
+
+        mock_call.side_effect = Exception("failed")
+        run_overdue_sync()
+        mock_call.assert_called_once_with("sync_gcal_overdues")
+
     def test_add_chore_invalid_form_redirects_without_creating(self):
         count_before = Chore.objects.count()
 
@@ -488,6 +505,38 @@ class ChoreViewTests(ChoresBaseTestCase):
         self.assertTrue(weekly.repeat_monday)
         self.assertEqual(weekly.assignees.get(), self.user)
         self.assertEqual(ActivityLog.objects.filter(action="CHORE_CREATED").count(), 3)
+
+    def test_add_chore_resets_daily_and_weekly_fields(self):
+        # Adding a DAILY chore with extraneous fields
+        self.client.post(
+            reverse("add_chore"),
+            {
+                "description": "Daily Cleanup",
+                "repeat_type": "DAILY",
+                "start_date": date.today().isoformat(),
+                "repeat_monday": "on",
+                "has_due_date": "on",
+                "due_date": date.today().isoformat(),
+            },
+        )
+        daily = Chore.objects.get(description="Daily Cleanup")
+        self.assertIsNone(daily.due_date)
+        self.assertFalse(daily.repeat_monday)
+
+        # Adding a WEEKLY chore with extraneous fields
+        self.client.post(
+            reverse("add_chore"),
+            {
+                "description": "Weekly Cleanup",
+                "repeat_type": "WEEKLY",
+                "start_date": date.today().isoformat(),
+                "repeat_monday": "on",
+                "has_due_date": "on",
+                "due_date": date.today().isoformat(),
+            },
+        )
+        weekly = Chore.objects.get(description="Weekly Cleanup")
+        self.assertIsNone(weekly.due_date)
 
     def test_edit_chore_requires_active_household(self):
         chore = self.create_chore()
@@ -586,6 +635,38 @@ class ChoreViewTests(ChoresBaseTestCase):
         self.assertEqual(weekly.description, "Editable weekly updated")
         self.assertTrue(weekly.repeat_tuesday)
         self.assertEqual(ActivityLog.objects.filter(action="CHORE_UPDATED").count(), 3)
+
+    def test_edit_chore_resets_daily_and_weekly_fields(self):
+        chore_daily = self.create_chore()
+        self.client.post(
+            reverse("edit_chore", args=[chore_daily.id]),
+            {
+                "description": "Daily Updated",
+                "repeat_type": "DAILY",
+                "start_date": date.today().isoformat(),
+                "repeat_monday": "on",
+                "has_due_date": "on",
+                "due_date": date.today().isoformat(),
+            },
+        )
+        chore_daily.refresh_from_db()
+        self.assertIsNone(chore_daily.due_date)
+        self.assertFalse(chore_daily.repeat_monday)
+
+        chore_weekly = self.create_chore()
+        self.client.post(
+            reverse("edit_chore", args=[chore_weekly.id]),
+            {
+                "description": "Weekly Updated",
+                "repeat_type": "WEEKLY",
+                "start_date": date.today().isoformat(),
+                "repeat_monday": "on",
+                "has_due_date": "on",
+                "due_date": date.today().isoformat(),
+            },
+        )
+        chore_weekly.refresh_from_db()
+        self.assertIsNone(chore_weekly.due_date)
 
     def test_delete_chore_get_redirects(self):
         chore = self.create_chore()

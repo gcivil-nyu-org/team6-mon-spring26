@@ -1,0 +1,18 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+<div class="activity-feed">
+    <h2>Recent Household Activity</h2>
+    <ul>
+    {% for activity in activities %}
+        <li>
+            <strong>{{ activity.timestamp|date:"M d, H:i" }}</strong>: 
+            {{ activity.user.username }} - {{ activity.action }}
+            <p>{{ activity.details }}</p>
+        </li>
+    {% empty %}
+        <li>No recent activity to show.</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}

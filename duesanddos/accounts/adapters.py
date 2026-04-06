@@ -11,8 +11,8 @@ class CustomAccountAdapter(DefaultAccountAdapter):
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def get_connect_redirect_url(self, request, socialaccount):
-        """Redirect to dashboard after an existing user connects a social account"""
-        return reverse("dashboard")
+        """Redirect back to profile after an existing user connects a Google account"""
+        return reverse("profile")
 
     def is_auto_signup_allowed(self, request, sociallogin):
         """

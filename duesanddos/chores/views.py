@@ -1,6 +1,9 @@
+import threading
+import sys
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
+from django.core.management import call_command
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -44,12 +47,25 @@ def get_occurrences_for_range(
     return occurrences
 
 
+def run_overdue_sync():
+    """Run the management command in the background to ensure overdues are synced."""
+    if "test" in sys.argv:
+        return
+    try:
+        call_command("sync_gcal_overdues")
+    except Exception:
+        pass
+
+
 @login_required
 def chores_list_view(request):
     active_hh = request.user.profile.active_household
     if not active_hh:
         messages.error(request, "Please select an active household first.")
         return redirect("household_settings")
+
+    # Fire and forget overdue sync so Google Calendar stays up to date
+    threading.Thread(target=run_overdue_sync).start()
 
     today = date.today()
     start_of_week = today - timedelta(days=today.weekday())
@@ -93,6 +109,17 @@ def chores_list_view(request):
     for skip in skips:
         skipped_dates_by_chore[skip.chore_id].add(skip.occurrence_date)
 
+    latest_completion_by_chore = {}
+    # Fetch all completions for this household, ordered
+    all_hh_completions = (
+        ChoreCompletion.objects.filter(chore__household=active_hh)
+        .select_related("completed_by")
+        .order_by("chore_id", "-occurrence_date", "-completed_at")
+    )
+    for comp in all_hh_completions:
+        if comp.chore_id not in latest_completion_by_chore:
+            latest_completion_by_chore[comp.chore_id] = comp
+
     occurrences = []
 
     for chore in chores:
@@ -104,11 +131,14 @@ def chores_list_view(request):
         completed_dates = completed_dates_by_chore.get(chore.id, set())
         skipped_dates = skipped_dates_by_chore.get(chore.id, set())
 
-        occurrences.extend(
-            get_occurrences_for_range(
-                chore, range_start, range_end, completed_dates, skipped_dates
-            )
+        current_ch_occurrences = get_occurrences_for_range(
+            chore, range_start, range_end, completed_dates, skipped_dates
         )
+        for occ in current_ch_occurrences:
+            occ["latest_completion"] = latest_completion_by_chore.get(chore.id)
+            occ["member_filter"] = member_filter
+
+        occurrences.extend(current_ch_occurrences)
 
         if (
             time_filter == "all"
@@ -121,6 +151,7 @@ def chores_list_view(request):
                     "date": None,
                     "is_unscheduled": True,
                     "is_completed": False,
+                    "latest_completion": latest_completion_by_chore.get(chore.id),
                 }
             )
 
@@ -146,6 +177,7 @@ def chores_list_view(request):
             "member_filter": member_filter,
             "today": today,
             "active_household": active_hh,
+            "latest_completions": latest_completion_by_chore,
         },
     )
 
@@ -338,7 +370,7 @@ def delete_chore_view(request, chore_id):
             action="CHORE_DELETED",
             details=(
                 f"Deleted occurrence of chore '{chore.description}' "
-                f"on {occurrence_date}."
+                f"on {occurrence_date.strftime('%-d %B').lower()}."
             ),
         )
 
@@ -392,8 +424,10 @@ def complete_chore_occurrence_view(request, chore_id):
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
-        action="CHORE_COMPLETED",
-        details=f"Completed chore '{chore.description}' for {occurrence_date}.",
+        details=(
+            f"Completed chore '{chore.description}' "
+            f"for {occurrence_date.strftime('%-d %B').lower()}."
+        ),
     )
 
     messages.success(request, "Chore marked complete.")

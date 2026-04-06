@@ -170,3 +170,20 @@ class ChoreSkip(models.Model):
 
     def __str__(self):
         return f"{self.chore.description} skipped on {self.occurrence_date}"
+
+
+class ChoreGoogleEvent(models.Model):
+    chore = models.ForeignKey(
+        Chore, on_delete=models.CASCADE, related_name="google_events"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="chore_syncs"
+    )
+    google_event_id = models.CharField(max_length=255)
+    last_synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("chore", "user")
+
+    def __str__(self):
+        return f"GCal Sync: {self.chore.description} for {self.user.username}"

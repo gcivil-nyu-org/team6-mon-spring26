@@ -12,7 +12,7 @@ class AdapterTests(TestCase):
     def test_custom_social_account_adapter(self):
         adapter = CustomSocialAccountAdapter()
         url = adapter.get_connect_redirect_url(request=None, socialaccount=None)
-        self.assertEqual(url, reverse("dashboard"))
+        self.assertEqual(url, reverse("profile"))
 
     def test_social_is_auto_signup_allowed(self):
         adapter = CustomSocialAccountAdapter()

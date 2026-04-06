@@ -80,6 +80,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "activities.context_processors.activity_notifications",
             ],
         },
     },
@@ -159,15 +160,10 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": [
             "profile",
             "email",
-            "openid",
+            "https://www.googleapis.com/auth/calendar.events",  # Create/edit events
         ],
         "AUTH_PARAMS": {
-            "access_type": "online",
-        },
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH2_CLIENT_ID"),
-            "secret": os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET"),
-            "key": "",
+            "access_type": "offline",  # To get refresh token
         },
     }
 }

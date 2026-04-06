@@ -107,6 +107,7 @@
                             >
                             <span class="font-bold text-gray-700">
                                 {{ member.user.get_full_name|default:member.user.username }}
+                                <span class="text-xs text-gray-400 ml-1 font-normal">({{ member.user.username }})</span>
                             </span>
                         </label>
                     </div>
@@ -194,6 +195,16 @@
                                 Unassigned
                             {% endfor %}
                         </div>
+
+                        {% if item.latest_completion %}
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/10">
+                                Last done by 
+                                {% if item.latest_completion.completed_by == request.user %}you{% else %}{{ item.latest_completion.completed_by.username }}{% endif %} 
+                                on {{ item.latest_completion.occurrence_date|date:"jS F"|lower }}
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="flex flex-col md:items-end gap-2">
@@ -263,7 +274,7 @@
                                 </form>
                             {% endif %}
 
-                            <form method="POST" action="{% url 'complete_chore_occurrence' item.chore.id %}">
+                            <form method="POST" action="{% url 'complete_chore_occurrence' item.chore.id %}" onsubmit="return confirm('Mark this chore as complete?');">
                                 {% csrf_token %}
                                 {% if item.date %}
                                     <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
