@@ -1,12 +1,13 @@
-from django.test import TestCase, Client
-from django.urls import reverse
-from accounts.models import CustomUser as User
-from chores.models import Chore
-from households.models import Household
 import datetime
 
+from django.test import TestCase, Client
+from django.urls import reverse
 
+from accounts.models import CustomUser as User
 from accounts.models import Profile
+from chores.models import Chore
+from households.models import Household
+
 
 class CalendarApiTests(TestCase):
     def setUp(self):

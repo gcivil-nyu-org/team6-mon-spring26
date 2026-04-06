@@ -1,7 +1,9 @@
 import tempfile
 import shutil
+from django.contrib.sites.models import Site
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from allauth.socialaccount.models import SocialApp
 from accounts.models import CustomUser, Profile
 from households.models import Household
 
@@ -29,6 +31,16 @@ class AuthAndProfileTests(TestCase):
         )
         self.profile = Profile.objects.create(user=self.user)
         self.client.login(username="testuser", password=TEST_PASSWORD)
+        # Create a SocialApp for Google so the profile template's
+        # {% provider_login_url 'google' %} tag doesn't raise DoesNotExist.
+        site = Site.objects.get_current()
+        social_app = SocialApp.objects.create(
+            provider="google",
+            name="Google",
+            client_id="test-client-id",
+            secret="test-secret",
+        )
+        social_app.sites.add(site)
 
     @classmethod
     def tearDownClass(cls):
