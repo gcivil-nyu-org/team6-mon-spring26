@@ -107,6 +107,12 @@ DB_PORT=5432
 ```bash
 python manage.py migrate
 ```
+If this throws an error, you might have to drop your local databases and migrate from scratch. Do the following instead:
+```bash
+dropdb duesanddos
+createdb duesanddos
+python manage.py migrate
+```
 
 ### 7. Create Superuser (Optional)
 ```bash

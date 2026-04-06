@@ -12,9 +12,6 @@ urlpatterns = [
     ),
     path("logout/", views.ProtectedLogoutView.as_view(), name="logout"),
     path("dashboard/", views.dashboard_view, name="dashboard"),
-    path(
-        "household-settings/", views.household_settings_view, name="household_settings"
-    ),
     path("faq/", views.faq_view, name="faq"),
     path("terms/", views.terms_view, name="terms"),
     path("privacy/", views.privacy_view, name="privacy"),

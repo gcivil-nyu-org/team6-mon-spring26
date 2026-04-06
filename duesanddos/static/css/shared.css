@@ -59,3 +59,115 @@ body {
   color: var(--color-text-main);
   background-color: var(--color-gray-bg);
 }
+
+h1, h2, h3, h4, h5, h6,
+.btn-primary, .btn-secondary, .btn-outline,
+.form-label,
+.nav-list a,
+.nav-item,
+nav a,
+table th,
+button,
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="password"]::placeholder,
+.sidebar-text {
+  text-transform: capitalize;
+}
+
+/* Utility classes to override unwanted text-transform rules (e.g. for displaying emails) */
+.normal-case { text-transform: none !important; }
+.lowercase { text-transform: lowercase !important; }
+.email-text { text-transform: none !important; }
+
+
+input[type="text"], 
+input[type="number"], 
+select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--color-gray-border);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif; 
+    font-size: 14px;
+    color: var(--color-text-main);
+    background-color: var(--color-white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none; 
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary-mid);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-primary {
+    background-color: var(--color-primary-sage); 
+    color: white;
+    font-weight: 700;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: var(--btn-shadow);
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.btn-primary:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+}
+
+
+.form-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 2rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+input[type="text"], 
+input[type="number"], 
+select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--color-gray-border);
+    border-radius: 14px; 
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--color-text-main);
+    background-color: var(--color-white);
+    transition: all 0.2s ease;
+    appearance: none; 
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary-mid);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.btn-primary {
+    background-color: #0a317d; 
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    padding: 18px;
+    border-radius: 18px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: var(--btn-shadow);
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}

@@ -1,0 +1,537 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Expenses | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
+{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Expenses</h1>
+        <button
+            id="openExpenseButton"
+            type="button"
+            onclick="openExpenseModal()"
+            class="btn-primary"
+            style="width: auto; padding: 10px 24px; margin-top: 0;"
+        >
+            + Add Expense
+        </button>
+    </div>
+
+    <div id="addExpenseModal" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
+        <h3 class="text-xl font-black mb-6">New Shared Expense</h3>
+
+        <form method="POST" action="{% url 'add_expense_pro' %}" class="space-y-4" onsubmit="validateExpenseForm(event)">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" name="title" placeholder="What was it for?" required>
+                <input type="number" step="0.01" min="0" name="amount" placeholder="Total Amount ($)" required>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Who Paid?</label>
+                <select name="payer" class="mt-1 expense-select">
+                    {% for member in members %}
+                        <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
+                            {{ member.user.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Split Method</label>
+                <select name="split_type" id="splitType" class="mt-1 expense-select" onchange="toggleSplitInputs()">
+                    <option value="EQUAL">Split Equally</option>
+                    <option value="PERCENT">Split by Percentage (%)</option>
+                    <option value="AMOUNT">Split by Amount ($)</option>
+                </select>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-[1.5rem]">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Include Roommates</label>
+
+                <div class="mt-4 space-y-3">
+                    {% for member in members %}
+                    <div class="participant-row flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                name="participants"
+                                value="{{ member.user.id }}"
+                                checked
+                                onchange="toggleSplitInputs()"
+                                class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                            >
+                            <span class="font-bold text-gray-700">{{ member.user.username }}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <div class="percent-input hidden">
+                                <input
+                                    type="number"
+                                    name="percent_{{ member.user.id }}"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    value="0"
+                                    placeholder="%"
+                                    class="split-input"
+                                >
+                            </div>
+
+                            <div class="amount-input hidden">
+                                <input
+                                    type="number"
+                                    name="amount_{{ member.user.id }}"
+                                    step="0.01"
+                                    min="0"
+                                    value="0.00"
+                                    placeholder="$"
+                                    class="split-input"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button
+                    type="button"
+                    onclick="closeExpenseModal()"
+                    class="btn-outline"
+                    style="margin-top: 0;"
+                >
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn-primary" style="margin-top: 0;">
+                    Save Shared Expense
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+            <h3 class="text-xl font-black text-gray-900 tracking-tight">Expense History</h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                        <th class="pb-4">Date</th>
+                        <th class="pb-4">Title</th>
+                        <th class="pb-4">Payer</th>
+                        <th class="pb-4">Total</th>
+                        <th class="pb-4 text-right">Settlement</th>
+                        <th class="pb-4"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for exp in expenses %}
+                    <tr class="group hover:bg-gray-50 transition-colors">
+                        <td class="py-4 text-gray-500 text-sm">{{ exp.created_at|date:"M d, Y" }}</td>
+                        <td class="py-4 font-bold text-gray-900">{{ exp.title }}</td>
+                        <td class="py-4 text-gray-600">
+                            {% if exp.payer == request.user %}You{% else %}{{ exp.payer.username }}{% endif %}
+                        </td>
+                        <td class="py-4 font-black text-gray-900">${{ exp.amount|floatformat:2 }}</td>
+                        <td class="py-4 text-right space-y-2">
+                            {% for split in exp.splits.all %}
+                                <!-- Only show settlement info for people involved (the payer, or the specific borrower) -->
+                                {% if split.user == request.user or exp.payer == request.user %}
+                                    {% if split.user != exp.payer %}
+                                        <div class="flex items-center justify-end gap-3 text-[11px] group">
+                                            <span class="font-bold text-gray-700">
+                                                {% if split.user == request.user %}You owe {% else %}{{ split.user.username }} owes {% endif %}
+                                                ${{ split.amount_owed|floatformat:2 }}
+                                            </span>
+                                            
+                                            {% if split.is_settled %}
+                                                <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-black uppercase tracking-tighter text-[9px]">Settled ✅</span>
+                                            {% else %}
+                                                <button 
+                                                    onclick="initiateSettlement(this)"
+                                                    data-url="{% url 'settle_split' split.id %}"
+                                                    data-amount="{{ split.amount_owed|floatformat:2 }}"
+                                                    data-person="{% if split.user == request.user %}{{ exp.payer.username }}{% else %}{{ split.user.username }}{% endif %}"
+                                                    class="px-3 py-1 bg-green-500 text-white rounded-full font-black uppercase tracking-widest text-[9px] hover:bg-green-600 transition-colors shadow-sm cursor-pointer border-none"
+                                                >
+                                                    Settle
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="py-4 text-right flex items-center justify-end">
+                            {% if exp.payer == request.user %}
+                                <button 
+                                    onclick="initiateEdit(this)"
+                                    data-url="{% url 'edit_expense_pro' exp.id %}"
+                                    data-title="{{ exp.title }}"
+                                    data-amount="{{ exp.amount|floatformat:2 }}"
+                                    data-split-type="{{ exp.split_type }}"
+                                    data-participants='[{% for split in exp.splits.all %}"{{ split.user.id }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+                                    class="p-2 text-gray-300 hover:text-blue-500 transition-colors cursor-pointer border-none bg-transparent"
+                                    title="Edit Expense"
+                                >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button 
+                                    onclick="initiateDeletion(this)"
+                                    data-url="{% url 'delete_expense_pro' exp.id %}"
+                                    data-title="{{ exp.title }}"
+                                    data-amount="{{ exp.amount|floatformat:2 }}"
+                                    class="p-2 text-gray-300 hover:text-red-500 transition-colors cursor-pointer border-none bg-transparent"
+                                    title="Delete Expense"
+                                >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-12 text-center text-gray-400 font-medium">No Expenses Recorded Yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Settle Confirmation Modal -->
+<div id="settleConfirmModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+    <!-- Backdrop Blur -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeSettleModal()"></div>
+    
+    <!-- Modal Card -->
+    <div class="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-white/20 p-8 sm:p-10 animate-in zoom-in-95 duration-300">
+        <div class="text-center">
+            <!-- Icon -->
+            <div class="mx-auto w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+                <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <h3 class="text-2xl font-black text-slate-900 mb-3 tracking-tight">Confirm Settlement</h3>
+            <p id="settleModalText" class="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                Are you sure you want to mark this shared expense as settled?
+            </p>
+
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-3">
+                <button 
+                    onclick="closeSettleModal()" 
+                    class="py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all active:scale-95"
+                >
+                    Cancel
+                </button>
+                <button 
+                    id="confirmSettleBtn"
+                    onclick="confirmSettlement()"
+                    class="py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-green-500 text-white shadow-lg shadow-green-200 hover:bg-green-600 transition-all active:scale-95"
+                >
+                    Yes, Settle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Premium Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+    <!-- Backdrop Blur -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    
+    <!-- Modal Card -->
+    <div class="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-red-50 p-8 sm:p-10 animate-in zoom-in-95 duration-300">
+        <div class="text-center">
+            <!-- Icon -->
+            <div class="mx-auto w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <h3 class="text-2xl font-black text-slate-900 mb-3 tracking-tight">Delete Expense?</h3>
+            <p id="deleteModalText" class="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                Are you sure you want to delete this expense? All associated debts will be removed.
+            </p>
+
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-3">
+                <button 
+                    onclick="closeDeleteModal()" 
+                    class="py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all active:scale-95"
+                >
+                    Cancel
+                </button>
+                <form id="deleteForm" method="POST" class="w-full">
+                    {% csrf_token %}
+                    <button 
+                        type="submit"
+                        class="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-red-500 text-white shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
+                    >
+                        Yes, Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Premium Edit Expense Modal -->
+<div id="editExpenseModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEditModal()"></div>
+    <div class="relative bg-white w-[95%] max-w-4xl rounded-[2.5rem] shadow-2xl border border-white/20 p-8 sm:p-10 animate-in zoom-in-95 duration-300">
+        <h3 class="text-2xl font-black mb-6 tracking-tight text-slate-900">Edit Shared Expense</h3>
+        <form id="editExpenseForm" method="POST" action="" class="space-y-6" onsubmit="return validateExpenseForm(event, 'edit')">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Expense Title</label>
+                    <input type="text" name="title" placeholder="Description" required class="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 font-bold transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Total Amount ($)</label>
+                    <input type="number" step="0.01" min="0" name="amount" placeholder="0.00" required class="w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 font-bold transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Split Method</label>
+                <select name="split_type" id="splitTypeEdit" class="mt-1 w-full px-5 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 font-bold appearance-none cursor-pointer" onchange="toggleSplitInputs('edit')">
+                    <option value="EQUAL">Split Equally</option>
+                    <option value="PERCENT">Split by Percentage (%)</option>
+                    <option value="AMOUNT">Split by Amount ($)</option>
+                </select>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-[2rem]">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Update Participants</label>
+                <div class="mt-4 space-y-3">
+                    {% for member in members %}
+                    <div class="participant-row flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100 group transition-all">
+                        <div class="flex items-center gap-4">
+                            <input type="checkbox" name="participants" value="{{ member.user.id }}" onchange="toggleSplitInputs('edit')" class="w-6 h-6 rounded-lg border-gray-200 text-blue-600 focus:ring-blue-500 transition-all">
+                            <span class="font-bold text-slate-700 tracking-tight">{{ member.user.username }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="percent-input hidden bg-blue-50 rounded-xl px-3 py-2">
+                                <input type="number" name="percent_{{ member.user.id }}" step="1" min="0" max="100" value="0" class="w-16 bg-transparent border-none text-center font-black text-blue-600 focus:ring-0 p-0">
+                                <span class="text-blue-400 font-black text-xs">%</span>
+                            </div>
+                            <div class="amount-input hidden bg-green-50 rounded-xl px-3 py-2">
+                                <span class="text-green-400 font-black text-xs">$</span>
+                                <input type="number" name="amount_{{ member.user.id }}" step="0.01" min="0" value="0.00" class="w-20 bg-transparent border-none text-center font-black text-green-600 focus:ring-0 p-0">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-4">
+                <button type="button" onclick="closeEditModal()" class="py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all active:scale-95">Cancel</button>
+                <button type="submit" class="py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-blue-600 text-white shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95">Update Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Global State for settlement
+    let pendingSettleUrl = '';
+
+    // Deletion Logic
+    function initiateDeletion(btn) {
+        const url = btn.dataset.url;
+        const title = btn.dataset.title;
+        const amount = btn.dataset.amount;
+        const textEl = document.getElementById('deleteModalText');
+        textEl.innerHTML = `Are you sure you want to delete <span class='text-red-500 font-black'>"${title}"</span> for <span class='text-slate-900 font-black'>$${amount}</span>? <br><br> <span class='text-[10px] text-gray-400 uppercase tracking-widest'>This action cannot be undone and will remove all related debts.</span>`;
+        document.getElementById('deleteForm').action = url;
+        document.getElementById('deleteConfirmModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteConfirmModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Settlement Logic
+    function initiateSettlement(btn) {
+        pendingSettleUrl = btn.dataset.url;
+        const amount = btn.dataset.amount;
+        const person = btn.dataset.person;
+        const textEl = document.getElementById('settleModalText');
+        textEl.innerHTML = `You are about to mark a payment of <span class='text-green-600 font-black'>$${amount}</span> with <span class='text-slate-900 font-black'>${person}</span> as settled. This action is final.`;
+        document.getElementById('settleConfirmModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function confirmSettlement() {
+        if (pendingSettleUrl) window.location.href = pendingSettleUrl;
+    }
+
+    function closeSettleModal() {
+        document.getElementById('settleConfirmModal').classList.add('hidden');
+        document.body.style.overflow = '';
+        pendingSettleUrl = '';
+    }
+
+    // Modal Control Logic
+    function openExpenseModal() {
+        document.getElementById('addExpenseModal').classList.remove('hidden');
+    }
+
+    function closeExpenseModal() {
+        document.getElementById('addExpenseModal').classList.add('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editExpenseModal').classList.add('hidden');
+    }
+
+    // Edit Initialization
+    function initiateEdit(btn) {
+        const url = btn.dataset.url;
+        const title = btn.dataset.title;
+        const amount = btn.dataset.amount;
+        const splitType = btn.dataset.splitType;
+        const participants = JSON.parse(btn.dataset.participants);
+
+        const modal = document.getElementById('editExpenseModal');
+        const form = document.getElementById('editExpenseForm');
+        
+        form.action = url;
+        form.querySelector('[name="title"]').value = title;
+        form.querySelector('[name="amount"]').value = amount;
+        form.querySelector('[name="split_type"]').value = splitType;
+
+        // Reset checkboxes
+        const checkboxes = form.querySelectorAll('[name="participants"]');
+        checkboxes.forEach(cb => {
+            cb.checked = participants.includes(cb.value);
+        });
+
+        toggleSplitInputs('edit');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Shared Split Input Toggle
+    function toggleSplitInputs(context = 'add') {
+        const modalId = context === 'edit' ? 'editExpenseModal' : 'addExpenseModal';
+        const modal = document.getElementById(modalId);
+        const splitType = modal.querySelector(context === 'edit' ? '#splitTypeEdit' : '#splitType').value;
+        const rows = modal.querySelectorAll('.participant-row');
+        const checkedCount = modal.querySelectorAll('input[name="participants"]:checked').length;
+
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const pDiv = row.querySelector('.percent-input');
+            const aDiv = row.querySelector('.amount-input');
+            const pInp = pDiv.querySelector('input');
+
+            pDiv.classList.add('hidden');
+            aDiv.classList.add('hidden');
+
+            if (checkbox.checked) {
+                if (splitType === 'PERCENT') {
+                    pDiv.classList.remove('hidden');
+                    if (!pInp.dataset.userEdited) {
+                        pInp.value = checkedCount > 0 ? (100 / checkedCount).toFixed(0) : 0;
+                    }
+                } else if (splitType === 'AMOUNT') {
+                    aDiv.classList.remove('hidden');
+                }
+            }
+        });
+    }
+
+    // Shared Validation Logic
+    function validateExpenseForm(event, context = 'add') {
+        const modalId = context === 'edit' ? 'editExpenseModal' : 'addExpenseModal';
+        const modal = document.getElementById(modalId);
+        const splitType = modal.querySelector(context === 'edit' ? '#splitTypeEdit' : '#splitType').value;
+        const totalAmount = parseFloat(modal.querySelector('[name="amount"]').value || '0');
+        const checked = modal.querySelectorAll('input[name="participants"]:checked');
+
+        if (totalAmount <= 0) {
+            showNotificationToast('error', 'Please enter a valid total amount.');
+            return false;
+        }
+        if (checked.length === 0) {
+            showNotificationToast('error', 'Select at least one participant.');
+            return false;
+        }
+
+        if (splitType === 'AMOUNT') {
+            let sum = 0;
+            checked.forEach(cb => {
+                const row = cb.closest('.participant-row');
+                sum += parseFloat(row.querySelector('.amount-input input').value || '0');
+            });
+            if (Math.abs(sum - totalAmount) > 0.01) {
+                showNotificationToast('error', `Amounts must total $${totalAmount.toFixed(2)}. Current: $${sum.toFixed(2)}`);
+                return false;
+            }
+        }
+
+        if (splitType === 'PERCENT') {
+            let sum = 0;
+            checked.forEach(cb => {
+                const row = cb.closest('.participant-row');
+                sum += parseFloat(row.querySelector('.percent-input input').value || '0');
+            });
+            if (Math.abs(sum - 100) > 0.01) {
+                showNotificationToast('error', `Percentages must total 100%. Current: ${sum.toFixed(0)}%`);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Percentage Auto-Balancing
+    document.addEventListener('input', function (e) {
+        if (e.target.name && e.target.name.startsWith('percent_')) {
+            e.target.dataset.userEdited = 'true';
+            const modal = e.target.closest('[id$="Modal"]');
+            const allVisible = Array.from(modal.querySelectorAll('.percent-input:not(.hidden) input'));
+            const others = allVisible.filter(i => i !== e.target);
+            
+            if (others.length > 0) {
+                const remaining = 100 - (parseFloat(e.target.value) || 0);
+                const share = Math.max(0, remaining / others.length);
+                others.forEach(i => { if (!i.dataset.userEdited) i.value = share.toFixed(0); });
+            }
+        }
+    });
+
+    window.onload = () => toggleSplitInputs('add');
+</script>
+{% endblock %}

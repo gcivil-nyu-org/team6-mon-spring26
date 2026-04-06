@@ -1,0 +1,166 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Edit Chore | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/expenses.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/chores.css' %}?v=2">
+{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Chore</h1>
+            <a href="{% url 'chores_list' %}" class="btn-outline" style="margin-top: 0;">Back to Chores</a>
+        </div>
+
+        <form method="POST" action="{% url 'edit_chore' chore.id %}" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <input type="text" name="description" value="{{ chore.description }}" placeholder="Chore description" required>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Chore Type</label>
+                    <select name="repeat_type" id="repeatType" class="mt-1 expense-select" onchange="toggleRepeatFields()">
+                        <option value="ONE_TIME" {% if chore.repeat_type == "ONE_TIME" %}selected{% endif %}>One-time</option>
+                        <option value="DAILY" {% if chore.repeat_type == "DAILY" %}selected{% endif %}>Recurring - Daily</option>
+                        <option value="WEEKLY" {% if chore.repeat_type == "WEEKLY" %}selected{% endif %}>Recurring - Weekly</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 font-bold text-gray-700">
+                        <input
+                            type="checkbox"
+                            name="has_due_date"
+                            id="hasDueDate"
+                            onchange="toggleDueFields()"
+                            class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                            {% if chore.has_due_date %}checked{% endif %}
+                        >
+                        <span>Has due date</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="dueFields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Date</label>
+                    <input type="date" name="due_date" id="dueDateField" class="mt-1" value="{% if chore.due_date %}{{ chore.due_date|date:'Y-m-d' }}{% endif %}">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Time (Optional)</label>
+                    <input type="time" name="due_time" class="mt-1" value="{% if chore.due_time %}{{ chore.due_time|time:'H:i' }}{% endif %}">
+                </div>
+            </div>
+
+            <div id="recurringFields" class="bg-gray-50 p-6 rounded-[1.5rem] space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Date</label>
+                        <input type="date" name="start_date" id="startDateField" class="mt-1" value="{% if chore.start_date %}{{ chore.start_date|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Date (Optional)</label>
+                        <input type="date" name="end_date" class="mt-1" value="{% if chore.end_date %}{{ chore.end_date|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                </div>
+
+                <div id="weeklyFields">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Repeat On</label>
+                    <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_monday" {% if chore.repeat_monday %}checked{% endif %}> Monday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_tuesday" {% if chore.repeat_tuesday %}checked{% endif %}> Tuesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_wednesday" {% if chore.repeat_wednesday %}checked{% endif %}> Wednesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_thursday" {% if chore.repeat_thursday %}checked{% endif %}> Thursday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_friday" {% if chore.repeat_friday %}checked{% endif %}> Friday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_saturday" {% if chore.repeat_saturday %}checked{% endif %}> Saturday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_sunday" {% if chore.repeat_sunday %}checked{% endif %}> Sunday</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-[1.5rem]">
+                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assign Household Members</label>
+                <div class="mt-4 space-y-3">
+                    {% for member in members %}
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                        <label class="flex items-center gap-3 w-full">
+                            <input
+                                type="checkbox"
+                                name="assignees"
+                                value="{{ member.user.id }}"
+                                class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                                {% if member.user in chore.assignees.all %}checked{% endif %}
+                            >
+                            <span class="font-bold text-gray-700">
+                                {{ member.user.get_full_name|default:member.user.username }}
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{% url 'chores_list' %}" class="btn-outline" style="margin-top: 0; display: inline-flex; justify-content: center;">
+                    Cancel
+                </a>
+
+                <button type="submit" class="btn-primary" style="margin-top: 0;">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleRepeatFields() {
+    const repeatType = document.getElementById("repeatType").value;
+    const recurringFields = document.getElementById("recurringFields");
+    const weeklyFields = document.getElementById("weeklyFields");
+    const startDateField = document.getElementById("startDateField");
+
+    if (repeatType === "ONE_TIME") {
+        recurringFields.classList.add("hidden");
+        weeklyFields.classList.add("hidden");
+        startDateField.required = false;
+    } else {
+        recurringFields.classList.remove("hidden");
+        startDateField.required = true;
+
+        if (repeatType === "WEEKLY") {
+            weeklyFields.classList.remove("hidden");
+        } else {
+            weeklyFields.classList.add("hidden");
+        }
+    }
+}
+
+function toggleDueFields() {
+    const hasDueDate = document.getElementById("hasDueDate").checked;
+    const dueFields = document.getElementById("dueFields");
+    const repeatType = document.getElementById("repeatType").value;
+    const dueDateField = document.getElementById("dueDateField");
+
+    if (hasDueDate) {
+        dueFields.classList.remove("hidden");
+        dueDateField.required = repeatType === "ONE_TIME";
+    } else {
+        dueFields.classList.add("hidden");
+        dueDateField.required = false;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    toggleRepeatFields();
+    toggleDueFields();
+});
+</script>
+{% endblock %}

@@ -59,38 +59,6 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class Household(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    invite_code = models.CharField(max_length=12, unique=True, null=True, blank=True)
-    invite_code_expires = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-
-class HouseholdMember(models.Model):
-    ROLE_CHOICES = (
-        ("Admin", "Admin"),
-        ("Member", "Member"),
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships"
-    )
-    household = models.ForeignKey(
-        Household, on_delete=models.CASCADE, related_name="members"
-    )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="Member")
-    joined_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("user", "household")
-
-    def __str__(self):
-        return f"{self.user.username} - {self.household.name} ({self.role})"
-
-
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     avatar = models.ImageField(
@@ -99,7 +67,7 @@ class Profile(models.Model):
     bio = models.TextField(blank=True)
     notifications_enabled = models.BooleanField(default=True)
     active_household = models.ForeignKey(
-        Household,
+        "households.Household",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
