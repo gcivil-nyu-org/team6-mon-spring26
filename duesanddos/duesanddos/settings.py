@@ -154,19 +154,6 @@ SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-            'https://www.googleapis.com/auth/calendar.events', # Permission to create/edit events
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'offline', # Essential to get a refresh token for background syncing
-        }
-    }
-}
-
 AUTH_USER_MODEL = "accounts.CustomUser"
 
 # Email settings

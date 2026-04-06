@@ -1,16 +1,14 @@
-from datetime import datetime
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.paginator import Paginator
 from .models import ActivityLog
-from django.http import JsonResponse
-from chores.models import Chore, ChoreCompletion, ChoreSkip
+from chores.models import Chore
 from chores.views import get_occurrences_for_range
 from datetime import date, timedelta
-from allauth.socialaccount.models import SocialToken
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
+
 
 @login_required
 def activity_log_view(request):
@@ -66,15 +64,18 @@ def activity_log_view(request):
         },
     )
 
+
 @login_required
 def calendar_view(request):
     """Renders the calendar page with roommate filters (#39, #41)."""
     active_hh = request.user.profile.active_household
     members = active_hh.members.all() if active_hh else []
-    return render(request, 'activities/calendar.html', {
-        'members': members,
-        'active_household': active_hh
-    })
+    return render(
+        request,
+        "activities/calendar.html",
+        {"members": members, "active_household": active_hh},
+    )
+
 
 @login_required
 def calendar_events_api(request):
@@ -86,86 +87,45 @@ def calendar_events_api(request):
     # Use a broad range for the calendar view
     start_date = date.today() - timedelta(days=60)
     end_date = date.today() + timedelta(days=90)
-    
-    chores = Chore.objects.filter(household=active_hh, is_active=True).prefetch_related('assignees')
-    
+
+    chores = Chore.objects.filter(household=active_hh, is_active=True).prefetch_related(
+        "assignees"
+    )
+
     # Filter by roommate (#39)
-    member_id = request.GET.get('user_id')
-    
+    member_id = request.GET.get("user_id")
+
     events = []
     for chore in chores:
         # Skip if filter is active and user is not an assignee
         if member_id and not chore.assignees.filter(id=member_id).exists():
             continue
-            
+
         # Get occurrences using teammate's logic
         occurrences = get_occurrences_for_range(chore, start_date, end_date)
-        
+
         for occ in occurrences:
-            events.append({
-                'id': f"{chore.id}-{occ['date']}",
-                'title': f"{chore.description}",
-                'start': occ['date'].isoformat(),
-                'allDay': True,
-                'color': '#3b82f6' if request.user in chore.assignees.all() else '#94a3b8',
-                'extendedProps': {
-                    'chore_id': chore.id,
-                    'assignees': ", ".join([u.username for u in chore.assignees.all()])
+            events.append(
+                {
+                    "id": f"{chore.id}-{occ['date']}",
+                    "title": f"{chore.description}",
+                    "start": occ["date"].isoformat(),
+                    "allDay": True,
+                    "color": (
+                        "#3b82f6"
+                        if request.user in chore.assignees.all()
+                        else "#94a3b8"
+                    ),
+                    "extendedProps": {
+                        "chore_id": chore.id,
+                        "assignees": ", ".join(
+                            [u.username for u in chore.assignees.all()]
+                        ),
+                    },
                 }
-            })
+            )
     return JsonResponse(events, safe=False)
 
-@login_required
-def sync_to_google(request, chore_id, date_str):
-    """Pushes a chore occurrence to the user's Google Calendar (#40)."""
-    chore = get_object_or_404(Chore, id=chore_id, household=request.user.profile.active_household)
-    token = SocialToken.objects.filter(account__user=request.user, provider='google').first()
-    
-    if not token:
-        return JsonResponse({'error': 'Google account not linked'}, status=400)
-
-    service = build('calendar', 'v3', credentials=Credentials(token.token))
-    
-    event = {
-        'summary': f"Chore: {chore.description}",
-        'start': {'date': date_str},
-        'end': {'date': date_str},
-    }
-    
-    service.events().insert(calendarId='primary', body=event).execute()
-    return JsonResponse({'status': 'synced'})
-
-def push_to_google_calendar(request, chore_occurrence):
-    # Retrieve the stored OAuth token for the current user
-    token = SocialToken.objects.filter(
-        account__user=request.user, 
-        account__provider='google'
-    ).first()
-    
-    if not token:
-        return None # User hasn't linked Google or lacks permission
-
-    # Setup the Google Calendar API service
-    creds = Credentials(token.token)
-    service = build('calendar', 'v3', credentials=creds)
-
-    # Format the chore as a Google Calendar event
-    event_body = {
-        'summary': f"Chore: {chore_occurrence['chore'].description}",
-        'description': 'Synced from DuesAndDos',
-        'start': {
-            'date': chore_occurrence['date'].isoformat(), # Use 'date' for all-day events
-            'timeZone': 'UTC',
-        },
-        'end': {
-            'date': chore_occurrence['date'].isoformat(),
-            'timeZone': 'UTC',
-        },
-    }
-
-    # Execute the insertion
-    created_event = service.events().insert(calendarId='primary', body=event_body).execute()
-    return created_event.get('id')
 
 @login_required
 def activity_feed_view(request):
@@ -173,6 +133,8 @@ def activity_feed_view(request):
     if not active_hh:
         activities = []
     else:
-        activities = ActivityLog.objects.filter(household=active_hh).order_by('-timestamp')[:50]
-    
-    return render(request, 'activities/activity_feed.html', {'activities': activities})
+        activities = ActivityLog.objects.filter(household=active_hh).order_by(
+            "-timestamp"
+        )[:50]
+
+    return render(request, "activities/activity_feed.html", {"activities": activities})
