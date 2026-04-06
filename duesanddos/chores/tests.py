@@ -121,9 +121,7 @@ class ChoreModelTests(ChoresBaseTestCase):
     def test_google_event_str(self):
         chore = self.create_chore(description="GCal Chore")
         event = ChoreGoogleEvent.objects.create(
-            chore=chore,
-            user=self.user,
-            google_event_id="abc12345"
+            chore=chore, user=self.user, google_event_id="abc12345"
         )
         self.assertEqual(str(event), "GCal Sync: GCal Chore for choreuser")
 
@@ -448,6 +446,7 @@ class ChoreViewTests(ChoresBaseTestCase):
     @patch("chores.views.call_command")
     def test_run_overdue_sync_execution(self, mock_call):
         from chores.views import run_overdue_sync
+
         mock_call.side_effect = Exception("failed")
         run_overdue_sync()
         mock_call.assert_called_once_with("sync_gcal_overdues")

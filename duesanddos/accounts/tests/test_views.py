@@ -180,14 +180,18 @@ class AuthAndProfileTests(TestCase):
         url = reverse("disconnect_google")
         response = self.client.post(url)
         self.assertRedirects(response, reverse("profile"))
-        self.assertTrue(SocialAccount.objects.filter(user=self.user, provider="google").exists())
+        self.assertTrue(
+            SocialAccount.objects.filter(user=self.user, provider="google").exists()
+        )
 
     def test_disconnect_google_view_post_success(self):
         SocialAccount.objects.create(user=self.user, provider="google", uid="12345")
         url = reverse("disconnect_google")
         response = self.client.post(url)
         self.assertRedirects(response, reverse("profile"))
-        self.assertFalse(SocialAccount.objects.filter(user=self.user, provider="google").exists())
+        self.assertFalse(
+            SocialAccount.objects.filter(user=self.user, provider="google").exists()
+        )
 
     def test_disconnect_google_view_get(self):
         url = reverse("disconnect_google")
