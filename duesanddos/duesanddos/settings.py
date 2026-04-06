@@ -80,6 +80,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "activities.context_processors.activity_notifications",
             ],
         },
     },
@@ -155,15 +156,15 @@ SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-            'https://www.googleapis.com/auth/calendar.events', # Permission to create/edit events
+    "google": {
+        "SCOPE": [
+            "profile",
+            "email",
+            "https://www.googleapis.com/auth/calendar.events",  # Create/edit events
         ],
-        'AUTH_PARAMS': {
-            'access_type': 'offline', # Essential to get a refresh token for background syncing
-        }
+        "AUTH_PARAMS": {
+            "access_type": "offline",  # To get refresh token
+        },
     }
 }
 
