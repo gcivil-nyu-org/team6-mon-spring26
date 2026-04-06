@@ -155,20 +155,15 @@ SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
 SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "SCOPE": [
-            "profile",
-            "email",
-            "openid",
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+            'https://www.googleapis.com/auth/calendar.events', # Permission to create/edit events
         ],
-        "AUTH_PARAMS": {
-            "access_type": "online",
-        },
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH2_CLIENT_ID"),
-            "secret": os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET"),
-            "key": "",
-        },
+        'AUTH_PARAMS': {
+            'access_type': 'offline', # Essential to get a refresh token for background syncing
+        }
     }
 }
 

@@ -1,0 +1,36 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<div class="calendar-container p-6">
+    <div class="flex justify-between mb-4">
+        <h2 class="text-2xl font-bold">Household Schedule</h2>
+        <select id="memberFilter" class="border p-2 rounded">
+            <option value="">All Members</option>
+            {% for member in members %}
+            <option value="{{ member.user.id }}">{{ member.user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div id="calendar" class="bg-white p-4 shadow rounded"></div>
+</div>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay' // Monthly, Weekly, Daily (#41)
+      },
+      events: '/activities/api/calendar-events/',
+    });
+    calendar.render();
+
+    document.getElementById('memberFilter').addEventListener('change', function() {
+        calendar.setOption('events', '/activities/api/calendar-events/?user_id=' + this.value);
+    });
+  });
+</script>
+{% endblock %}
