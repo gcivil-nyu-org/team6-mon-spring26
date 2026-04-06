@@ -19,7 +19,7 @@ class ActivitiesViewsTests(TestCase):
         self.household = Household.objects.create(name="Act House")
         self.profile.active_household = self.household
         self.profile.save()
-        HouseholdMember.objects.create(
+        self.member = HouseholdMember.objects.create(
             user=self.user, household=self.household, role="Admin"
         )
 
@@ -38,6 +38,91 @@ class ActivitiesViewsTests(TestCase):
         response = self.client.get(reverse("calendar_events_api"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
+
+    def test_calendar_events_api_unassigned_member_filtered(self):
+        chore = Chore.objects.create(
+            description="Filtered Chore",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date="2026-04-01"
+        )
+        response = self.client.get(reverse("calendar_events_api"), {"user_id": 9999})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
+    @patch("django.utils.timezone.now")
+    def test_calendar_events_api_with_chore_states(self, mock_tz_now):
+        from django.utils import timezone
+        import datetime
+        from chores.models import ChoreCompletion
+        
+        fixed_now = timezone.make_aware(datetime.datetime(2026, 4, 10, 12, 0, 0))
+        mock_tz_now.return_value = fixed_now
+
+        # Completed On-Time Chore
+        chore_on_time = Chore.objects.create(
+            description="On Time Chore",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=fixed_now.date(),
+            has_due_date=True,
+            due_time=datetime.time(14, 0)
+        )
+        ChoreCompletion.objects.create(
+            chore=chore_on_time,
+            occurrence_date=fixed_now.date(),
+            completed_by=self.user
+        )
+        # Update completed_at to be earlier than due_time for testing on_time correctly.
+        comp = ChoreCompletion.objects.get(chore=chore_on_time)
+        comp.completed_at = timezone.make_aware(datetime.datetime(2026, 4, 10, 10, 0, 0))
+        comp.save()
+
+        # Completed Late Chore
+        chore_late = Chore.objects.create(
+            description="Late Chore",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=fixed_now.date(),
+            has_due_date=True,
+            due_time=datetime.time(8, 0)
+        )
+        ChoreCompletion.objects.create(
+            chore=chore_late,
+            occurrence_date=fixed_now.date(),
+            completed_by=self.user
+        )
+        comp2 = ChoreCompletion.objects.get(chore=chore_late)
+        comp2.completed_at = timezone.make_aware(datetime.datetime(2026, 4, 10, 10, 0, 0))
+        comp2.save()
+
+        # Overdue Chore
+        chore_overdue = Chore.objects.create(
+            description="Overdue Chore",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=fixed_now.date(),
+            has_due_date=True,
+            due_time=datetime.time(8, 0) # Missed
+        )
+
+        response = self.client.get(reverse("calendar_events_api"))
+        self.assertEqual(response.status_code, 200)
+        events = response.json()
+        
+        on_time_event = next(e for e in events if str(chore_on_time.id) in e['id'])
+        self.assertEqual(on_time_event['color'], "#10b981") # Green
+        
+        late_event = next(e for e in events if str(chore_late.id) in e['id'])
+        self.assertEqual(late_event['color'], "#f59e0b") # Yellow
+        
+        overdue_event = next(e for e in events if str(chore_overdue.id) in e['id'])
+        self.assertEqual(overdue_event['color'], "#ef4444") # Red
+
 
     @patch("activities.views.GoogleCalendarService")
     def test_sync_to_google(self, MockGoogleCalendarService):
@@ -58,6 +143,17 @@ class ActivitiesViewsTests(TestCase):
 
         response = sync_to_google(request, chore.id, "2026-04-06")
         self.assertEqual(response.status_code, 200)
+        
+        # Test no Google Account
+        mock_service.service = False
+        response = sync_to_google(request, chore.id, "2026-04-06")
+        self.assertEqual(response.status_code, 400)
+        
+        # Test Sync Failed
+        mock_service.service = True
+        mock_service.sync_chore.return_value = None
+        response = sync_to_google(request, chore.id, "2026-04-06")
+        self.assertEqual(response.status_code, 500)
 
     @patch("activities.views.GoogleCalendarService")
     def test_push_to_google_calendar(self, MockGoogleCalendarService):
@@ -78,7 +174,21 @@ class ActivitiesViewsTests(TestCase):
 
         result = push_to_google_calendar(request, {"chore": chore})
         self.assertEqual(result, "123")
+        
+        # Test push without service
+        mock_service.service = False
+        result = push_to_google_calendar(request, {"chore": chore})
+        self.assertIsNone(result)
 
     def test_activity_feed_view(self):
         response = self.client.get(reverse("activity_feed"))
+        self.assertEqual(response.status_code, 200)
+        
+        self.profile.active_household = None
+        self.profile.save()
+        response = self.client.get(reverse("activity_feed"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_activity_log_view_invalid_date(self):
+        response = self.client.get(reverse("activity_log"), {"start_date": "invalid"})
         self.assertEqual(response.status_code, 200)

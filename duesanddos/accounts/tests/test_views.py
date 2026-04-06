@@ -3,7 +3,7 @@ import shutil
 from django.contrib.sites.models import Site
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from allauth.socialaccount.models import SocialApp
+from allauth.socialaccount.models import SocialApp, SocialAccount
 from accounts.models import CustomUser, Profile
 from households.models import Household
 
@@ -166,6 +166,33 @@ class AuthAndProfileTests(TestCase):
         self.client.post(url)
         response = self.client.get(reverse("profile"))
         self.assertEqual(response.status_code, 302)
+
+    def test_disconnect_google_view_post_no_account(self):
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_disconnect_google_view_post_no_password(self):
+        SocialAccount.objects.create(user=self.user, provider="google", uid="12345")
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+        self.assertTrue(SocialAccount.objects.filter(user=self.user, provider="google").exists())
+
+    def test_disconnect_google_view_post_success(self):
+        SocialAccount.objects.create(user=self.user, provider="google", uid="12345")
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+        self.assertFalse(SocialAccount.objects.filter(user=self.user, provider="google").exists())
+
+    def test_disconnect_google_view_get(self):
+        url = reverse("disconnect_google")
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse("profile"))
 
 
 class RegisterViewTests(TestCase):
