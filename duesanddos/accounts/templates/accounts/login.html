@@ -114,8 +114,9 @@
           </div>
           {% endif %}
 
-          {% if socialaccount_providers %}
-            <a href="{% provider_login_url 'google' %}">Login with Google</a>
+          {% extends "accounts/base.html" %}
+          {% load socialaccount %}  {% if socialaccount_providers %}
+              <a href="{% provider_login_url 'google' %}">Login with Google</a>
           {% endif %}
             <button type="submit" class="btn-secondary w-full py-3 flex items-center justify-center gap-2 border-stone-200">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google Logo" class="h-5 w-5">
