@@ -14,9 +14,13 @@ class CalendarApiTests(TestCase):
         self.user = User.objects.create_user(username="testuser", password="password")
         self.client.login(username="testuser", password="password")
 
+        # Create the profile manually for the test user
+        from accounts.models import Profile
+
+        self.profile, created = Profile.objects.get_or_create(user=self.user)
+
         # Setup household context
         self.household = Household.objects.create(name="Test Home")
-        self.profile = self.user.profile
         self.profile.active_household = self.household
         self.profile.save()
 
