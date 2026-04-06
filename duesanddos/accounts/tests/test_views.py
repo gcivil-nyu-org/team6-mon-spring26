@@ -21,6 +21,20 @@ SMALL_GIF = (
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
 
+def _make_google_social_app():
+    """Create a Google SocialApp fixture so templates using
+    {% provider_login_url 'google' %} don't raise SocialApp.DoesNotExist."""
+    site = Site.objects.get_current()
+    app = SocialApp.objects.create(
+        provider="google",
+        name="Google",
+        client_id="test-client-id",
+        secret="test-secret",
+    )
+    app.sites.add(site)
+    return app
+
+
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class AuthAndProfileTests(TestCase):
     def setUp(self):
@@ -31,16 +45,7 @@ class AuthAndProfileTests(TestCase):
         )
         self.profile = Profile.objects.create(user=self.user)
         self.client.login(username="testuser", password=TEST_PASSWORD)
-        # Create a SocialApp for Google so the profile template's
-        # {% provider_login_url 'google' %} tag doesn't raise DoesNotExist.
-        site = Site.objects.get_current()
-        social_app = SocialApp.objects.create(
-            provider="google",
-            name="Google",
-            client_id="test-client-id",
-            secret="test-secret",
-        )
-        social_app.sites.add(site)
+        _make_google_social_app()
 
     @classmethod
     def tearDownClass(cls):
@@ -164,6 +169,10 @@ class AuthAndProfileTests(TestCase):
 
 
 class RegisterViewTests(TestCase):
+    def setUp(self):
+        # register.html uses {% provider_login_url 'google' %} — needs a fixture.
+        _make_google_social_app()
+
     def test_register_get(self):
         url = reverse("register")
         response = self.client.get(url)
