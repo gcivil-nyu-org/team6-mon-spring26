@@ -4,7 +4,6 @@ from django.contrib.admin.sites import site
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
-
 from accounts.models import CustomUser, Profile
 from activities.models import ActivityLog
 from households.models import Household, HouseholdMember
@@ -13,7 +12,6 @@ from .apps import ChoresConfig
 from .forms import ChoreForm
 from .models import Chore, ChoreCompletion, ChoreSkip
 from .views import daterange, get_occurrences_for_range
-
 
 TEST_PASSWORD = "TestPass123!"
 
