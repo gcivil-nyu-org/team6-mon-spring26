@@ -139,6 +139,30 @@ class AuthAndProfileTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_dashboard_chores_logic_coverage(self):
+        from chores.models import Chore
+        from households.models import HouseholdMember
+        from django.utils import timezone
+        h = Household.objects.create(name="Chore HH", invite_code="CHORE1")
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+        today = timezone.now().date()
+        chore = Chore.objects.create(
+            household=h,
+            description="Coverage Test Chore",
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date=today,
+            is_active=True
+        )
+        chore.assignees.add(self.user)
+        url = reverse("dashboard")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(chore, response.context['pending_chores'])
+        self.assertContains(response, "Coverage Test Chore")
+
     def test_dashboard_household_does_not_exist(self):
         self.profile.active_household_id = 99999
         self.profile.save()
