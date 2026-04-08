@@ -8,6 +8,7 @@ from django.contrib.auth.views import LogoutView
 from django.db import transaction, models
 from django.utils import timezone
 
+from allauth.socialaccount.models import SocialAccount
 from .models import CustomUser, Profile
 from households.models import Household, HouseholdMember
 from expenses.models import ExpenseSplit
@@ -91,6 +92,10 @@ def profile_view(request):
         "household"
     )
 
+    google_account = SocialAccount.objects.filter(
+        user=request.user, provider="google"
+    ).first()
+
     return render(
         request,
         "accounts/edit_profile.html",
@@ -100,6 +105,7 @@ def profile_view(request):
             "profile_form": profile_form,
             "password_form": password_form,
             "memberships": memberships,
+            "google_account": google_account,
         },
     )
 
@@ -144,6 +150,33 @@ def delete_account_view(request):
 
         messages.success(request, "Your account has been successfully deleted.")
         return redirect("login")
+
+    return redirect("profile")
+
+
+@login_required
+def disconnect_google_view(request):
+    """Remove the Google social account link from the user's account."""
+    if request.method == "POST":
+        google_account = SocialAccount.objects.filter(
+            user=request.user, provider="google"
+        ).first()
+
+        if not google_account:
+            messages.warning(request, "No Google account is connected.")
+            return redirect("profile")
+
+        # Safety: if the user has no usable password they'd be locked out
+        if not request.user.has_usable_password():
+            messages.error(
+                request,
+                "Cannot disconnect Google — you have no password set. "
+                "Please set a password first so you don't lose access to your account.",
+            )
+            return redirect("profile")
+
+        google_account.delete()
+        messages.success(request, "Your Google account has been disconnected.")
 
     return redirect("profile")
 

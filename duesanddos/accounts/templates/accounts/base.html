@@ -9,6 +9,114 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'css/base.css' %}?v=2">
+    <style>
+        /* Navbar & Notification Fixes */
+        .top-navbar {
+            height: 64px;
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--color-gray-border, #e5e7eb);
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 40px !important;
+            z-index: 1000;
+            flex-shrink: 0;
+            width: 100%;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            box-sizing: border-box;
+        }
+        .top-navbar-id {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-weight: 700;
+            color: var(--color-text-main, #111827);
+        }
+        .notification-container {
+            position: relative !important;
+        }
+        .notification-btn {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid var(--color-gray-border, #e5e7eb);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .notification-badge {
+            position: absolute !important;
+            top: -6px !important;
+            right: -6px !important;
+            background: #ef4444 !important;
+            color: white !important;
+            font-size: 10px !important;
+            font-weight: 800 !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            border-radius: 9px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 4px;
+            border: 2px solid #fff;
+        }
+        .notification-dropdown {
+            position: absolute !important;
+            top: 56px !important;
+            right: 0 !important;
+            width: 360px !important;
+            background: #fff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            z-index: 2000 !important;
+            display: block;
+            overflow: hidden;
+        }
+        .notification-header {
+            padding: 20px 20px 16px 20px !important;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+        }
+        .notification-footer {
+            padding: 14px 20px;
+            border-top: 1px solid #f1f5f9;
+            text-align: center;
+            background-color: #f8fafc;
+        }
+        .is-hidden {
+            display: none !important;
+        }
+        .notification-item {
+            display: flex !important;
+            gap: 12px !important;
+            padding: 16px 20px !important;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+            text-decoration: none !important;
+        }
+        .notification-item:hover { background-color: #f8fafc; }
+        .notification-item.overdue { background-color: #fffaf0; }
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+    </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -68,10 +176,12 @@
                     </svg>
                     <span class="sidebar-text">Expenses</span>
                 </a>
-                <button onclick="showComingSoon('Chores')" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;" title="Chores">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <a href="{% url 'chores_list' %}" class="nav-item {% if request.resolver_match.url_name == 'chores_list' %}active{% endif %}" title="Chores">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
+                        <path d="M20 6L9 17l-5-5"></path>
+                    </svg>
                     <span class="sidebar-text">Chores</span>
-                </button>
+                </a>
                 <a href="{% url 'activity_log' %}" class="nav-item {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}" title="Activity Hub">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     <span class="sidebar-text">Activity Hub</span>
@@ -80,14 +190,25 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                     <span class="sidebar-text">Chat</span>
                 </button>
-                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}" title="Profile">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span class="sidebar-text">Profile</span>
+                <a href="{% url 'calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}" title="Household Calendar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span class="sidebar-text">Household Calendar</span>
                 </a>
+                
                 <a href="{% url 'household_settings' %}" class="nav-item {% if request.resolver_match.url_name == 'household_settings' %}active{% endif %}" title="Household Settings">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     <span class="sidebar-text">Household Settings</span>
                 </a>
+                <a href="{% url 'profile' %}" class="nav-item {% if 'profile' in request.resolver_match.url_name %}active{% endif %}" title="Profile">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="sidebar-text">Profile</span>
+                </a>
+                
             </nav>
 
             <div class="sidebar-footer">
@@ -119,7 +240,91 @@
         </aside>
 
         <main class="main-content">
-            {% block content %}{% endblock %}
+            <header class="top-navbar">
+                <div class="top-navbar-id">
+                    <span class="text-blue-600">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </span>
+                    <span>{{ request.user.profile.active_household.name|default:"General" }}</span>
+                </div>
+
+                <div class="nav-actions">
+                    <!-- Notifications -->
+                    <div class="notification-container">
+                        <button id="notificationBtn" class="notification-btn" onclick="toggleNotifications(event)">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            {% if notification_count > 0 %}
+                                <span class="notification-badge">{{ notification_count }}</span>
+                            {% endif %}
+                        </button>
+
+                        <div id="notificationDropdown" class="notification-dropdown is-hidden">
+                            <div class="notification-header">
+                                <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest">Recent Activity</h3>
+                            </div>
+                            
+                            <div class="notification-list">
+                                <!-- Task Reminders (Overdue) -->
+                                {% for item in overdue_reminders %}
+                                    <div class="notification-item overdue">
+                                        <div class="notification-icon bg-orange-100 text-orange-600">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="15"></line></svg>
+                                        </div>
+                                        <div class="notification-content">
+                                            <p class="notification-title">Reminder: {{ item.chore.description }}</p>
+                                            <p class="notification-details">This task was missed on {{ item.date|date:"j F" }}.</p>
+                                            <span class="notification-timestamp text-orange-500 font-bold uppercase tracking-tighter">Overdue</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                <!-- Recent Activities -->
+                                {% for activity in recent_notifications %}
+                                    <div class="notification-item">
+                                        <div class="notification-icon 
+                                            {% if 'EXPENSE' in activity.action %}bg-green-100 text-green-600
+                                            {% elif 'CHORE' in activity.action %}bg-blue-100 text-blue-600
+                                            {% elif 'PAYMENT' in activity.action %}bg-purple-100 text-purple-600
+                                            {% else %}bg-gray-100 text-gray-500{% endif %}">
+                                            
+                                            {% if 'EXPENSE' in activity.action %}
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                            {% elif 'CHORE' in activity.action %}
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            {% elif 'PAYMENT' in activity.action %}
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                            {% else %}
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                            {% endif %}
+                                        </div>
+                                        <div class="notification-content">
+                                            <p class="notification-title">{{ activity.get_action_display }}</p>
+                                            <p class="notification-details">{{ activity.details|truncatechars:60 }}</p>
+                                            <span class="notification-timestamp">{{ activity.timestamp|timesince }} ago</span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    {% if not overdue_reminders %}
+                                        <div class="empty-notifications">
+                                            <p class="text-sm font-medium">No new notifications</p>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="notification-footer">
+                                <a href="{% url 'activity_log' %}" class="text-xs font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 flex items-center justify-center gap-2">
+                                    <span>View All in Activity Hub</span>
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"></path><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                </a>
+                            </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-inner">
+                {% block content %}{% endblock %}
+            </div>
         </main>
     </div>
 
@@ -263,40 +468,37 @@
             box.style.display = (box.style.display === 'block') ? 'none' : 'block';
         }
 
-        // Close logout box when clicking outside
+        // Init sidebar state immediately
+        updateSidebarState();
+
+        // Notification Toggle Logic
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('is-hidden');
+        }
+
+        // Close dropdowns when clicking outside
         document.addEventListener('click', function(event) {
             const logoutBox = document.getElementById('logoutBox');
             const userPill = document.querySelector('.user-pill');
-            if (logoutBox && userPill && !logoutBox.contains(event.target) && !userPill.contains(event.target)) {
-                logoutBox.style.display = 'none';
+            const notifBox = document.getElementById('notificationDropdown');
+            const notifBtn = document.getElementById('notificationBtn');
+
+            // Close logout if clicking outside user-pill area
+            if (logoutBox && logoutBox.style.display === 'block') {
+                if (!logoutBox.contains(event.target) && !userPill.contains(event.target)) {
+                    logoutBox.style.display = 'none';
+                }
+            }
+
+            // Close Notifications if clicking outside notification area
+            if (notifBox && !notifBox.classList.contains('is-hidden')) {
+                if (!notifBtn.contains(event.target) && !notifBox.contains(event.target)) {
+                    notifBox.classList.add('is-hidden');
+                }
             }
         });
-
-        // Sidebar Pin Logic
-        const sidebar = document.getElementById('app-sidebar');
-        const pinIcon = document.getElementById('pinIcon');
-        let isSidebarPinned = localStorage.getItem('sidebarPinned') === 'true'; // Default to unpinned
-
-        function updateSidebarState() {
-            if (isSidebarPinned) {
-                sidebar.classList.add('pinned');
-                document.body.classList.add('sidebar-pinned');
-                pinIcon.innerHTML = '<path d="M19 12H5M12 19l-7-7 7-7"/>'; // Collapse icon
-            } else {
-                sidebar.classList.remove('pinned');
-                document.body.classList.remove('sidebar-pinned');
-                pinIcon.innerHTML = '<path d="M5 12h14M12 5l7 7-7 7"/>'; // Expand icon
-            }
-        }
-
-        function toggleSidebarPin() {
-            isSidebarPinned = !isSidebarPinned;
-            localStorage.setItem('sidebarPinned', isSidebarPinned);
-            updateSidebarState();
-        }
-
-        // Init sidebar state immediately
-        updateSidebarState();
     </script>
 </body>
 </html>
