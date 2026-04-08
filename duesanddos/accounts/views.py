@@ -212,6 +212,21 @@ def dashboard_view(request):
     total_spent = sum(e.amount for e in expenses)
     members = active_hh.members.select_related("user")
 
+    today = timezone.now().date()
+    all_household_chores = active_hh.chores.filter(is_active=True).prefetch_related(
+        "assignees", "completions", "skips"
+    )
+
+    pending_chores = []
+    for chore in all_household_chores:
+        if request.user in chore.assignees.all():
+            if chore.occurs_on(today):
+                completed = chore.completions.filter(occurrence_date=today).exists()
+                skipped = chore.skips.filter(occurrence_date=today).exists()
+
+                if not completed and not skipped:
+                    pending_chores.append(chore)
+
     summary = []
     user_net = 0.0
 
@@ -293,6 +308,9 @@ def dashboard_view(request):
 
     context = {
         "active_household": active_hh,
+        "members": members,
+        "pending_chores": pending_chores[:5],
+        "today_date": today,
         "you_are_owed": max(0, user_net),
         "you_owe": abs(min(0, user_net)),
         "total_spent": total_spent,
