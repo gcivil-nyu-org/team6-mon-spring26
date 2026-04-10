@@ -1,0 +1,226 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Chat | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="chat-shell">
+    <aside class="chat-sidebar">
+        <div class="chat-sidebar-card">
+            <p class="chat-eyebrow">Active Household</p>
+            <h1 class="chat-household">{{ request.user.profile.active_household.name }}</h1>
+        </div>
+
+        <div class="chat-sidebar-card">
+            <div class="chat-sidebar-header">
+                <h2>Conversations</h2>
+            </div>
+            <div class="chat-conversation-list">
+                {% for conversation in conversations %}
+                    <a
+                        href="{% url 'chat:detail' conversation.id %}"
+                        class="chat-conversation-item {% if active_conversation.id == conversation.id %}is-active{% endif %}"
+                    >
+                        <div>
+                            <strong>
+                                {% if conversation.conversation_type == "group" %}
+                                    Household Chat
+                                {% else %}
+                                    {% for participant in conversation.participants.all %}
+                                        {% if participant.user != request.user %}
+                                            {{ participant.user.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </strong>
+                            <p>
+                                {% with latest=conversation.messages.last %}
+                                    {% if latest %}
+                                        {{ latest.body|truncatechars:40 }}
+                                    {% else %}
+                                        No messages yet
+                                    {% endif %}
+                                {% endwith %}
+                            </p>
+                        </div>
+                        <span
+                            class="chat-conversation-badge"
+                            data-conversation-badge="{{ conversation.id }}"
+                            {% if request.user.chat_participations.all %}
+                            {% endif %}
+                        ></span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="chat-sidebar-card">
+            <div class="chat-sidebar-header">
+                <h2>Start a direct conversation</h2>
+            </div>
+            {% if other_members %}
+                <div class="chat-member-list">
+                    {% for member in other_members %}
+                        <form method="post" action="{% url 'chat:start_dm' member.user.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="chat-member-button">{{ member.user.username }}</button>
+                        </form>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="chat-empty-copy">No other household members yet.</p>
+            {% endif %}
+        </div>
+    </aside>
+
+    <section class="chat-thread">
+        <header class="chat-thread-header">
+            <div>
+                <p class="chat-eyebrow">
+                    {% if active_conversation.conversation_type == "group" %}Group{% else %}Direct message{% endif %}
+                </p>
+                <h2>
+                    {% if active_conversation.conversation_type == "group" %}
+                        Household Chat
+                    {% else %}
+                        {% for participant in active_conversation.participants.all %}
+                            {% if participant.user != request.user %}
+                                {{ participant.user.username }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </h2>
+            </div>
+        </header>
+
+        <div
+            id="chat-message-list"
+            class="chat-message-list"
+            data-conversation-id="{{ active_conversation.id }}"
+            data-messages-url="{% url 'chat:messages' active_conversation.id %}"
+            data-mark-read-url="{% url 'chat:mark_read' active_conversation.id %}"
+            data-poll-interval="{{ poll_interval_ms }}"
+        >
+            {% if messages %}
+                {% for message in messages %}
+                    <article class="chat-message {% if message.author_id == request.user.id %}is-own{% endif %}" data-message-id="{{ message.id }}">
+                        <div class="chat-message-meta">
+                            <strong>{{ message.author.username }}</strong>
+                            <span>{{ message.created_at|date:"M j, g:i A" }}</span>
+                        </div>
+                        <p>{{ message.body|linebreaksbr }}</p>
+                    </article>
+                {% endfor %}
+            {% else %}
+                <div class="chat-empty-state">
+                    <h3>No messages yet</h3>
+                    <p>Send the first message to start this conversation.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="post" action="{% url 'chat:send_message' active_conversation.id %}" class="chat-composer">
+            {% csrf_token %}
+            <label for="chat-body" class="sr-only">Message</label>
+            <textarea id="chat-body" name="body" maxlength="{{ message_max_length }}" rows="3" placeholder="Write a message"></textarea>
+            <div class="chat-composer-footer">
+                <span>Polling every 5 seconds</span>
+                <button type="submit">Send</button>
+            </div>
+        </form>
+    </section>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const messageList = document.getElementById('chat-message-list');
+        const unreadBadge = document.getElementById('chat-unread-badge');
+        if (!messageList) {
+            return;
+        }
+
+        const messagesUrl = messageList.dataset.messagesUrl;
+        const markReadUrl = messageList.dataset.markReadUrl;
+        const pollInterval = Number(messageList.dataset.pollInterval || '5000');
+
+        function getLastMessageId() {
+            const messages = messageList.querySelectorAll('[data-message-id]');
+            if (!messages.length) {
+                return null;
+            }
+            return messages[messages.length - 1].dataset.messageId;
+        }
+
+        function appendMessage(message) {
+            const article = document.createElement('article');
+            article.className = `chat-message${message.is_own_message ? ' is-own' : ''}`;
+            article.dataset.messageId = message.id;
+            article.innerHTML = `
+                <div class="chat-message-meta">
+                    <strong>${message.author_username}</strong>
+                    <span>${new Date(message.created_at).toLocaleString()}</span>
+                </div>
+                <p></p>
+            `;
+            article.querySelector('p').textContent = message.body;
+            messageList.appendChild(article);
+        }
+
+        async function postMarkRead() {
+            await fetch(markReadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            });
+        }
+
+        async function pollMessages() {
+            const lastMessageId = getLastMessageId();
+            const url = lastMessageId ? `${messagesUrl}?after_id=${lastMessageId}` : messagesUrl;
+            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            if (payload.messages.length) {
+                const emptyState = messageList.querySelector('.chat-empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                payload.messages.forEach(appendMessage);
+                await postMarkRead();
+            }
+        }
+
+        async function pollUnreadCounts() {
+            const response = await fetch('{% url "chat:unread_counts" %}');
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            if (unreadBadge) {
+                unreadBadge.textContent = payload.total_unread > 0 ? payload.total_unread : '';
+                unreadBadge.classList.toggle('is-hidden', payload.total_unread === 0);
+            }
+            Object.entries(payload.by_conversation).forEach(([conversationId, count]) => {
+                const badge = document.querySelector(`[data-conversation-badge="${conversationId}"]`);
+                if (!badge) {
+                    return;
+                }
+                badge.textContent = count > 0 ? count : '';
+                badge.classList.toggle('is-hidden', count === 0);
+            });
+        }
+
+        pollUnreadCounts();
+        setInterval(pollMessages, pollInterval);
+        setInterval(pollUnreadCounts, pollInterval);
+    });
+</script>
+{% endblock %}
+
