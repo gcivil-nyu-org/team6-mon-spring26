@@ -79,7 +79,7 @@ def chat_index(request, conversation_id=None):
         "active_conversation": selected_conversation,
         "conversations": conversations,
         "group_conversation": group_conversation,
-        "messages": thread_messages,
+        "thread_messages": thread_messages,
         "other_members": other_members,
         "message_max_length": Message.MAX_BODY_LENGTH,
         "poll_interval_ms": 5000,

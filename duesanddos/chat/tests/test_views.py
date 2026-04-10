@@ -118,7 +118,64 @@ class ChatViewTests(TestCase):
 
         self.assertContains(response, "Household Chat")
         self.assertContains(response, "Start a direct conversation")
+        self.assertContains(response, 'class="chat-shell"')
+        self.assertContains(response, 'data-sidebar-open="false"')
+        self.assertContains(response, "data-live-status")
+        self.assertContains(response, "data-character-count")
 
     def test_nav_badge_container_is_present(self):
         response = self.client.get(reverse("chat:index"))
         self.assertContains(response, 'id="chat-unread-badge"')
+
+    def test_chat_page_renders_message_avatar_markers_and_thread_context(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.other,
+        )
+        Message.objects.create(
+            conversation=conversation,
+            author=self.other,
+            body="Checking in with the house",
+        )
+
+        response = self.client.get(reverse("chat:detail", args=[conversation.id]))
+
+        self.assertContains(response, "chat-message-avatar")
+        self.assertContains(response, "chat-thread-badge")
+        self.assertContains(response, 'data-message-author-initial="O"')
+        self.assertContains(response, "Live updates")
+
+    def test_chat_page_uses_thread_messages_context_without_populating_toast_messages(
+        self,
+    ):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.user,
+        )
+        Message.objects.create(
+            conversation=conversation,
+            author=self.user,
+            body="Toast collision regression",
+        )
+
+        response = self.client.get(reverse("chat:detail", args=[conversation.id]))
+
+        template_context = response.context[-1].dicts[-1]
+        self.assertIn("thread_messages", template_context)
+        self.assertNotIn("messages", template_context)
+        self.assertContains(response, "Toast collision regression")
+        self.assertNotContains(response, 'data-content="Toast collision regression"')
