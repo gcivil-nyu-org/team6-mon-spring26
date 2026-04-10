@@ -2,9 +2,11 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import CustomUser, Profile
+from chores.models import Chore
+from expenses.models import Expense
 from households.models import Household, HouseholdMember
 
-from chat.models import Conversation, ConversationParticipant, Message
+from chat.models import Conversation, ConversationParticipant, Message, MessageReference
 
 TEST_PASSWORD = "TestPass123!"
 
@@ -179,3 +181,227 @@ class ChatViewTests(TestCase):
         self.assertNotIn("messages", template_context)
         self.assertContains(response, "Toast collision regression")
         self.assertNotContains(response, 'data-content="Toast collision regression"')
+
+    def test_chat_page_context_includes_reference_picker_datasets(self):
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="84.29",
+            payer=self.user,
+            household=self.household,
+        )
+        active_chore = Chore.objects.create(
+            household=self.household,
+            description="Vacuum living room",
+            created_by=self.user,
+            has_due_date=True,
+            due_date=expense.date_spent,
+        )
+        inactive_chore = Chore.objects.create(
+            household=self.household,
+            description="Archived task",
+            created_by=self.user,
+            is_active=False,
+            has_due_date=True,
+            due_date=expense.date_spent,
+        )
+
+        response = self.client.get(reverse("chat:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("expense_picker_items", response.context)
+        self.assertIn("chore_picker_items", response.context)
+        self.assertEqual(response.context["expense_picker_items"][0]["id"], expense.id)
+        chore_ids = [item["id"] for item in response.context["chore_picker_items"]]
+        self.assertIn(active_chore.id, chore_ids)
+        self.assertNotIn(inactive_chore.id, chore_ids)
+
+    def test_sending_card_only_expense_message_succeeds(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="84.29",
+            payer=self.user,
+            household=self.household,
+        )
+
+        response = self.client.post(
+            reverse("chat:send_message", args=[conversation.id]),
+            {
+                "body": "   ",
+                "reference_type[]": ["EXPENSE"],
+                "reference_id[]": [str(expense.id)],
+            },
+        )
+
+        self.assertRedirects(response, reverse("chat:detail", args=[conversation.id]))
+        message = Message.objects.get(conversation=conversation)
+        self.assertEqual(message.body, "")
+        self.assertEqual(message.references.count(), 1)
+        self.assertEqual(message.references.get().expense, expense)
+
+    def test_sending_mixed_references_with_text_preserves_order(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="84.29",
+            payer=self.user,
+            household=self.household,
+        )
+        chore = Chore.objects.create(
+            household=self.household,
+            description="Vacuum living room",
+            created_by=self.user,
+            has_due_date=True,
+            due_date=expense.date_spent,
+        )
+
+        response = self.client.post(
+            reverse("chat:send_message", args=[conversation.id]),
+            {
+                "body": "Please handle these",
+                "reference_type[]": ["EXPENSE", "CHORE"],
+                "reference_id[]": [str(expense.id), str(chore.id)],
+            },
+        )
+
+        self.assertRedirects(response, reverse("chat:detail", args=[conversation.id]))
+        message = Message.objects.get(conversation=conversation)
+        self.assertEqual(message.body, "Please handle these")
+        references = list(message.references.order_by("position"))
+        self.assertEqual(
+            [reference.reference_type for reference in references],
+            [
+                MessageReference.ReferenceType.EXPENSE,
+                MessageReference.ReferenceType.CHORE,
+            ],
+        )
+
+    def test_invalid_reference_payload_fails_without_creating_message(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+
+        response = self.client.post(
+            reverse("chat:send_message", args=[conversation.id]),
+            {
+                "body": "Should fail",
+                "reference_type[]": ["EXPENSE"],
+                "reference_id[]": ["999999"],
+            },
+        )
+
+        self.assertRedirects(response, reverse("chat:detail", args=[conversation.id]))
+        self.assertFalse(Message.objects.filter(conversation=conversation).exists())
+
+    def test_card_only_latest_message_uses_shared_references_preview(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="84.29",
+            payer=self.user,
+            household=self.household,
+        )
+        message = Message.objects.create(
+            conversation=conversation,
+            author=self.user,
+            body="card placeholder",
+        )
+        MessageReference.objects.create(
+            message=message,
+            reference_type=MessageReference.ReferenceType.EXPENSE,
+            expense=expense,
+            position=0,
+        )
+        message.body = ""
+        message.save(update_fields=["body"])
+
+        response = self.client.get(reverse("chat:detail", args=[conversation.id]))
+
+        self.assertContains(response, "Shared references")
+
+    def test_thread_renders_reference_cards_before_text_and_unavailable_stub(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="84.29",
+            payer=self.user,
+            household=self.household,
+        )
+        chore = Chore.objects.create(
+            household=self.household,
+            description="Vacuum living room",
+            created_by=self.user,
+            has_due_date=True,
+            due_date=expense.date_spent,
+        )
+        message = Message.objects.create(
+            conversation=conversation,
+            author=self.user,
+            body="Please review both items",
+        )
+        MessageReference.objects.create(
+            message=message,
+            reference_type=MessageReference.ReferenceType.EXPENSE,
+            expense=expense,
+            position=0,
+        )
+        missing_reference = MessageReference.objects.create(
+            message=message,
+            reference_type=MessageReference.ReferenceType.CHORE,
+            chore=chore,
+            position=1,
+        )
+        chore.delete()
+
+        response = self.client.get(reverse("chat:detail", args=[conversation.id]))
+
+        content = response.content.decode()
+        self.assertLess(
+            content.index("chat-message-references"),
+            content.rindex("Please review both items"),
+        )
+        self.assertContains(
+            response,
+            f'href="{reverse("expenses_list")}?highlight_expense={expense.id}"',
+            html=False,
+        )
+        self.assertContains(response, "Chore unavailable")
+        self.assertContains(
+            response,
+            f'data-reference-id="{missing_reference.id}"',
+            html=False,
+        )
+        self.assertNotContains(response, "<p></p>", html=False)

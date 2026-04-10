@@ -68,13 +68,7 @@
                                     </span>
                                 </div>
                                 <p class="chat-conversation-preview">
-                                    {% with latest=conversation.messages.last %}
-                                        {% if latest %}
-                                            {{ latest.body|truncatechars:72 }}
-                                        {% else %}
-                                            No messages yet. Start the thread when you're ready.
-                                        {% endif %}
-                                    {% endwith %}
+                                    {{ conversation.preview_text }}
                                 </p>
                             </div>
                             <span class="chat-conversation-meta">
@@ -157,7 +151,7 @@
             <div class="chat-live-status-panel">
                 <span class="chat-live-status-dot" aria-hidden="true"></span>
                 <div class="chat-live-status-copy">
-                    <strong data-live-status>Live Updates</strong>
+                    <strong data-live-status>Live updates</strong>
                     <p data-live-status-detail>Checking for new messages every 5 seconds.</p>
                 </div>
             </div>
@@ -184,7 +178,39 @@
                                 <strong>{{ message.author.username }}</strong>
                                 <span>{{ message.created_at|date:"M j, g:i A" }}</span>
                             </div>
-                            <p>{{ message.body|linebreaksbr }}</p>
+                            {% if message.reference_cards %}
+                                <div class="chat-message-references">
+                                    {% for reference in message.reference_cards %}
+                                        {% if reference.is_available and reference.href %}
+                                            <a
+                                                href="{{ reference.href }}"
+                                                class="chat-reference-card"
+                                                data-reference-id="{{ reference.id }}"
+                                                data-reference-type="{{ reference.reference_type }}"
+                                            >
+                                                <span class="chat-reference-card-type">{{ reference.reference_type|title }}</span>
+                                                <strong>{{ reference.title }}</strong>
+                                                <span>{{ reference.subtitle }}</span>
+                                                <small>{{ reference.meta }}</small>
+                                            </a>
+                                        {% else %}
+                                            <div
+                                                class="chat-reference-card is-unavailable"
+                                                data-reference-id="{{ reference.id }}"
+                                                data-reference-type="{{ reference.reference_type }}"
+                                            >
+                                                <span class="chat-reference-card-type">{{ reference.reference_type|title }}</span>
+                                                <strong>{{ reference.title }}</strong>
+                                                <span>{{ reference.subtitle }}</span>
+                                                <small>{{ reference.meta }}</small>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if message.body %}
+                                <p>{{ message.body|linebreaksbr }}</p>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}
@@ -199,6 +225,14 @@
 
         <form method="post" action="{% url 'chat:send_message' active_conversation.id %}" class="chat-composer" data-chat-composer>
             {% csrf_token %}
+            <div class="chat-composer-toolbar">
+                <button type="button" class="chat-picker-toggle" data-picker-open>
+                    Add Expense or Chore
+                </button>
+                <span class="chat-composer-toolbar-copy">Attach live references from this household.</span>
+            </div>
+            <div class="chat-selected-references is-hidden" data-selected-references></div>
+            <div data-reference-inputs></div>
             <label for="chat-body" class="sr-only">Message</label>
             <textarea
                 id="chat-body"
@@ -218,6 +252,37 @@
     </section>
 </section>
 
+<div class="chat-picker-modal is-hidden" data-reference-picker-modal>
+    <button type="button" class="chat-picker-backdrop" data-picker-close aria-label="Close reference picker"></button>
+    <div class="chat-picker-panel" role="dialog" aria-modal="true" aria-labelledby="chat-picker-title">
+        <div class="chat-picker-header">
+            <div>
+                <p class="chat-section-kicker">Attach references</p>
+                <h3 id="chat-picker-title">Share expenses and chores</h3>
+            </div>
+            <button type="button" class="chat-picker-close" data-picker-close aria-label="Close">
+                ×
+            </button>
+        </div>
+        <div class="chat-picker-tabs">
+            <button type="button" class="is-active" data-picker-tab="EXPENSE">Expenses</button>
+            <button type="button" data-picker-tab="CHORE">Chores</button>
+        </div>
+        <label class="sr-only" for="chat-reference-search">Search references</label>
+        <input
+            id="chat-reference-search"
+            type="search"
+            class="chat-picker-search"
+            placeholder="Search by title, person, or summary"
+            data-picker-search
+        >
+        <div class="chat-picker-results" data-picker-results></div>
+    </div>
+</div>
+
+{{ expense_picker_items|json_script:"chat-expense-picker-data" }}
+{{ chore_picker_items|json_script:"chat-chore-picker-data" }}
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const shell = document.querySelector('.chat-shell');
@@ -230,6 +295,18 @@
         const liveStatus = document.querySelector('[data-live-status]');
         const liveStatusDetail = document.querySelector('[data-live-status-detail]');
         const characterCount = document.querySelector('[data-character-count]');
+        const selectedReferencesContainer = document.querySelector('[data-selected-references]');
+        const referenceInputsContainer = document.querySelector('[data-reference-inputs]');
+        const pickerModal = document.querySelector('[data-reference-picker-modal]');
+        const pickerResults = document.querySelector('[data-picker-results]');
+        const pickerSearch = document.querySelector('[data-picker-search]');
+        const pickerTabButtons = Array.from(document.querySelectorAll('[data-picker-tab]'));
+        const pickerOpenButton = document.querySelector('[data-picker-open]');
+        const pickerCloseButtons = Array.from(document.querySelectorAll('[data-picker-close]'));
+        const pickerData = {
+            EXPENSE: JSON.parse(document.getElementById('chat-expense-picker-data').textContent),
+            CHORE: JSON.parse(document.getElementById('chat-chore-picker-data').textContent),
+        };
 
         if (!messageList || !shell) {
             return;
@@ -240,6 +317,8 @@
         const pollInterval = Number(messageList.dataset.pollInterval || '5000');
         const nearBottomThreshold = 120;
         let lastSuccessfulPoll = null;
+        let activePickerTab = 'EXPENSE';
+        let selectedReferences = [];
 
         function formatClock(value) {
             return new Intl.DateTimeFormat(undefined, {
@@ -267,7 +346,7 @@
                 );
                 return;
             }
-            setLiveStatus('Live Updates', `Last Checked At ${formatClock(timestamp)}.`);
+            setLiveStatus('Live updates', `Last checked at ${formatClock(timestamp)}.`);
         }
 
         function isNearBottom() {
@@ -287,6 +366,44 @@
             avatar.textContent = initial;
             avatar.setAttribute('aria-hidden', 'true');
             return { avatar, initial };
+        }
+
+        function buildReferenceCard(reference) {
+            const element = document.createElement(reference.href && reference.is_available ? 'a' : 'div');
+            element.className = `chat-reference-card${reference.is_available ? '' : ' is-unavailable'}`;
+            element.dataset.referenceId = reference.id;
+            element.dataset.referenceType = reference.reference_type;
+            if (reference.href && reference.is_available) {
+                element.href = reference.href;
+            }
+
+            const type = document.createElement('span');
+            type.className = 'chat-reference-card-type';
+            type.textContent = reference.reference_type === 'EXPENSE' ? 'Expense' : 'Chore';
+
+            const title = document.createElement('strong');
+            title.textContent = reference.title;
+
+            const subtitle = document.createElement('span');
+            subtitle.textContent = reference.subtitle;
+
+            const meta = document.createElement('small');
+            meta.textContent = reference.meta;
+
+            element.append(type, title, subtitle, meta);
+            return element;
+        }
+
+        function buildMessageBody(bodyText) {
+            const body = document.createElement('p');
+            const lines = String(bodyText || '').split('\n');
+            lines.forEach(function (line, index) {
+                if (index > 0) {
+                    body.append(document.createElement('br'));
+                }
+                body.append(document.createTextNode(line));
+            });
+            return body;
         }
 
         function appendMessage(message) {
@@ -309,11 +426,21 @@
             const timestamp = document.createElement('span');
             timestamp.textContent = new Date(message.created_at).toLocaleString();
 
-            const body = document.createElement('p');
-            body.textContent = message.body;
-
             meta.append(author, timestamp);
-            bubble.append(meta, body);
+            bubble.append(meta);
+
+            if (Array.isArray(message.references) && message.references.length) {
+                const references = document.createElement('div');
+                references.className = 'chat-message-references';
+                message.references.forEach(function (reference) {
+                    references.appendChild(buildReferenceCard(reference));
+                });
+                bubble.append(references);
+            }
+
+            if (message.body) {
+                bubble.append(buildMessageBody(message.body));
+            }
             article.append(avatar, bubble);
             messageList.appendChild(article);
 
@@ -345,6 +472,138 @@
             }
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+        }
+
+        function setPickerOpen(isOpen) {
+            if (!pickerModal) {
+                return;
+            }
+            pickerModal.classList.toggle('is-hidden', !isOpen);
+            document.body.classList.toggle('chat-picker-open', isOpen);
+            if (isOpen && pickerSearch) {
+                pickerSearch.focus();
+            }
+        }
+
+        function syncReferenceInputs() {
+            if (!referenceInputsContainer) {
+                return;
+            }
+            referenceInputsContainer.innerHTML = '';
+            selectedReferences.forEach(function (reference) {
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'reference_type[]';
+                typeInput.value = reference.reference_type;
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'reference_id[]';
+                idInput.value = reference.id;
+
+                referenceInputsContainer.append(typeInput, idInput);
+            });
+        }
+
+        function renderSelectedReferences() {
+            if (!selectedReferencesContainer) {
+                return;
+            }
+            selectedReferencesContainer.innerHTML = '';
+            selectedReferencesContainer.classList.toggle('is-hidden', selectedReferences.length === 0);
+
+            selectedReferences.forEach(function (reference) {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'chat-selected-reference-chip';
+                chip.dataset.referenceKey = `${reference.reference_type}:${reference.id}`;
+
+                const label = document.createElement('span');
+                label.textContent = `${reference.reference_type === 'EXPENSE' ? 'Expense' : 'Chore'}: ${reference.title}`;
+
+                const remove = document.createElement('strong');
+                remove.textContent = '×';
+
+                chip.append(label, remove);
+                chip.addEventListener('click', function () {
+                    selectedReferences = selectedReferences.filter(function (candidate) {
+                        return !(candidate.reference_type === reference.reference_type && candidate.id === reference.id);
+                    });
+                    renderSelectedReferences();
+                    renderPickerResults();
+                });
+                selectedReferencesContainer.appendChild(chip);
+            });
+
+            syncReferenceInputs();
+        }
+
+        function getVisiblePickerItems() {
+            const term = pickerSearch ? pickerSearch.value.trim().toLowerCase() : '';
+            return pickerData[activePickerTab].filter(function (item) {
+                if (!term) {
+                    return true;
+                }
+                return [item.title, item.subtitle, item.meta].join(' ').toLowerCase().includes(term);
+            });
+        }
+
+        function renderPickerResults() {
+            if (!pickerResults) {
+                return;
+            }
+            pickerResults.innerHTML = '';
+            const items = getVisiblePickerItems();
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'chat-picker-empty';
+                empty.textContent = 'No matching references.';
+                pickerResults.appendChild(empty);
+                return;
+            }
+
+            items.forEach(function (item) {
+                const key = `${activePickerTab}:${item.id}`;
+                const isSelected = selectedReferences.some(function (reference) {
+                    return `${reference.reference_type}:${reference.id}` === key;
+                });
+
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = `chat-picker-item${isSelected ? ' is-selected' : ''}`;
+
+                const copy = document.createElement('div');
+                copy.className = 'chat-picker-item-copy';
+
+                const title = document.createElement('strong');
+                title.textContent = item.title;
+
+                const subtitle = document.createElement('span');
+                subtitle.textContent = item.subtitle;
+
+                const meta = document.createElement('small');
+                meta.textContent = item.meta;
+
+                const badge = document.createElement('span');
+                badge.className = 'chat-picker-item-badge';
+                badge.textContent = isSelected ? 'Selected' : 'Add';
+
+                copy.append(title, subtitle, meta);
+                row.append(copy, badge);
+                row.addEventListener('click', function () {
+                    if (isSelected) {
+                        return;
+                    }
+                    selectedReferences.push({
+                        id: item.id,
+                        reference_type: activePickerTab,
+                        title: item.title,
+                    });
+                    renderSelectedReferences();
+                    renderPickerResults();
+                });
+                pickerResults.appendChild(row);
+            });
         }
 
         function setSidebarOpen(isOpen) {
@@ -424,11 +683,47 @@
             textarea.addEventListener('keydown', function (event) {
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
-                    if (textarea.value.trim()) {
+                    if (textarea.value.trim() || selectedReferences.length) {
                         composer.requestSubmit();
                     }
                 }
             });
+        }
+
+        if (composer) {
+            composer.addEventListener('submit', function (event) {
+                syncReferenceInputs();
+                if (!textarea.value.trim() && !selectedReferences.length) {
+                    event.preventDefault();
+                }
+            });
+        }
+
+        if (pickerOpenButton) {
+            pickerOpenButton.addEventListener('click', function () {
+                renderPickerResults();
+                setPickerOpen(true);
+            });
+        }
+
+        pickerCloseButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                setPickerOpen(false);
+            });
+        });
+
+        pickerTabButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                activePickerTab = button.dataset.pickerTab;
+                pickerTabButtons.forEach(function (candidate) {
+                    candidate.classList.toggle('is-active', candidate === button);
+                });
+                renderPickerResults();
+            });
+        });
+
+        if (pickerSearch) {
+            pickerSearch.addEventListener('input', renderPickerResults);
         }
 
         if (sidebarToggle) {
@@ -445,6 +740,8 @@
 
         scrollToBottom();
         setSidebarOpen(false);
+        renderSelectedReferences();
+        renderPickerResults();
         pollUnreadCounts();
         updateLiveStatusFromSuccess(new Date().toISOString(), 0);
         window.setInterval(pollMessages, pollInterval);
