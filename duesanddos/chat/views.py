@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.http import Http404
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -11,11 +12,17 @@ from households.models import HouseholdMember
 
 from .models import Message
 from .services import (
+    compute_message_preview_text,
+    create_message_with_references,
     ensure_chat_context,
     get_accessible_conversations,
     get_conversation_or_404,
+    get_chore_picker_items,
     get_or_create_dm,
     get_participant_or_404,
+    get_expense_picker_items,
+    serialize_reference,
+    serialize_message,
     unread_counts_for_user,
 )
 
@@ -23,23 +30,7 @@ MESSAGE_PAGE_SIZE = 50
 
 
 def _serialize_message(message, request_user):
-    profile = getattr(message.author, "profile", None)
-    avatar = ""
-    if profile and profile.avatar:
-        try:
-            avatar = profile.avatar.url
-        except ValueError:
-            avatar = ""
-
-    return {
-        "id": message.id,
-        "author_id": message.author_id,
-        "author_username": message.author.username,
-        "author_avatar_url": avatar,
-        "body": message.body,
-        "created_at": message.created_at.isoformat(),
-        "is_own_message": message.author_id == request_user.id,
-    }
+    return serialize_message(message, request_user)
 
 
 @login_required
@@ -60,12 +51,28 @@ def chat_index(request, conversation_id=None):
     selected_conversation = selected_conversation or group_conversation
     selected_participant = get_participant_or_404(selected_conversation, request.user)
 
+    for conversation in conversations:
+        latest = conversation.messages.last()
+        if latest is None:
+            conversation.preview_text = (
+                "No messages yet. Start the thread when you're ready."
+            )
+        else:
+            conversation.preview_text = compute_message_preview_text(
+                body=latest.body,
+                has_references=latest.references.exists(),
+            )
+
     thread_messages = list(
-        selected_conversation.messages.select_related("author").order_by("-id")[
-            :MESSAGE_PAGE_SIZE
-        ]
+        selected_conversation.messages.select_related("author")
+        .prefetch_related("references__expense__payer", "references__chore__assignees")
+        .order_by("-id")[:MESSAGE_PAGE_SIZE]
     )
     thread_messages.reverse()
+    for message in thread_messages:
+        message.reference_cards = [
+            serialize_reference(reference) for reference in message.references.all()
+        ]
     selected_participant.mark_read(thread_messages[-1] if thread_messages else None)
 
     other_members = (
@@ -81,6 +88,8 @@ def chat_index(request, conversation_id=None):
         "group_conversation": group_conversation,
         "thread_messages": thread_messages,
         "other_members": other_members,
+        "expense_picker_items": get_expense_picker_items(household),
+        "chore_picker_items": get_chore_picker_items(household),
         "message_max_length": Message.MAX_BODY_LENGTH,
         "poll_interval_ms": 5000,
     }
@@ -107,6 +116,7 @@ def start_dm(request, user_id):
 
 
 @login_required
+@transaction.atomic
 def send_message(request, conversation_id):
     if request.method != "POST":
         return redirect("chat:detail", conversation_id=conversation_id)
@@ -119,15 +129,25 @@ def send_message(request, conversation_id):
     get_participant_or_404(conversation, request.user)
 
     body = request.POST.get("body", "")
+    reference_types = request.POST.getlist("reference_type[]") or request.POST.getlist(
+        "reference_type"
+    )
+    reference_ids = request.POST.getlist("reference_id[]") or request.POST.getlist(
+        "reference_id"
+    )
     try:
-        message = Message(
+        create_message_with_references(
             conversation=conversation,
             author=request.user,
             body=body,
+            reference_types=reference_types,
+            reference_ids=reference_ids,
         )
-        message.save()
     except ValidationError as exc:
-        error_message = exc.message_dict.get("body", exc.messages)[0]
+        if hasattr(exc, "message_dict"):
+            error_message = next(iter(exc.message_dict.values()))[0]
+        else:
+            error_message = exc.messages[0]
         messages.error(request, error_message)
     else:
         messages.success(request, "Message sent.")
@@ -144,7 +164,11 @@ def messages_json(request, conversation_id):
     conversation = get_conversation_or_404(request.user, household, conversation_id)
     get_participant_or_404(conversation, request.user)
 
-    queryset = conversation.messages.select_related("author").order_by("id")
+    queryset = (
+        conversation.messages.select_related("author")
+        .prefetch_related("references__expense__payer", "references__chore__assignees")
+        .order_by("id")
+    )
     after_id = request.GET.get("after_id")
     if after_id:
         queryset = queryset.filter(id__gt=after_id)

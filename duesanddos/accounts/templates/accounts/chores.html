@@ -10,6 +10,9 @@
 
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    {% if request.GET.highlight_chore %}
+        <div data-highlight-chore="{{ request.GET.highlight_chore }}"></div>
+    {% endif %}
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Chores</h1>
         <button
@@ -171,7 +174,7 @@
 
         <div class="space-y-3">
             {% for item in occurrences %}
-            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100" id="chore-{{ item.chore.id }}">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <div class="font-bold text-gray-900 text-lg">{{ item.chore.description }}</div>
@@ -300,6 +303,28 @@
 function toggleChoreForm() {
     document.getElementById("choreFormCard").classList.toggle("hidden");
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const marker = document.querySelector('[data-highlight-chore]');
+    if (!marker) {
+        return;
+    }
+
+    const card = document.getElementById(`chore-${marker.dataset.highlightChore}`);
+    if (!card) {
+        return;
+    }
+
+    card.classList.add('ring-2');
+    card.classList.add('ring-cyan-300');
+    card.classList.add('bg-cyan-50');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    window.setTimeout(function () {
+        card.classList.remove('ring-2');
+        card.classList.remove('ring-cyan-300');
+    }, 2400);
+});
 
 function toggleRepeatFields() {
     const repeatType = document.getElementById("repeatType").value;

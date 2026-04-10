@@ -209,7 +209,7 @@ class Message(models.Model):
         on_delete=models.CASCADE,
         related_name="chat_messages",
     )
-    body = models.TextField(max_length=MAX_BODY_LENGTH)
+    body = models.TextField(max_length=MAX_BODY_LENGTH, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -222,9 +222,15 @@ class Message(models.Model):
         return f"{self.author} in {self.conversation_id}"
 
     def clean(self):
-        if not self.body or not self.body.strip():
-            raise ValidationError({"body": "Message body cannot be empty."})
-        self.body = self.body.strip()
+        self.body = (self.body or "").strip()
+        has_references = False
+        if self.pk:
+            has_references = self.references.exists()
+        allow_blank_body = getattr(self, "_allow_blank_body", False)
+        if not self.body and not has_references and not allow_blank_body:
+            raise ValidationError(
+                {"body": "Add a message or at least one reference before sending."}
+            )
         if len(self.body) > self.MAX_BODY_LENGTH:
             raise ValidationError(
                 {"body": f"Message body cannot exceed {self.MAX_BODY_LENGTH} chars."}
@@ -234,8 +240,105 @@ class Message(models.Model):
                 raise ValidationError("Message author must be a participant.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        skip_composition_validation = kwargs.pop("skip_composition_validation", False)
+        self.body = (self.body or "").strip()
+        if skip_composition_validation:
+            if len(self.body) > self.MAX_BODY_LENGTH:
+                raise ValidationError(
+                    {
+                        "body": (
+                            f"Message body cannot exceed {self.MAX_BODY_LENGTH} chars."
+                        )
+                    }
+                )
+            if self.conversation_id and self.author_id:
+                if not self.conversation.participants.filter(user=self.author).exists():
+                    raise ValidationError("Message author must be a participant.")
+        else:
+            self.full_clean()
         super().save(*args, **kwargs)
         Conversation.objects.filter(pk=self.conversation_id).update(
             updated_at=timezone.now()
         )
+
+
+class MessageReference(models.Model):
+    class ReferenceType(models.TextChoices):
+        EXPENSE = "EXPENSE", "Expense"
+        CHORE = "CHORE", "Chore"
+
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name="references",
+    )
+    reference_type = models.CharField(max_length=16, choices=ReferenceType.choices)
+    expense = models.ForeignKey(
+        "expenses.Expense",
+        on_delete=models.SET_NULL,
+        related_name="message_references",
+        blank=True,
+        null=True,
+    )
+    chore = models.ForeignKey(
+        "chores.Chore",
+        on_delete=models.SET_NULL,
+        related_name="message_references",
+        blank=True,
+        null=True,
+    )
+    snapshot_title = models.CharField(max_length=255, blank=True)
+    snapshot_subtitle = models.CharField(max_length=255, blank=True)
+    snapshot_meta = models.CharField(max_length=255, blank=True)
+    snapshot_href = models.CharField(max_length=255, blank=True)
+    snapshot_is_available = models.BooleanField(default=True)
+    position = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["message", "position"],
+                name="chat_unique_reference_position_per_message",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.reference_type} ref for message {self.message_id}"
+
+    def clean(self):
+        has_expense = self.expense_id is not None
+        has_chore = self.chore_id is not None
+        if has_expense == has_chore:
+            raise ValidationError(
+                (
+                    "Exactly one of expense or chore must be attached to a message "
+                    "reference."
+                )
+            )
+
+        if has_expense and self.reference_type != self.ReferenceType.EXPENSE:
+            raise ValidationError(
+                {"reference_type": "Reference type must match expense."}
+            )
+        if has_chore and self.reference_type != self.ReferenceType.CHORE:
+            raise ValidationError(
+                {"reference_type": "Reference type must match chore."}
+            )
+
+        if not self.message_id:
+            return
+
+        household_id = self.message.conversation.household_id
+        if has_expense and self.expense.household_id != household_id:
+            raise ValidationError(
+                "Expense references must belong to the same household."
+            )
+
+        if has_chore:
+            if self.chore.household_id != household_id:
+                raise ValidationError(
+                    "Chore references must belong to the same household."
+                )
+            if not self.chore.is_active:
+                raise ValidationError("Only active chores can be attached to messages.")
