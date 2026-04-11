@@ -21,6 +21,13 @@ class GoogleCalendarService:
         self.service = self._get_service()
 
     # ------------------------------------------------------------------ auth
+    def _normalize_expiry(self, expiry):
+        if not isinstance(expiry, datetime):
+            return None
+        if timezone.is_naive(expiry):
+            return timezone.make_aware(expiry, timezone=timezone.utc)
+        return expiry.astimezone(timezone.utc)
+
     def _get_service(self):
         token_obj = (
             SocialToken.objects.filter(
@@ -43,19 +50,15 @@ class GoogleCalendarService:
 
         # Refresh if expired or about to expire (within 5 min)
         now = timezone.now()
-        if creds.expired or (
-            creds.expiry
-            and timezone.make_aware(creds.expiry, timezone=timezone.utc)
-            < now + timedelta(minutes=5)
-        ):
+        expiry = self._normalize_expiry(creds.expiry)
+        if creds.expired or (expiry and expiry < now + timedelta(minutes=5)):
             try:
                 creds.refresh(Request())
                 # Persist the refreshed token back to the DB
                 token_obj.token = creds.token
-                if creds.expiry:
-                    token_obj.expires_at = timezone.make_aware(
-                        creds.expiry, timezone=timezone.utc
-                    )
+                refreshed_expiry = self._normalize_expiry(creds.expiry)
+                if refreshed_expiry:
+                    token_obj.expires_at = refreshed_expiry
                 token_obj.save(update_fields=["token", "expires_at"])
             except Exception as e:  # pragma: no cover
                 logger.error(f"Token refresh failed for {self.user.username}: {e}")

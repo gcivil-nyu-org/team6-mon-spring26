@@ -89,6 +89,29 @@ class ChatModelTests(TestCase):
                 user_b=self.owner,
             )
 
+    def test_direct_message_requires_both_members_to_belong_to_household(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Both users must belong to the same household.",
+        ):
+            Conversation.objects.create_direct_message(
+                household=self.household,
+                created_by=self.owner,
+                user_a=self.outsider,
+                user_b=self.member,
+            )
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Both users must belong to the same household.",
+        ):
+            Conversation.objects.create_direct_message(
+                household=self.household,
+                created_by=self.owner,
+                user_a=self.owner,
+                user_b=self.outsider,
+            )
+
     def test_participant_uniqueness_enforced(self):
         conversation = Conversation.objects.create(
             household=self.household,
@@ -161,6 +184,125 @@ class ChatModelTests(TestCase):
 
         with self.assertRaises(ValidationError):
             message.full_clean()
+
+    def test_conversation_and_participant_display_names(self):
+        group = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.owner,
+        )
+        group.ensure_group_participants()
+
+        direct = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.DIRECT,
+            created_by=self.owner,
+        )
+        participant = ConversationParticipant.objects.create(
+            conversation=direct,
+            user=self.owner,
+        )
+
+        self.assertEqual(group.display_name, "Household Chat")
+        self.assertEqual(str(group), "Household Chat")
+        self.assertEqual(direct.display_name, "Direct Message")
+        self.assertIn("owner", str(participant))
+        self.assertEqual(participant.unread_count, 0)
+
+        ConversationParticipant.objects.create(
+            conversation=direct,
+            user=self.member,
+        )
+        self.assertEqual(direct.display_name, "member and owner")
+        self.assertEqual(str(direct), "member and owner")
+
+    def test_non_group_conversation_does_not_add_participants(self):
+        direct = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.DIRECT,
+            created_by=self.owner,
+        )
+
+        direct.ensure_group_participants()
+
+        self.assertEqual(direct.participants.count(), 0)
+
+    def test_participant_clean_returns_early_without_required_foreign_keys(self):
+        participant = ConversationParticipant()
+
+        participant.clean()
+
+    def test_message_save_validates_length_and_membership_on_skip(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.owner,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.owner,
+        )
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            f"Message body cannot exceed {Message.MAX_BODY_LENGTH} chars.",
+        ):
+            Message(
+                conversation=conversation,
+                author=self.owner,
+                body="x" * (Message.MAX_BODY_LENGTH + 1),
+            ).save(skip_composition_validation=True)
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Message author must be a participant.",
+        ):
+            Message(
+                conversation=conversation,
+                author=self.member,
+                body="hello",
+            ).save(skip_composition_validation=True)
+
+    def test_message_clean_rejects_overlong_body(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.owner,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.owner,
+        )
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            f"Message body cannot exceed {Message.MAX_BODY_LENGTH} chars.",
+        ):
+            Message(
+                conversation=conversation,
+                author=self.owner,
+                body="x" * (Message.MAX_BODY_LENGTH + 1),
+            ).full_clean()
+
+    def test_message_string_and_save_trim_body(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.owner,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.owner,
+        )
+
+        message = Message.objects.create(
+            conversation=conversation,
+            author=self.owner,
+            body="  hello world  ",
+        )
+
+        self.assertEqual(message.body, "hello world")
+        self.assertEqual(str(message), f"{self.owner} in {conversation.id}")
 
     def test_reference_must_point_to_exactly_one_domain_object(self):
         conversation = Conversation.objects.create(
@@ -235,6 +377,113 @@ class ChatModelTests(TestCase):
                 position=0,
             ).full_clean()
 
+    def test_reference_validation_covers_type_specific_rules(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.owner,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation,
+            user=self.owner,
+        )
+        message = Message.objects.create(
+            conversation=conversation,
+            author=self.owner,
+            body="Reference payload",
+        )
+        expense = Expense.objects.create(
+            title="Groceries",
+            amount="42.50",
+            payer=self.owner,
+            household=self.household,
+        )
+        active_chore = Chore.objects.create(
+            household=self.household,
+            description="Take out recycling",
+            created_by=self.owner,
+            has_due_date=True,
+            due_date=timezone.now().date(),
+        )
+        inactive_chore = Chore.objects.create(
+            household=self.household,
+            description="Archived task",
+            created_by=self.owner,
+            is_active=False,
+            has_due_date=True,
+            due_date=timezone.now().date(),
+        )
+        foreign_chore = Chore.objects.create(
+            household=self.other_household,
+            description="Other household task",
+            created_by=self.outsider,
+            has_due_date=True,
+            due_date=timezone.now().date(),
+        )
+
+        self.assertIn(
+            "EXPENSE ref",
+            str(
+                MessageReference(
+                    message=message,
+                    reference_type="EXPENSE",
+                    expense=expense,
+                    position=0,
+                )
+            ),
+        )
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Reference type must match expense.",
+        ):
+            MessageReference(
+                message=message,
+                reference_type=MessageReference.ReferenceType.CHORE,
+                expense=expense,
+                position=0,
+            ).full_clean()
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Reference type must match chore.",
+        ):
+            MessageReference(
+                message=message,
+                reference_type=MessageReference.ReferenceType.EXPENSE,
+                chore=active_chore,
+                position=0,
+            ).full_clean()
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Chore references must belong to the same household.",
+        ):
+            MessageReference(
+                message=message,
+                reference_type=MessageReference.ReferenceType.CHORE,
+                chore=foreign_chore,
+                position=0,
+            ).full_clean()
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Only active chores can be attached to messages.",
+        ):
+            MessageReference(
+                message=message,
+                reference_type=MessageReference.ReferenceType.CHORE,
+                chore=inactive_chore,
+                position=0,
+            ).full_clean()
+
+        reference_without_message = MessageReference(
+            reference_type=MessageReference.ReferenceType.CHORE,
+            chore=active_chore,
+            position=1,
+        )
+        reference_without_message.clean()
+
     def test_reference_snapshot_is_stored_at_send_time_and_used_after_live_data_changes(
         self,
     ):
@@ -280,13 +529,13 @@ class ChatModelTests(TestCase):
         self.assertEqual(references[0].snapshot_subtitle, "$42.50 • owner")
         self.assertEqual(
             references[0].snapshot_href,
-            f'{reverse("expenses_list")}?highlight_expense={expense_id}',
+            f"{reverse('expenses_list')}?highlight_expense={expense_id}",
         )
         self.assertEqual(references[1].snapshot_title, "Take out recycling")
         self.assertEqual(references[1].snapshot_meta, "Assigned to member")
         self.assertEqual(
             references[1].snapshot_href,
-            f'{reverse("chores_list")}?highlight_chore={chore_id}',
+            f"{reverse('chores_list')}?highlight_chore={chore_id}",
         )
 
         expense.title = "Changed title"
@@ -298,13 +547,13 @@ class ChatModelTests(TestCase):
         self.assertEqual(serialized_expense["title"], "Groceries")
         self.assertEqual(
             serialized_expense["href"],
-            f'{reverse("expenses_list")}?highlight_expense={expense_id}',
+            f"{reverse('expenses_list')}?highlight_expense={expense_id}",
         )
         self.assertTrue(serialized_expense["is_available"])
         self.assertEqual(serialized_chore["title"], "Take out recycling")
         self.assertEqual(
             serialized_chore["href"],
-            f'{reverse("chores_list")}?highlight_chore={chore_id}',
+            f"{reverse('chores_list')}?highlight_chore={chore_id}",
         )
         self.assertTrue(serialized_chore["is_available"])
 

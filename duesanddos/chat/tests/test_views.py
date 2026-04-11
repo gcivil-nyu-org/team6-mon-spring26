@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from accounts.models import CustomUser, Profile
 from chores.models import Chore
@@ -73,6 +74,19 @@ class ChatViewTests(TestCase):
             1,
         )
 
+    def test_start_dm_get_request_redirects_to_index(self):
+        response = self.client.get(reverse("chat:start_dm", args=[self.other.id]))
+
+        self.assertRedirects(response, reverse("chat:index"))
+
+    def test_start_dm_without_active_household_redirects_to_household_settings(self):
+        self.profile.active_household = None
+        self.profile.save(update_fields=["active_household"])
+
+        response = self.client.post(reverse("chat:start_dm", args=[self.other.id]))
+
+        self.assertRedirects(response, reverse("household_settings"))
+
     def test_sending_valid_message_succeeds(self):
         conversation = Conversation.objects.create(
             household=self.household,
@@ -114,6 +128,100 @@ class ChatViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Message.objects.filter(conversation=conversation).exists())
+
+    def test_send_message_get_request_redirects_without_posting(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+
+        response = self.client.get(reverse("chat:send_message", args=[conversation.id]))
+
+        self.assertRedirects(response, reverse("chat:detail", args=[conversation.id]))
+        self.assertFalse(Message.objects.filter(conversation=conversation).exists())
+
+    def test_send_message_without_active_household_redirects_to_household_settings(
+        self,
+    ):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        self.profile.active_household = None
+        self.profile.save(update_fields=["active_household"])
+
+        response = self.client.post(
+            reverse("chat:send_message", args=[conversation.id]),
+            {"body": "hello"},
+        )
+
+        self.assertRedirects(response, reverse("household_settings"))
+
+    def test_send_message_uses_flat_validation_message_list_when_message_dict_missing(
+        self,
+    ):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+
+        with patch(
+            "chat.views.create_message_with_references",
+            side_effect=ValueError,
+        ):
+            pass
+
+        from django.core.exceptions import ValidationError
+
+        with patch(
+            "chat.views.create_message_with_references",
+            side_effect=ValidationError("Flat message"),
+        ):
+            response = self.client.post(
+                reverse("chat:send_message", args=[conversation.id]),
+                {"body": "bad"},
+                follow=True,
+            )
+
+        messages_list = list(response.context["messages"])
+        self.assertEqual(messages_list[-1].message, "Flat message")
+
+    def test_send_message_uses_message_dict_validation_errors(self):
+        from django.core.exceptions import ValidationError
+
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+
+        with patch(
+            "chat.views.create_message_with_references",
+            side_effect=ValidationError({"body": ["Dict error"]}),
+        ):
+            response = self.client.post(
+                reverse("chat:send_message", args=[conversation.id]),
+                {"body": "bad"},
+                follow=True,
+            )
+
+        messages_list = list(response.context["messages"])
+        self.assertEqual(messages_list[-1].message, "Dict error")
 
     def test_chat_page_renders_conversation_list_and_empty_dm_state(self):
         response = self.client.get(reverse("chat:index"))
@@ -405,3 +513,47 @@ class ChatViewTests(TestCase):
             html=False,
         )
         self.assertNotContains(response, "<p></p>", html=False)
+
+    def test_polling_views_return_household_errors_for_users_without_active_household(
+        self,
+    ):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+        self.profile.active_household = None
+        self.profile.save(update_fields=["active_household"])
+
+        messages_response = self.client.get(
+            reverse("chat:messages", args=[conversation.id])
+        )
+        unread_response = self.client.get(reverse("chat:unread_counts"))
+        mark_read_response = self.client.post(
+            reverse("chat:mark_read", args=[conversation.id])
+        )
+
+        self.assertEqual(messages_response.status_code, 403)
+        self.assertEqual(messages_response.json()["error"], "No active household.")
+        self.assertEqual(unread_response.status_code, 200)
+        self.assertEqual(unread_response.json()["total_unread"], 0)
+        self.assertEqual(mark_read_response.status_code, 403)
+        self.assertEqual(mark_read_response.json()["error"], "No active household.")
+
+    def test_mark_read_requires_post(self):
+        conversation = Conversation.objects.create(
+            household=self.household,
+            conversation_type=Conversation.ConversationType.GROUP,
+            created_by=self.user,
+        )
+        ConversationParticipant.objects.create(
+            conversation=conversation, user=self.user
+        )
+
+        response = self.client.get(reverse("chat:mark_read", args=[conversation.id]))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response.json()["error"], "POST required.")
