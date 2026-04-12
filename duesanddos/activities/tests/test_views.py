@@ -116,13 +116,19 @@ class ActivitiesViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         events = response.json()
 
-        on_time_event = next(e for e in events if str(chore_on_time.id) in e["id"])
+        on_time_event = next(
+            e for e in events if e["extendedProps"]["chore_id"] == chore_on_time.id
+        )
         self.assertEqual(on_time_event["color"], "#10b981")  # Green
 
-        late_event = next(e for e in events if str(chore_late.id) in e["id"])
+        late_event = next(
+            e for e in events if e["extendedProps"]["chore_id"] == chore_late.id
+        )
         self.assertEqual(late_event["color"], "#f59e0b")  # Yellow
 
-        overdue_event = next(e for e in events if str(chore_overdue.id) in e["id"])
+        overdue_event = next(
+            e for e in events if e["extendedProps"]["chore_id"] == chore_overdue.id
+        )
         self.assertEqual(overdue_event["color"], "#ef4444")  # Red
 
     @patch("activities.views.GoogleCalendarService")

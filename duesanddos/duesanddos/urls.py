@@ -22,6 +22,7 @@ urlpatterns = [
     path("activities/", include("activities.urls")),
     path("accounts/", include("chores.urls")),
     path("accounts/", include("insights.urls")),
+    path("accounts/", include("chat.urls")),
     # Allauth routes (e.g., google/login/, etc.)
     path("accounts/", include("allauth.urls")),
 ]

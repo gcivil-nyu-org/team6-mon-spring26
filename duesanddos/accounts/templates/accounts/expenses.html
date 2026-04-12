@@ -9,6 +9,9 @@
 
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    {% if request.GET.highlight_expense %}
+        <div data-highlight-expense="{{ request.GET.highlight_expense }}"></div>
+    {% endif %}
     
 
     {% for p in pending_incoming %}
@@ -139,7 +142,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     {% for exp in expenses %}
-                    <tr class="group">
+                    <tr class="group" id="expense-{{ exp.id }}">
                         <td class="py-4 text-sm text-gray-500">{{ exp.date_spent|date:"M d, Y" }}</td>
                         <td class="py-4 font-bold text-gray-900">{{ exp.title }}</td>
                         <td class="py-4 text-gray-700">{{ exp.payer.username }}</td>
@@ -195,6 +198,30 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const marker = document.querySelector('[data-highlight-expense]');
+    if (!marker) {
+        return;
+    }
+
+    const row = document.getElementById(`expense-${marker.dataset.highlightExpense}`);
+    if (!row) {
+        return;
+    }
+
+    row.classList.add('bg-cyan-50');
+    row.classList.add('ring-2');
+    row.classList.add('ring-cyan-300');
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    window.setTimeout(function () {
+        row.classList.remove('ring-2');
+        row.classList.remove('ring-cyan-300');
+    }, 2400);
+});
+</script>
 
 
 <div id="globalSettleModal" class="hidden fixed inset-0 z-[1100] flex items-center justify-center p-4">

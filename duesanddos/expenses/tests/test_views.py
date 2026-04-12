@@ -575,6 +575,26 @@ class ExpenseViewTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
+    def test_expenses_list_highlights_targeted_expense_row(self):
+        expense = Expense.objects.create(
+            title="Highlight me",
+            amount=Decimal("25.00"),
+            payer=self.user,
+            household=self.hh,
+        )
+
+        response = self.client.get(
+            reverse("expenses_list"),
+            {"highlight_expense": str(expense.id)},
+        )
+
+        self.assertContains(response, f'id="expense-{expense.id}"', html=False)
+        self.assertContains(
+            response,
+            f'data-highlight-expense="{expense.id}"',
+            html=False,
+        )
+
     def test_expense_history_view_success(self):
         url = reverse("expense_history")
         response = self.client.get(url)
