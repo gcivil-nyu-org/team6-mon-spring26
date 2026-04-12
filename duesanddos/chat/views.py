@@ -54,9 +54,7 @@ def chat_index(request, conversation_id=None):
     for conversation in conversations:
         latest = conversation.messages.last()
         if latest is None:
-            conversation.preview_text = (
-                "No messages yet. Start the thread when you're ready."
-            )
+            conversation.preview_text = "No Messages"
         else:
             conversation.preview_text = compute_message_preview_text(
                 body=latest.body,

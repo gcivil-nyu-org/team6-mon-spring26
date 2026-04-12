@@ -151,7 +151,7 @@
             <div class="chat-live-status-panel">
                 <span class="chat-live-status-dot" aria-hidden="true"></span>
                 <div class="chat-live-status-copy">
-                    <strong data-live-status>Live updates</strong>
+                    <strong data-live-status>Live Updates</strong>
                     <p data-live-status-detail>Checking for new messages every 5 seconds.</p>
                 </div>
             </div>
@@ -217,8 +217,7 @@
             {% else %}
                 <div class="chat-empty-state">
                     <div class="chat-empty-state-icon" aria-hidden="true">+</div>
-                    <h3>No messages yet</h3>
-                    <p>Send the first note to kick off this conversation.</p>
+                    <h3>No Messages</h3>
                 </div>
             {% endif %}
         </div>
@@ -229,7 +228,7 @@
                 <button type="button" class="chat-picker-toggle" data-picker-open>
                     Add Expense or Chore
                 </button>
-                <span class="chat-composer-toolbar-copy">Attach live references from this household.</span>
+                <span class="chat-composer-toolbar-copy">Attach Live References From This Household</span>
             </div>
             <div class="chat-selected-references is-hidden" data-selected-references></div>
             <div data-reference-inputs></div>
@@ -243,8 +242,8 @@
             ></textarea>
             <div class="chat-composer-footer">
                 <div class="chat-composer-meta">
-                    <strong>Press Enter to send</strong>
-                    <span>Use Shift+Enter for a new line <span data-character-count>(0 / {{ message_max_length }})</span></span>
+                    <strong>Press Enter To Send</strong>
+                    <span>Use Shift+Enter For A New Line <span data-character-count>(0 / {{ message_max_length }})</span></span>
                 </div>
                 <button type="submit">Send Message</button>
             </div>
@@ -342,11 +341,11 @@
             if (newCount > 0) {
                 setLiveStatus(
                     newCount === 1 ? '1 new message' : `${newCount} new messages`,
-                    `Last synced at ${formatClock(timestamp)}.`
+                    'Checking for new messages.'
                 );
                 return;
             }
-            setLiveStatus('Live updates', `Last checked at ${formatClock(timestamp)}.`);
+            setLiveStatus('Live Updates', '');
         }
 
         function isNearBottom() {
