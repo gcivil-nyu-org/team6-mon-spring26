@@ -67,7 +67,11 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["avatar", "bio", "notifications_enabled"]
+        fields = ["avatar", "bio", "theme", "default_calendar_view"]
+        widgets = {
+            "theme": forms.Select(attrs={"class": "input-field"}),
+            "default_calendar_view": forms.Select(attrs={"class": "input-field"}),
+        }
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):

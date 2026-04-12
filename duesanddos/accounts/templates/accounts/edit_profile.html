@@ -160,12 +160,11 @@
                     {% endfor %}
                     
                     {% for field in profile_form %}
-                        {% if field.name != 'notifications_enabled' and field.name != 'avatar' %}
+                    {% if field.name != 'avatar' %}
                         <div class="form-group">
                             {{ field.label_tag }}
                             {{ field }}
-                            {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
-                            {{ field.errors }}
+                            ...
                         </div>
                         {% endif %}
                     {% endfor %}

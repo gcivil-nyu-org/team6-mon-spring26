@@ -25,6 +25,42 @@
     padding: 24px 16px;
 }
 
+/* Sidebar and Background */
+.dark .sidebar {
+    background-color: #0f172a; /* Dark Navy */
+    border-right: 1px solid #1e293b;
+}
+
+.dark .main-content {
+    background-color: #020617; /* Near Black */
+    color: #f8fafc;
+}
+
+/* Top Navbar */
+.dark .top-navbar {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+
+.dark .top-navbar-id {
+    color: #f8fafc !important;
+}
+
+/* Cards and Containers */
+.dark .bg-white {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+.dark .text-gray-900 {
+    color: #f8fafc !important;
+}
+
+.dark .text-gray-500 {
+    color: #94a3b8 !important;
+}
+
 .sidebar-text {
     opacity: 0;
     transform: translateX(-10px);

@@ -120,12 +120,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class', // Add this line to enable class-based dark mode
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
-                            500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
+                            // ... your existing colors ...
                         }
                     }
                 }
@@ -134,7 +134,7 @@
     </script>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% if user.profile.theme == 'dark' %}dark{% endif %}">
     <div class="app-layout">
         <aside id="app-sidebar" class="sidebar">
             <div class="sidebar-brand">

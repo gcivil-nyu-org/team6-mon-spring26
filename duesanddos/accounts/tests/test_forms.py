@@ -80,20 +80,29 @@ class ProfileUpdateFormTests(TestCase):
         self.assertEqual(ProfileUpdateForm.Meta.model, Profile)
 
     def test_meta_fields(self):
+        form = ProfileUpdateForm()
         self.assertEqual(
-            list(ProfileUpdateForm.Meta.fields),
-            ["avatar", "bio", "notifications_enabled"],
+            list(form.fields.keys()),
+            ["avatar", "bio", "theme", "default_calendar_view"],
         )
 
     def test_valid_data_with_bio(self):
         form = ProfileUpdateForm(
-            data={"bio": "A short bio", "notifications_enabled": True},
+            data={
+                "bio": "A short bio",
+                "theme": "light",
+                "default_calendar_view": "dayGridMonth",
+                "notifications_enabled": True,
+            },
             instance=self.profile,
         )
         self.assertTrue(form.is_valid())
 
     def test_empty_data_is_valid(self):
-        form = ProfileUpdateForm(data={}, instance=self.profile)
+        form = ProfileUpdateForm(
+            data={"theme": "light", "default_calendar_view": "dayGridMonth"},
+            instance=self.profile,
+        )
         self.assertTrue(form.is_valid())
 
 
