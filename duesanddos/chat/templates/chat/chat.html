@@ -1,0 +1,750 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Chat | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="chat-shell" data-sidebar-open="false">
+    <button
+        type="button"
+        class="chat-sidebar-backdrop"
+        data-sidebar-backdrop
+        aria-label="Close conversations"
+        hidden
+    ></button>
+
+    <aside class="chat-sidebar" id="chat-sidebar-panel" aria-label="Conversations">
+        <div class="chat-sidebar-panel">
+            <div class="chat-identity-card">
+                <p class="chat-eyebrow">Active Household</p>
+                <h1 class="chat-household">{{ request.user.profile.active_household.name }}</h1>
+                <p class="chat-identity-copy">
+                    Your shared live workspace for quick check-ins, updates, and everyday coordination.
+                </p>
+                <div class="chat-summary-chips">
+                    <div class="chat-summary-chip">
+                        <strong>{{ conversations|length }}</strong>
+                        <span>Visible conversations</span>
+                    </div>
+                    <div class="chat-summary-chip">
+                        <strong>{{ other_members|length }}</strong>
+                        <span>Members ready for DMs</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-sidebar-section">
+                <div class="chat-sidebar-header">
+                    <div>
+                        <p class="chat-section-kicker">Browse threads</p>
+                        <h2>Conversations</h2>
+                    </div>
+                </div>
+                <div class="chat-conversation-list">
+                    {% for conversation in conversations %}
+                        <a
+                            href="{% url 'chat:detail' conversation.id %}"
+                            class="chat-conversation-item {% if active_conversation.id == conversation.id %}is-active{% endif %}"
+                        >
+                            <div class="chat-conversation-copy">
+                                <div class="chat-conversation-topline">
+                                    <strong>
+                                        {% if conversation.conversation_type == "group" %}
+                                            Household Chat
+                                        {% else %}
+                                            {% for participant in conversation.participants.all %}
+                                                {% if participant.user != request.user %}
+                                                    {{ participant.user.username }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </strong>
+                                    <span class="chat-conversation-label">
+                                        {% if conversation.conversation_type == "group" %}Group{% else %}Direct{% endif %}
+                                    </span>
+                                </div>
+                                <p class="chat-conversation-preview">
+                                    {{ conversation.preview_text }}
+                                </p>
+                            </div>
+                            <span class="chat-conversation-meta">
+                                <span
+                                    class="chat-conversation-badge is-hidden"
+                                    data-conversation-badge="{{ conversation.id }}"
+                                ></span>
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="chat-sidebar-section">
+                <div class="chat-sidebar-header">
+                    <div>
+                        <p class="chat-section-kicker">Reach someone fast</p>
+                        <h2>Start a direct conversation</h2>
+                    </div>
+                </div>
+                {% if other_members %}
+                    <div class="chat-member-list">
+                        {% for member in other_members %}
+                            <form method="post" action="{% url 'chat:start_dm' member.user.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="chat-member-button">
+                                    <span class="chat-member-avatar" aria-hidden="true">{{ member.user.username|first|upper }}</span>
+                                    <span>{{ member.user.username }}</span>
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="chat-empty-copy">
+                        <strong>Everyone is already here.</strong>
+                        <p>No other household members are available for a new direct message yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+    <section class="chat-thread">
+        <header class="chat-thread-header">
+            <div class="chat-thread-heading">
+                <button
+                    type="button"
+                    class="chat-rail-toggle"
+                    data-sidebar-toggle
+                    aria-expanded="false"
+                    aria-controls="chat-sidebar-panel"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span class="sr-only">Toggle conversations</span>
+                </button>
+                <div>
+                    <p class="chat-eyebrow">
+                        {% if active_conversation.conversation_type == "group" %}Household thread{% else %}Direct message{% endif %}
+                    </p>
+                    <div class="chat-thread-title-row">
+                        <h2>
+                            {% if active_conversation.conversation_type == "group" %}
+                                Household Chat
+                            {% else %}
+                                {% for participant in active_conversation.participants.all %}
+                                    {% if participant.user != request.user %}
+                                        {{ participant.user.username }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </h2>
+                        <span class="chat-thread-badge">
+                            {% if active_conversation.conversation_type == "group" %}Group{% else %}Direct{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-live-status-panel">
+                <span class="chat-live-status-dot" aria-hidden="true"></span>
+                <div class="chat-live-status-copy">
+                    <strong data-live-status>Live updates</strong>
+                    <p data-live-status-detail>Checking for new messages every 5 seconds.</p>
+                </div>
+            </div>
+        </header>
+
+        <div
+            id="chat-message-list"
+            class="chat-message-list"
+            data-conversation-id="{{ active_conversation.id }}"
+            data-messages-url="{% url 'chat:messages' active_conversation.id %}"
+            data-mark-read-url="{% url 'chat:mark_read' active_conversation.id %}"
+            data-poll-interval="{{ poll_interval_ms }}"
+        >
+            {% if thread_messages %}
+                {% for message in thread_messages %}
+                    <article
+                        class="chat-message {% if message.author_id == request.user.id %}is-own{% endif %}"
+                        data-message-id="{{ message.id }}"
+                        data-message-author-initial="{{ message.author.username|first|upper }}"
+                    >
+                        <div class="chat-message-avatar" aria-hidden="true">{{ message.author.username|first|upper }}</div>
+                        <div class="chat-message-bubble">
+                            <div class="chat-message-meta">
+                                <strong>{{ message.author.username }}</strong>
+                                <span>{{ message.created_at|date:"M j, g:i A" }}</span>
+                            </div>
+                            {% if message.reference_cards %}
+                                <div class="chat-message-references">
+                                    {% for reference in message.reference_cards %}
+                                        {% if reference.is_available and reference.href %}
+                                            <a
+                                                href="{{ reference.href }}"
+                                                class="chat-reference-card"
+                                                data-reference-id="{{ reference.id }}"
+                                                data-reference-type="{{ reference.reference_type }}"
+                                            >
+                                                <span class="chat-reference-card-type">{{ reference.reference_type|title }}</span>
+                                                <strong>{{ reference.title }}</strong>
+                                                <span>{{ reference.subtitle }}</span>
+                                                <small>{{ reference.meta }}</small>
+                                            </a>
+                                        {% else %}
+                                            <div
+                                                class="chat-reference-card is-unavailable"
+                                                data-reference-id="{{ reference.id }}"
+                                                data-reference-type="{{ reference.reference_type }}"
+                                            >
+                                                <span class="chat-reference-card-type">{{ reference.reference_type|title }}</span>
+                                                <strong>{{ reference.title }}</strong>
+                                                <span>{{ reference.subtitle }}</span>
+                                                <small>{{ reference.meta }}</small>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if message.body %}
+                                <p>{{ message.body|linebreaksbr }}</p>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            {% else %}
+                <div class="chat-empty-state">
+                    <div class="chat-empty-state-icon" aria-hidden="true">+</div>
+                    <h3>No Messages</h3>
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="post" action="{% url 'chat:send_message' active_conversation.id %}" class="chat-composer" data-chat-composer>
+            {% csrf_token %}
+            <div class="chat-composer-toolbar">
+                <button type="button" class="chat-picker-toggle" data-picker-open>
+                    Add Expense or Chore
+                </button>
+                <span class="chat-composer-toolbar-copy">Attach Live References From This Household</span>
+            </div>
+            <div class="chat-selected-references is-hidden" data-selected-references></div>
+            <div data-reference-inputs></div>
+            <label for="chat-body" class="sr-only">Message</label>
+            <textarea
+                id="chat-body"
+                name="body"
+                maxlength="{{ message_max_length }}"
+                rows="2"
+                placeholder="Write a message to your household"
+            ></textarea>
+            <div class="chat-composer-footer">
+                <div class="chat-composer-meta">
+                    <strong>Press Enter To Send</strong>
+                    <span>Use Shift+Enter For A New Line <span data-character-count>(0 / {{ message_max_length }})</span></span>
+                </div>
+                <button type="submit">Send Message</button>
+            </div>
+        </form>
+    </section>
+</section>
+
+<div class="chat-picker-modal is-hidden" data-reference-picker-modal>
+    <button type="button" class="chat-picker-backdrop" data-picker-close aria-label="Close reference picker"></button>
+    <div class="chat-picker-panel" role="dialog" aria-modal="true" aria-labelledby="chat-picker-title">
+        <div class="chat-picker-header">
+            <div>
+                <p class="chat-section-kicker">Attach references</p>
+                <h3 id="chat-picker-title">Share expenses and chores</h3>
+            </div>
+            <button type="button" class="chat-picker-close" data-picker-close aria-label="Close">
+                ×
+            </button>
+        </div>
+        <div class="chat-picker-tabs">
+            <button type="button" class="is-active" data-picker-tab="EXPENSE">Expenses</button>
+            <button type="button" data-picker-tab="CHORE">Chores</button>
+        </div>
+        <label class="sr-only" for="chat-reference-search">Search references</label>
+        <input
+            id="chat-reference-search"
+            type="search"
+            class="chat-picker-search"
+            placeholder="Search by title, person, or summary"
+            data-picker-search
+        >
+        <div class="chat-picker-results" data-picker-results></div>
+    </div>
+</div>
+
+{{ expense_picker_items|json_script:"chat-expense-picker-data" }}
+{{ chore_picker_items|json_script:"chat-chore-picker-data" }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const shell = document.querySelector('.chat-shell');
+        const messageList = document.getElementById('chat-message-list');
+        const unreadBadge = document.getElementById('chat-unread-badge');
+        const composer = document.querySelector('[data-chat-composer]');
+        const textarea = document.getElementById('chat-body');
+        const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
+        const sidebarBackdrop = document.querySelector('[data-sidebar-backdrop]');
+        const liveStatus = document.querySelector('[data-live-status]');
+        const liveStatusDetail = document.querySelector('[data-live-status-detail]');
+        const characterCount = document.querySelector('[data-character-count]');
+        const selectedReferencesContainer = document.querySelector('[data-selected-references]');
+        const referenceInputsContainer = document.querySelector('[data-reference-inputs]');
+        const pickerModal = document.querySelector('[data-reference-picker-modal]');
+        const pickerResults = document.querySelector('[data-picker-results]');
+        const pickerSearch = document.querySelector('[data-picker-search]');
+        const pickerTabButtons = Array.from(document.querySelectorAll('[data-picker-tab]'));
+        const pickerOpenButton = document.querySelector('[data-picker-open]');
+        const pickerCloseButtons = Array.from(document.querySelectorAll('[data-picker-close]'));
+        const pickerData = {
+            EXPENSE: JSON.parse(document.getElementById('chat-expense-picker-data').textContent),
+            CHORE: JSON.parse(document.getElementById('chat-chore-picker-data').textContent),
+        };
+
+        if (!messageList || !shell) {
+            return;
+        }
+
+        const messagesUrl = messageList.dataset.messagesUrl;
+        const markReadUrl = messageList.dataset.markReadUrl;
+        const pollInterval = Number(messageList.dataset.pollInterval || '5000');
+        const nearBottomThreshold = 120;
+        let lastSuccessfulPoll = null;
+        let activePickerTab = 'EXPENSE';
+        let selectedReferences = [];
+
+        function formatClock(value) {
+            return new Intl.DateTimeFormat(undefined, {
+                hour: 'numeric',
+                minute: '2-digit',
+            }).format(value);
+        }
+
+        function setLiveStatus(title, detail) {
+            if (liveStatus) {
+                liveStatus.textContent = title;
+            }
+            if (liveStatusDetail) {
+                liveStatusDetail.textContent = detail;
+            }
+        }
+
+        function updateLiveStatusFromSuccess(serverTime, newCount) {
+            const timestamp = serverTime ? new Date(serverTime) : new Date();
+            lastSuccessfulPoll = timestamp;
+            if (newCount > 0) {
+                setLiveStatus(
+                    newCount === 1 ? '1 new message' : `${newCount} new messages`,
+                    'Checking for new messages.'
+                );
+                return;
+            }
+            setLiveStatus('Live updates', '');
+        }
+
+        function isNearBottom() {
+            return (
+                messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight
+            ) < nearBottomThreshold;
+        }
+
+        function scrollToBottom() {
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        function buildAvatar(message) {
+            const avatar = document.createElement('div');
+            avatar.className = 'chat-message-avatar';
+            const initial = (message.author_username || '?').trim().charAt(0).toUpperCase() || '?';
+            avatar.textContent = initial;
+            avatar.setAttribute('aria-hidden', 'true');
+            return { avatar, initial };
+        }
+
+        function buildReferenceCard(reference) {
+            const element = document.createElement(reference.href && reference.is_available ? 'a' : 'div');
+            element.className = `chat-reference-card${reference.is_available ? '' : ' is-unavailable'}`;
+            element.dataset.referenceId = reference.id;
+            element.dataset.referenceType = reference.reference_type;
+            if (reference.href && reference.is_available) {
+                element.href = reference.href;
+            }
+
+            const type = document.createElement('span');
+            type.className = 'chat-reference-card-type';
+            type.textContent = reference.reference_type === 'EXPENSE' ? 'Expense' : 'Chore';
+
+            const title = document.createElement('strong');
+            title.textContent = reference.title;
+
+            const subtitle = document.createElement('span');
+            subtitle.textContent = reference.subtitle;
+
+            const meta = document.createElement('small');
+            meta.textContent = reference.meta;
+
+            element.append(type, title, subtitle, meta);
+            return element;
+        }
+
+        function buildMessageBody(bodyText) {
+            const body = document.createElement('p');
+            const lines = String(bodyText || '').split('\n');
+            lines.forEach(function (line, index) {
+                if (index > 0) {
+                    body.append(document.createElement('br'));
+                }
+                body.append(document.createTextNode(line));
+            });
+            return body;
+        }
+
+        function appendMessage(message) {
+            const article = document.createElement('article');
+            article.className = `chat-message${message.is_own_message ? ' is-own' : ''} is-new`;
+            article.dataset.messageId = message.id;
+
+            const { avatar, initial } = buildAvatar(message);
+            article.dataset.messageAuthorInitial = initial;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-message-bubble';
+
+            const meta = document.createElement('div');
+            meta.className = 'chat-message-meta';
+
+            const author = document.createElement('strong');
+            author.textContent = message.author_username;
+
+            const timestamp = document.createElement('span');
+            timestamp.textContent = new Date(message.created_at).toLocaleString();
+
+            meta.append(author, timestamp);
+            bubble.append(meta);
+
+            if (Array.isArray(message.references) && message.references.length) {
+                const references = document.createElement('div');
+                references.className = 'chat-message-references';
+                message.references.forEach(function (reference) {
+                    references.appendChild(buildReferenceCard(reference));
+                });
+                bubble.append(references);
+            }
+
+            if (message.body) {
+                bubble.append(buildMessageBody(message.body));
+            }
+            article.append(avatar, bubble);
+            messageList.appendChild(article);
+
+            window.setTimeout(function () {
+                article.classList.remove('is-new');
+            }, 1200);
+        }
+
+        async function postMarkRead() {
+            await fetch(markReadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            });
+        }
+
+        function updateCharacterCount() {
+            if (!textarea || !characterCount) {
+                return;
+            }
+            const maxLength = Number(textarea.getAttribute('maxlength') || '0');
+            characterCount.textContent = `${textarea.value.length} / ${maxLength}`;
+        }
+
+        function autoResizeTextarea() {
+            if (!textarea) {
+                return;
+            }
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+        }
+
+        function setPickerOpen(isOpen) {
+            if (!pickerModal) {
+                return;
+            }
+            pickerModal.classList.toggle('is-hidden', !isOpen);
+            document.body.classList.toggle('chat-picker-open', isOpen);
+            if (isOpen && pickerSearch) {
+                pickerSearch.focus();
+            }
+        }
+
+        function syncReferenceInputs() {
+            if (!referenceInputsContainer) {
+                return;
+            }
+            referenceInputsContainer.innerHTML = '';
+            selectedReferences.forEach(function (reference) {
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'reference_type[]';
+                typeInput.value = reference.reference_type;
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'reference_id[]';
+                idInput.value = reference.id;
+
+                referenceInputsContainer.append(typeInput, idInput);
+            });
+        }
+
+        function renderSelectedReferences() {
+            if (!selectedReferencesContainer) {
+                return;
+            }
+            selectedReferencesContainer.innerHTML = '';
+            selectedReferencesContainer.classList.toggle('is-hidden', selectedReferences.length === 0);
+
+            selectedReferences.forEach(function (reference) {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'chat-selected-reference-chip';
+                chip.dataset.referenceKey = `${reference.reference_type}:${reference.id}`;
+
+                const label = document.createElement('span');
+                label.textContent = `${reference.reference_type === 'EXPENSE' ? 'Expense' : 'Chore'}: ${reference.title}`;
+
+                const remove = document.createElement('strong');
+                remove.textContent = '×';
+
+                chip.append(label, remove);
+                chip.addEventListener('click', function () {
+                    selectedReferences = selectedReferences.filter(function (candidate) {
+                        return !(candidate.reference_type === reference.reference_type && candidate.id === reference.id);
+                    });
+                    renderSelectedReferences();
+                    renderPickerResults();
+                });
+                selectedReferencesContainer.appendChild(chip);
+            });
+
+            syncReferenceInputs();
+        }
+
+        function getVisiblePickerItems() {
+            const term = pickerSearch ? pickerSearch.value.trim().toLowerCase() : '';
+            return pickerData[activePickerTab].filter(function (item) {
+                if (!term) {
+                    return true;
+                }
+                return [item.title, item.subtitle, item.meta].join(' ').toLowerCase().includes(term);
+            });
+        }
+
+        function renderPickerResults() {
+            if (!pickerResults) {
+                return;
+            }
+            pickerResults.innerHTML = '';
+            const items = getVisiblePickerItems();
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'chat-picker-empty';
+                empty.textContent = 'No matching references.';
+                pickerResults.appendChild(empty);
+                return;
+            }
+
+            items.forEach(function (item) {
+                const key = `${activePickerTab}:${item.id}`;
+                const isSelected = selectedReferences.some(function (reference) {
+                    return `${reference.reference_type}:${reference.id}` === key;
+                });
+
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = `chat-picker-item${isSelected ? ' is-selected' : ''}`;
+
+                const copy = document.createElement('div');
+                copy.className = 'chat-picker-item-copy';
+
+                const title = document.createElement('strong');
+                title.textContent = item.title;
+
+                const subtitle = document.createElement('span');
+                subtitle.textContent = item.subtitle;
+
+                const meta = document.createElement('small');
+                meta.textContent = item.meta;
+
+                const badge = document.createElement('span');
+                badge.className = 'chat-picker-item-badge';
+                badge.textContent = isSelected ? 'Selected' : 'Add';
+
+                copy.append(title, subtitle, meta);
+                row.append(copy, badge);
+                row.addEventListener('click', function () {
+                    if (isSelected) {
+                        return;
+                    }
+                    selectedReferences.push({
+                        id: item.id,
+                        reference_type: activePickerTab,
+                        title: item.title,
+                    });
+                    renderSelectedReferences();
+                    renderPickerResults();
+                });
+                pickerResults.appendChild(row);
+            });
+        }
+
+        function setSidebarOpen(isOpen) {
+            shell.dataset.sidebarOpen = isOpen ? 'true' : 'false';
+            if (sidebarToggle) {
+                sidebarToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+            if (sidebarBackdrop) {
+                sidebarBackdrop.hidden = !isOpen;
+            }
+        }
+
+        async function pollMessages() {
+            const shouldStickToBottom = isNearBottom();
+            const messages = messageList.querySelectorAll('[data-message-id]');
+            const lastMessage = messages[messages.length - 1];
+            const lastMessageId = lastMessage ? lastMessage.dataset.messageId : null;
+            const url = lastMessageId ? `${messagesUrl}?after_id=${lastMessageId}` : messagesUrl;
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!response.ok) {
+                    throw new Error(`Polling failed with status ${response.status}`);
+                }
+
+                const payload = await response.json();
+                if (payload.messages.length) {
+                    const emptyState = messageList.querySelector('.chat-empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+                    payload.messages.forEach(appendMessage);
+                    if (shouldStickToBottom) {
+                        scrollToBottom();
+                    }
+                    await postMarkRead();
+                    await pollUnreadCounts();
+                }
+                updateLiveStatusFromSuccess(payload.server_time, payload.messages.length);
+            } catch (error) {
+                const detail = lastSuccessfulPoll
+                    ? `Last successful sync was at ${formatClock(lastSuccessfulPoll)}.`
+                    : 'Waiting to reconnect to live updates.';
+                setLiveStatus('Connection issue', detail);
+            }
+        }
+
+        async function pollUnreadCounts() {
+            const response = await fetch('{% url "chat:unread_counts" %}');
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            if (unreadBadge) {
+                unreadBadge.textContent = payload.total_unread > 0 ? payload.total_unread : '';
+                unreadBadge.classList.toggle('is-hidden', payload.total_unread === 0);
+            }
+            Object.entries(payload.by_conversation).forEach(function ([conversationId, count]) {
+                const badge = document.querySelector(`[data-conversation-badge="${conversationId}"]`);
+                if (!badge) {
+                    return;
+                }
+                badge.textContent = count > 0 ? count : '';
+                badge.classList.toggle('is-hidden', count === 0);
+            });
+        }
+
+        if (textarea && composer) {
+            updateCharacterCount();
+            autoResizeTextarea();
+            textarea.addEventListener('input', function () {
+                updateCharacterCount();
+                autoResizeTextarea();
+            });
+            textarea.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    if (textarea.value.trim() || selectedReferences.length) {
+                        composer.requestSubmit();
+                    }
+                }
+            });
+        }
+
+        if (composer) {
+            composer.addEventListener('submit', function (event) {
+                syncReferenceInputs();
+                if (!textarea.value.trim() && !selectedReferences.length) {
+                    event.preventDefault();
+                }
+            });
+        }
+
+        if (pickerOpenButton) {
+            pickerOpenButton.addEventListener('click', function () {
+                renderPickerResults();
+                setPickerOpen(true);
+            });
+        }
+
+        pickerCloseButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                setPickerOpen(false);
+            });
+        });
+
+        pickerTabButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                activePickerTab = button.dataset.pickerTab;
+                pickerTabButtons.forEach(function (candidate) {
+                    candidate.classList.toggle('is-active', candidate === button);
+                });
+                renderPickerResults();
+            });
+        });
+
+        if (pickerSearch) {
+            pickerSearch.addEventListener('input', renderPickerResults);
+        }
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function () {
+                setSidebarOpen(shell.dataset.sidebarOpen !== 'true');
+            });
+        }
+
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function () {
+                setSidebarOpen(false);
+            });
+        }
+
+        scrollToBottom();
+        setSidebarOpen(false);
+        renderSelectedReferences();
+        renderPickerResults();
+        pollUnreadCounts();
+        updateLiveStatusFromSuccess(new Date().toISOString(), 0);
+        window.setInterval(pollMessages, pollInterval);
+        window.setInterval(pollUnreadCounts, pollInterval);
+    });
+</script>
+{% endblock %}

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "expenses",
     "activities",
     "chores",
+    "chat",
     # django-allauth
     "allauth",
     "allauth.account",
@@ -81,6 +82,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "activities.context_processors.activity_notifications",
+                "chat.context_processors.chat_unread_counts",
             ],
         },
     },

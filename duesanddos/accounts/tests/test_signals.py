@@ -69,8 +69,9 @@ class SignalTests(TestCase):
         self.profile.refresh_from_db()
         self.assertFalse(bool(self.profile.avatar))
 
+    @patch("builtins.print")
     @patch("accounts.signals.requests.get")
-    def test_fetch_gmail_photo_exception_handled(self, mock_get):
+    def test_fetch_gmail_photo_exception_handled(self, mock_get, mock_print):
         mock_get.side_effect = Exception("Network error")
 
         SocialAccount.objects.create(
@@ -82,6 +83,7 @@ class SignalTests(TestCase):
         # Should not crash
         user_signed_up.send(sender=User, request=None, user=self.user)
         self.assertFalse(bool(self.profile.avatar))
+        mock_print.assert_not_called()
 
     @patch("accounts.signals.requests.get")
     def test_fetch_gmail_photo_existing_avatar(self, mock_get):
