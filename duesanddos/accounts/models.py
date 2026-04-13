@@ -66,6 +66,17 @@ class Profile(models.Model):
     )
     bio = models.TextField(blank=True)
     notifications_enabled = models.BooleanField(default=True)
+    THEME_CHOICES = [("light", "Light"), ("dark", "Dark")]
+    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="light")
+
+    DEFAULT_VIEW_CHOICES = [
+        ("dayGridMonth", "Monthly"),
+        ("timeGridWeek", "Weekly"),
+        ("timeGridDay", "Daily"),
+    ]
+    default_calendar_view = models.CharField(
+        max_length=20, choices=DEFAULT_VIEW_CHOICES, default="dayGridMonth"
+    )
     active_household = models.ForeignKey(
         "households.Household",
         on_delete=models.SET_NULL,

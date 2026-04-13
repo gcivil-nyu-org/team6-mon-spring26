@@ -1,7 +1,9 @@
 import tempfile
 import shutil
+from django.contrib.sites.models import Site
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from allauth.socialaccount.models import SocialApp, SocialAccount
 from accounts.models import CustomUser, Profile
 from households.models import Household
 
@@ -19,6 +21,20 @@ SMALL_GIF = (
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
 
+def _make_google_social_app():
+    """Create a Google SocialApp fixture so templates using
+    {% provider_login_url 'google' %} don't raise SocialApp.DoesNotExist."""
+    site = Site.objects.get_current()
+    app = SocialApp.objects.create(
+        provider="google",
+        name="Google",
+        client_id="test-client-id",
+        secret="test-secret",
+    )
+    app.sites.add(site)
+    return app
+
+
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class AuthAndProfileTests(TestCase):
     def setUp(self):
@@ -29,6 +45,7 @@ class AuthAndProfileTests(TestCase):
         )
         self.profile = Profile.objects.create(user=self.user)
         self.client.login(username="testuser", password=TEST_PASSWORD)
+        _make_google_social_app()
 
     @classmethod
     def tearDownClass(cls):
@@ -49,11 +66,16 @@ class AuthAndProfileTests(TestCase):
             "last_name": "NewLast",
             "email": self.user.email,
             "username": self.user.username,
-            "bio": "New Bio",
+            "bio": "Updated bio",
             "notifications_enabled": True,
+            "theme": "dark",
+            "default_calendar_view": "timeGridWeek",
         }
         response = self.client.post(url, data)
         self.assertRedirects(response, url)
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.bio, "Updated bio")
+        self.assertEqual(self.user.profile.theme, "dark")  # Verify the change
 
     def test_profile_view_post_change_password(self):
         url = reverse("profile")
@@ -122,6 +144,31 @@ class AuthAndProfileTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_dashboard_chores_logic_coverage(self):
+        from chores.models import Chore
+        from households.models import HouseholdMember
+        from django.utils import timezone
+
+        h = Household.objects.create(name="Chore HH", invite_code="CHORE1")
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+        today = timezone.now().date()
+        chore = Chore.objects.create(
+            household=h,
+            description="Coverage Test Chore",
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date=today,
+            is_active=True,
+        )
+        chore.assignees.add(self.user)
+        url = reverse("dashboard")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(chore, response.context["pending_chores"])
+        self.assertContains(response, "Coverage Test Chore")
+
     def test_dashboard_household_does_not_exist(self):
         self.profile.active_household_id = 99999
         self.profile.save()
@@ -150,8 +197,43 @@ class AuthAndProfileTests(TestCase):
         response = self.client.get(reverse("profile"))
         self.assertEqual(response.status_code, 302)
 
+    def test_disconnect_google_view_post_no_account(self):
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_disconnect_google_view_post_no_password(self):
+        SocialAccount.objects.create(user=self.user, provider="google", uid="12345")
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+        self.assertTrue(
+            SocialAccount.objects.filter(user=self.user, provider="google").exists()
+        )
+
+    def test_disconnect_google_view_post_success(self):
+        SocialAccount.objects.create(user=self.user, provider="google", uid="12345")
+        url = reverse("disconnect_google")
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse("profile"))
+        self.assertFalse(
+            SocialAccount.objects.filter(user=self.user, provider="google").exists()
+        )
+
+    def test_disconnect_google_view_get(self):
+        url = reverse("disconnect_google")
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse("profile"))
+
 
 class RegisterViewTests(TestCase):
+    def setUp(self):
+        # register.html uses {% provider_login_url 'google' %} — needs a fixture.
+        _make_google_social_app()
+
     def test_register_get(self):
         url = reverse("register")
         response = self.client.get(url)
@@ -169,6 +251,18 @@ class RegisterViewTests(TestCase):
         }
         self.client.post(url, data)
         self.assertTrue(CustomUser.objects.filter(username="newuser").exists())
+
+
+class AuthViewsWithoutSocialAppTests(TestCase):
+    def test_login_get_without_google_social_app(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Continue with Google")
+
+    def test_register_get_without_google_social_app(self):
+        response = self.client.get(reverse("register"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Continue with Google")
 
 
 class StaticPageViewTests(TestCase):

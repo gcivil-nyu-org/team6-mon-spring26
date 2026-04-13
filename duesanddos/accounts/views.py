@@ -4,10 +4,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.db import transaction, models
 from django.utils import timezone
 
+from allauth.socialaccount.models import SocialAccount, SocialApp
+from django.contrib.sites.models import Site
 from .models import CustomUser, Profile
 from households.models import Household, HouseholdMember
 from expenses.models import ExpenseSplit
@@ -17,6 +19,20 @@ from .forms import (
     ProfileUpdateForm,
     CustomPasswordChangeForm,
 )
+
+
+def is_google_app_configured():
+    site = Site.objects.get_current()
+    return SocialApp.objects.filter(provider="google", sites=site).exists()
+
+
+class CustomLoginView(LoginView):
+    template_name = "accounts/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["google_app_configured"] = is_google_app_configured()
+        return context
 
 
 @transaction.atomic
@@ -46,7 +62,14 @@ def register_view(request):
     else:
         form = RegisterForm()
 
-    return render(request, "accounts/register.html", {"form": form})
+    return render(
+        request,
+        "accounts/register.html",
+        {
+            "form": form,
+            "google_app_configured": is_google_app_configured(),
+        },
+    )
 
 
 @login_required
@@ -91,6 +114,11 @@ def profile_view(request):
         "household"
     )
 
+    # Only show the Google connect button if a SocialApp is configured for this site.
+    google_account = SocialAccount.objects.filter(
+        user=request.user, provider="google"
+    ).first()
+
     return render(
         request,
         "accounts/edit_profile.html",
@@ -100,6 +128,8 @@ def profile_view(request):
             "profile_form": profile_form,
             "password_form": password_form,
             "memberships": memberships,
+            "google_account": google_account,
+            "google_app_configured": is_google_app_configured(),
         },
     )
 
@@ -149,6 +179,33 @@ def delete_account_view(request):
 
 
 @login_required
+def disconnect_google_view(request):
+    """Remove the Google social account link from the user's account."""
+    if request.method == "POST":
+        google_account = SocialAccount.objects.filter(
+            user=request.user, provider="google"
+        ).first()
+
+        if not google_account:
+            messages.warning(request, "No Google account is connected.")
+            return redirect("profile")
+
+        # Safety: if the user has no usable password they'd be locked out
+        if not request.user.has_usable_password():
+            messages.error(
+                request,
+                "Cannot disconnect Google — you have no password set. "
+                "Please set a password first so you don't lose access to your account.",
+            )
+            return redirect("profile")
+
+        google_account.delete()
+        messages.success(request, "Your Google account has been disconnected.")
+
+    return redirect("profile")
+
+
+@login_required
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
     try:
@@ -178,6 +235,21 @@ def dashboard_view(request):
     expenses = active_hh.expenses.filter(date_spent__range=(start_date, end_date))
     total_spent = sum(e.amount for e in expenses)
     members = active_hh.members.select_related("user")
+
+    today = timezone.now().date()
+    all_household_chores = active_hh.chores.filter(is_active=True).prefetch_related(
+        "assignees", "completions", "skips"
+    )
+
+    pending_chores = []
+    for chore in all_household_chores:
+        if request.user in chore.assignees.all():
+            if chore.occurs_on(today):
+                completed = chore.completions.filter(occurrence_date=today).exists()
+                skipped = chore.skips.filter(occurrence_date=today).exists()
+
+                if not completed and not skipped:
+                    pending_chores.append(chore)
 
     summary = []
     user_net = 0.0
@@ -260,6 +332,9 @@ def dashboard_view(request):
 
     context = {
         "active_household": active_hh,
+        "members": members,
+        "pending_chores": pending_chores[:5],
+        "today_date": today,
         "you_are_owed": max(0, user_net),
         "you_owe": abs(min(0, user_net)),
         "total_spent": total_spent,

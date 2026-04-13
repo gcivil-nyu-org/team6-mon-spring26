@@ -19,7 +19,10 @@ urlpatterns = [
     path("accounts/", include("households.urls")),
     path("accounts/", include("expenses.urls")),
     path("accounts/", include("activities.urls")),
+    path("activities/", include("activities.urls")),
     path("accounts/", include("chores.urls")),
+    path("accounts/", include("insights.urls")),
+    path("accounts/", include("chat.urls")),
     # Allauth routes (e.g., google/login/, etc.)
     path("accounts/", include("allauth.urls")),
 ]

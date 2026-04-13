@@ -1,0 +1,309 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Insights | Dues & Do's{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/insights.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="insights-page px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+            <h1 class="text-4xl font-black text-gray-900 tracking-tight">Insights</h1>
+            <p class="text-gray-500 mt-1 font-bold uppercase text-[10px] tracking-widest opacity-60">
+                Household trends and progress
+            </p>
+        </div>
+
+        {% if not no_household %}
+        <form method="get" class="insights-filter-card">
+            <div>
+                <label for="start_date">Start date</label>
+                <input id="start_date" type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div>
+                <label for="end_date">End date</label>
+                <input id="end_date" type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <button type="submit">Apply</button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if no_household %}
+    <div class="bg-yellow-50 p-12 rounded-[3rem] border border-yellow-100 text-center">
+        <h2 class="text-2xl font-black text-yellow-800 mb-2 text-center">No Household Found</h2>
+        <p class="text-yellow-700">Go to Settings to create one before viewing insights.</p>
+    </div>
+    {% else %}
+
+    <div class="insights-card-grid">
+        <div class="insights-stat-card border-t-emerald-500">
+            <span>Total spent</span>
+            <h2>${{ insights_cards.total_spent|floatformat:2 }}</h2>
+            <p>Across the selected date range.</p>
+        </div>
+        <div class="insights-stat-card border-t-blue-500">
+            <span>Average expense</span>
+            <h2>${{ insights_cards.average_expense|floatformat:2 }}</h2>
+            <p>Average value per expense entry.</p>
+        </div>
+        <div class="insights-stat-card border-t-violet-500">
+            <span>Previous period</span>
+            <h2>${{ insights_cards.previous_total|floatformat:2 }}</h2>
+            <p>
+                {% if insights_cards.previous_total > 0 %}
+                    {{ insights_cards.spending_change }}% vs. the previous matching period.
+                {% else %}
+                    No earlier period to compare yet.
+                {% endif %}
+            </p>
+        </div>
+        <div class="insights-stat-card border-t-amber-500">
+            <span>Chore completion</span>
+            <h2>{{ insights_cards.completion_rate|floatformat:1 }}%</h2>
+            <p>Based on expected chore occurrences since {{ chore_window_start|date:"M j" }}.</p>
+        </div>
+    </div>
+
+    <div class="insights-chart-grid insights-chart-grid--wide">
+        <section class="chart-card chart-card--wide">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Monthly spending trend</h3>
+                    <p>Use this to compare recent months and spot spikes.</p>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="monthlyExpensesChart"></canvas></div>
+        </section>
+
+        <section class="chart-card">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Spending by member</h3>
+                    <p>Who paid the most in the selected period.</p>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="memberSpendingChart"></canvas></div>
+        </section>
+    </div>
+
+    <div class="insights-chart-grid">
+        <section class="chart-card">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Daily spending this month</h3>
+                    <p>Helpful for seeing heavier spend days.</p>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="dailySpendingChart"></canvas></div>
+        </section>
+
+        <section class="chart-card">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Chore status breakdown</h3>
+                    <p>Completion, skipped, and still-open occurrences.</p>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="choreStatusChart"></canvas></div>
+        </section>
+    </div>
+
+    <div class="insights-chart-grid">
+        <section class="chart-card">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Completed chores by member</h3>
+                    <p>Who has completed the most chores recently.</p>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="memberCompletionChart"></canvas></div>
+        </section>
+
+        <section class="chart-card">
+            <div class="chart-card__header">
+                <div>
+                    <h3>Top spenders</h3>
+                    <p>A quick ranked summary for the selected range.</p>
+                </div>
+            </div>
+            <div class="space-y-3 mt-3">
+                {% for row in top_spenders %}
+                <div class="top-spender-row">
+                    <div>
+                        <strong>{{ row.payer__username }}</strong>
+                        <span>{{ row.expense_count }} expense{{ row.expense_count|pluralize }}</span>
+                    </div>
+                    <div class="top-spender-amount">${{ row.total|floatformat:2 }}</div>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-400">No expenses found in this range.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+    {% endif %}
+</div>
+
+{% if not no_household %}
+<script>
+    function moneyTick(value) {
+        return '$' + value;
+    }
+
+    const monthlyLabels = {{ monthly_labels_json|safe }};
+    const monthlyExpenses = {{ monthly_expenses_json|safe }};
+    const memberLabels = {{ member_labels_json|safe }};
+    const memberTotals = {{ member_totals_json|safe }};
+    const dailyLabels = {{ daily_labels_json|safe }};
+    const dailyValues = {{ daily_values_json|safe }};
+    const choreStatusLabels = {{ chore_status_labels_json|safe }};
+    const choreStatusValues = {{ chore_status_values_json|safe }};
+    const completionMemberLabels = {{ completion_member_labels_json|safe }};
+    const completionMemberValues = {{ completion_member_values_json|safe }};
+
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.color = '#6b7280';
+
+    new Chart(document.getElementById('monthlyExpensesChart'), {
+        type: 'line',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Monthly expenses',
+                data: monthlyExpenses,
+                borderWidth: 3,
+                tension: 0.35,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: moneyTick }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('memberSpendingChart'), {
+        type: 'bar',
+        data: {
+            labels: memberLabels,
+            datasets: [{
+                label: 'Amount paid',
+                data: memberTotals,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: moneyTick }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('dailySpendingChart'), {
+        type: 'bar',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Daily spend',
+                data: dailyValues,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: { maxTicksLimit: 8 }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: moneyTick }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('choreStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: choreStatusLabels,
+            datasets: [{
+                data: choreStatusValues,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('memberCompletionChart'), {
+        type: 'bar',
+        data: {
+            labels: completionMemberLabels,
+            datasets: [{
+                label: 'Completed chores',
+                data: completionMemberValues,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

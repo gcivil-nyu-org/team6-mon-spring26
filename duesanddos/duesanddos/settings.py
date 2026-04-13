@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import socket
 
 load_dotenv()
 
@@ -32,6 +33,13 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 
+try:
+    internal_ip = socket.gethostbyname(socket.gethostname())
+    if internal_ip:
+        ALLOWED_HOSTS.append(internal_ip)
+except Exception:
+    pass
+
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,6 +55,8 @@ INSTALLED_APPS = [
     "expenses",
     "activities",
     "chores",
+    "insights",
+    "chat",
     # django-allauth
     "allauth",
     "allauth.account",
@@ -80,6 +90,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "activities.context_processors.activity_notifications",
+                "chat.context_processors.chat_unread_counts",
             ],
         },
     },
@@ -159,15 +171,10 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": [
             "profile",
             "email",
-            "openid",
+            "https://www.googleapis.com/auth/calendar.events",  # Create/edit events
         ],
         "AUTH_PARAMS": {
-            "access_type": "online",
-        },
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH2_CLIENT_ID"),
-            "secret": os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET"),
-            "key": "",
+            "access_type": "offline",  # To get refresh token
         },
     }
 }

@@ -12,9 +12,9 @@
     border-right: 1px solid var(--color-gray-border);
     display: flex;
     flex-direction: column;
-    padding: 24px 20px;
+    padding: 0 20px 24px 20px; /* Removed top padding to handle brand area separately */
     height: 100vh;
-    z-index: 100;
+    z-index: 1000;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
     overflow: hidden;
     flex-shrink: 0;
@@ -23,6 +23,42 @@
 .sidebar:hover, .sidebar.pinned {
     width: 260px;
     padding: 24px 16px;
+}
+
+/* Sidebar and Background */
+.dark .sidebar {
+    background-color: #0f172a; /* Dark Navy */
+    border-right: 1px solid #1e293b;
+}
+
+.dark .main-content {
+    background-color: #020617; /* Near Black */
+    color: #f8fafc;
+}
+
+/* Top Navbar */
+.dark .top-navbar {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+
+.dark .top-navbar-id {
+    color: #f8fafc !important;
+}
+
+/* Cards and Containers */
+.dark .bg-white {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+.dark .text-gray-900 {
+    color: #f8fafc !important;
+}
+
+.dark .text-gray-500 {
+    color: #94a3b8 !important;
 }
 
 .sidebar-text {
@@ -60,8 +96,12 @@
     justify-content: space-between;
     padding: 0;
     margin-bottom: 24px;
+    height: 64px; /* Matches Top Navbar Height */
+    border-bottom: 1px solid var(--color-gray-border); /* Continues the Navbar line */
+    border-right: none; /* Merges with Navbar */
     text-decoration: none;
-    min-width: 200px;
+    min-width: 100px;
+    box-sizing: border-box;
 }
 
 .brand-text {
@@ -192,12 +232,19 @@
 }
 .main-content {
     flex: 1;
-    padding: 32px 48px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-inner {
+    flex: 1;
+    padding: 24px 40px 48px 40px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-.main-content::-webkit-scrollbar {
+.content-inner::-webkit-scrollbar {
     width: 0px;
-    background: transparent;
 }

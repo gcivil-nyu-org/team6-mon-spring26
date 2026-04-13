@@ -1,0 +1,112 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Google | Dues & Do's</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#051f52', 600: '#051f52', 700: '#051f52', 800: '#051f52', 900: '#051f52', 950: '#051f52'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .btn-primary {
+            background-color: #051f52 !important;
+            border-radius: 12px;
+        }
+        .btn-primary:hover {
+            background-color: #031436 !important;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <div class="flex min-h-screen w-full">
+      <!-- Left panel — branding -->
+      <div class="relative hidden flex-1 flex-col justify-between bg-brand-950 p-12 lg:flex" style="background-color: #051f52;">
+        <div aria-hidden class="pointer-events-none absolute inset-0 overflow-hidden">
+          <div class="absolute -right-20 top-0 h-96 w-96 rounded-full bg-brand-800 opacity-30 blur-3xl"></div>
+          <div class="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-brand-700 opacity-20 blur-3xl"></div>
+        </div>
+
+        <a href="{% url 'home' %}" class="relative flex items-center gap-2">
+          <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-8 rounded-lg object-contain bg-white">
+          <span class="font-display text-lg font-semibold text-white">
+            Dues <span style="color: #38bdf8;">&</span> Do's
+          </span>
+        </a>
+
+        <div class="relative space-y-8">
+          <blockquote class="space-y-3">
+            <p class="font-display text-2xl font-medium leading-snug text-white">
+              "Finally, a way to handle the money stuff without making things weird."
+            </p>
+            <footer class="text-sm" style="color: #bae6fd;">— A very relieved roommate</footer>
+          </blockquote>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-xl p-4" style="background-color: rgba(255, 255, 255, 0.1);">
+              <div class="font-display text-xl font-semibold text-white">Automated</div>
+              <div class="mt-1 text-xs" style="color: #38bdf8;">Calendar Sync</div>
+            </div>
+            <div class="rounded-xl p-4" style="background-color: rgba(255, 255, 255, 0.1);">
+              <div class="font-display text-xl font-semibold text-white">Real-time</div>
+              <div class="mt-1 text-xs" style="color: #38bdf8;">Activity Hub</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="relative text-xs" style="color: #38bdf8;">© <span id="year-l"></span> Dues & Do's</p>
+      </div>
+
+      <!-- Right panel — form -->
+      <div class="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8 lg:px-12">
+        <div class="mb-10 lg:hidden text-center">
+            <a href="{% url 'home' %}" class="flex items-center gap-2 justify-center">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-8 w-8 rounded-lg object-contain">
+                <span class="font-display text-lg font-semibold text-stone-900">Dues <span style="color: #051f52;">&</span> Do's</span>
+            </a>
+        </div>
+
+        <div class="w-full max-w-sm">
+          <div class="mb-8 text-center sm:text-left">
+            <div class="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-blue-50 text-blue-600">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"></path><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"></path></svg>
+            </div>
+            <h1 class="font-display text-3xl font-semibold text-stone-900">Connect Google</h1>
+            <p class="mt-2 text-sm text-stone-500">You are about to connect your Dues & Do's account with Google for calendar synchronization.</p>
+          </div>
+
+          <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="btn-primary w-full py-3.5 font-bold text-white rounded-xl shadow-lg transition-all active:scale-[0.98]">
+                  Continue to Google
+                </button>
+                <a href="{% url 'profile' %}" class="block text-center text-sm font-semibold text-stone-500 hover:text-stone-700 transition-colors py-2">
+                    Cancel and go back
+                </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+        document.getElementById('year-l').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
