@@ -1,9 +1,12 @@
+import logging
 import requests
 from django.core.files.base import ContentFile
 from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
 from .models import Profile
 from allauth.socialaccount.models import SocialAccount
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(user_signed_up)
@@ -40,4 +43,4 @@ def fetch_gmail_photo(request, user, **kwargs):
 
     except Exception as e:
         # We don't want to crash the signup process if photo download fails
-        print(f"Error fetching Gmail photo: {e}")
+        logger.debug("Error fetching Gmail photo: %s", e)

@@ -19,7 +19,7 @@ class Expense(models.Model):
         "households.Household", on_delete=models.CASCADE, related_name="expenses"
     )
     split_type = models.CharField(max_length=10, choices=SPLIT_CHOICES, default="EQUAL")
-    date_spent = models.DateField(default=timezone.now)
+    date_spent = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

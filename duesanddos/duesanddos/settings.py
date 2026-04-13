@@ -9,6 +9,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import socket
+
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,6 +35,29 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 
+try:
+    # We use a 1-second timeout so the app doesn't hang if it's not on AWS
+    r = requests.get("http://169.254.169.254/latest/meta-data/local-ipv4", timeout=1)
+    if r.status_code == 200:
+        internal_ip = r.text.strip()
+        ALLOWED_HOSTS.append(internal_ip)
+        print(f"--- ALLOWED_HOSTS: Added Metadata IP {internal_ip} ---")
+    else:
+        print(
+            f"--- ALLOWED_HOSTS: Metadata service returned status {r.status_code} ---"
+        )
+except Exception as e:
+    print(f"--- ALLOWED_HOSTS: Metadata lookup failed: {e} ---")
+
+    # 2. Fallback to Socket method
+    try:
+        internal_ip = socket.gethostbyname(socket.gethostname())
+        ALLOWED_HOSTS.append(internal_ip)
+        print(f"--- ALLOWED_HOSTS: Added Socket IP {internal_ip} ---")
+    except Exception as socket_e:
+        # THE FINAL PRINT BLOCK
+        print(f"--- ALLOWED_HOSTS CRITICAL FAILURE: {socket_e} ---")
+
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,6 +73,8 @@ INSTALLED_APPS = [
     "expenses",
     "activities",
     "chores",
+    "insights",
+    "chat",
     # django-allauth
     "allauth",
     "allauth.account",
@@ -81,6 +109,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "activities.context_processors.activity_notifications",
+                "chat.context_processors.chat_unread_counts",
             ],
         },
     },

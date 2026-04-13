@@ -4,11 +4,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.db import transaction, models
 from django.utils import timezone
 
-from allauth.socialaccount.models import SocialAccount
+from allauth.socialaccount.models import SocialAccount, SocialApp
+from django.contrib.sites.models import Site
 from .models import CustomUser, Profile
 from households.models import Household, HouseholdMember
 from expenses.models import ExpenseSplit
@@ -18,6 +19,20 @@ from .forms import (
     ProfileUpdateForm,
     CustomPasswordChangeForm,
 )
+
+
+def is_google_app_configured():
+    site = Site.objects.get_current()
+    return SocialApp.objects.filter(provider="google", sites=site).exists()
+
+
+class CustomLoginView(LoginView):
+    template_name = "accounts/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["google_app_configured"] = is_google_app_configured()
+        return context
 
 
 @transaction.atomic
@@ -47,7 +62,14 @@ def register_view(request):
     else:
         form = RegisterForm()
 
-    return render(request, "accounts/register.html", {"form": form})
+    return render(
+        request,
+        "accounts/register.html",
+        {
+            "form": form,
+            "google_app_configured": is_google_app_configured(),
+        },
+    )
 
 
 @login_required
@@ -92,6 +114,7 @@ def profile_view(request):
         "household"
     )
 
+    # Only show the Google connect button if a SocialApp is configured for this site.
     google_account = SocialAccount.objects.filter(
         user=request.user, provider="google"
     ).first()
@@ -106,6 +129,7 @@ def profile_view(request):
             "password_form": password_form,
             "memberships": memberships,
             "google_account": google_account,
+            "google_app_configured": is_google_app_configured(),
         },
     )
 

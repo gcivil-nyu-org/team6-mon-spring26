@@ -5,7 +5,8 @@ from allauth.socialaccount.models import SocialApp, SocialAccount, SocialToken
 from unittest.mock import patch, MagicMock
 from chores.models import Chore
 from households.models import Household
-from datetime import date
+from datetime import date, datetime
+from django.utils import timezone
 
 
 class GoogleCalendarServiceTests(TestCase):
@@ -23,6 +24,8 @@ class GoogleCalendarServiceTests(TestCase):
         self.token = SocialToken.objects.create(
             app=self.app, account=self.account, token="tok", token_secret="sec"
         )
+        self.gcal_patcher = patch("chores.signals.GoogleCalendarService")
+        self.gcal_patcher.start()
 
         self.household = Household.objects.create(name="GC House")
         self.chore = Chore.objects.create(
@@ -39,6 +42,9 @@ class GoogleCalendarServiceTests(TestCase):
             chore=self.chore, user=self.user, google_event_id="test_id"
         )
 
+    def tearDown(self):
+        self.gcal_patcher.stop()
+
     @patch("activities.google_calendar.build")
     @patch("activities.google_calendar.Credentials")
     def test_service_init_success(self, MockCredentials, MockBuild):
@@ -54,19 +60,28 @@ class GoogleCalendarServiceTests(TestCase):
     @patch("activities.google_calendar.build")
     @patch("activities.google_calendar.Credentials")
     def test_service_init_success_with_expiry(self, MockCredentials, MockBuild):
-        from datetime import datetime
-
         mock_creds = MagicMock()
-        mock_creds.expiry = datetime.now()
+        mock_creds.expiry = timezone.now()
         mock_creds.expired = False
         mock_creds.token = "new_token_str"
         MockCredentials.return_value = mock_creds
         MockBuild.return_value = MagicMock()
 
-        from django.utils import timezone
-
         self.token.expires_at = timezone.now()
         self.token.save()
+
+        service = GoogleCalendarService(self.user)
+        self.assertIsNotNone(service.service)
+
+    @patch("activities.google_calendar.build")
+    @patch("activities.google_calendar.Credentials")
+    def test_service_init_normalizes_naive_expiry(self, MockCredentials, MockBuild):
+        mock_creds = MagicMock()
+        mock_creds.expiry = datetime.now()
+        mock_creds.expired = False
+        mock_creds.token = "tok"
+        MockCredentials.return_value = mock_creds
+        MockBuild.return_value = MagicMock()
 
         service = GoogleCalendarService(self.user)
         self.assertIsNotNone(service.service)
@@ -96,6 +111,39 @@ class GoogleCalendarServiceTests(TestCase):
 
         result = service.sync_chore(self.chore)
         self.assertIsNotNone(result)
+
+    @patch("activities.google_calendar.build")
+    @patch("activities.google_calendar.Credentials")
+    def test_sync_chore_creates_new_event_when_sync_record_missing(
+        self, MockCredentials, MockBuild
+    ):
+        from chores.models import ChoreGoogleEvent
+
+        ChoreGoogleEvent.objects.filter(chore=self.chore, user=self.user).delete()
+
+        mock_creds = MagicMock()
+        mock_creds.expiry = None
+        mock_creds.expired = False
+        MockCredentials.return_value = mock_creds
+
+        mock_service = MagicMock()
+        events = MagicMock()
+        mock_service.events.return_value = events
+        events.insert().execute.return_value = {"id": "ev-new"}
+        MockBuild.return_value = mock_service
+
+        service = GoogleCalendarService(self.user)
+        result = service.sync_chore(self.chore)
+
+        self.assertEqual(result["id"], "ev-new")
+        events.insert.assert_any_call(
+            calendarId="primary", body=service._build_event_body(self.chore)
+        )
+        self.assertTrue(
+            ChoreGoogleEvent.objects.filter(
+                chore=self.chore, user=self.user, google_event_id="ev-new"
+            ).exists()
+        )
 
     @patch("activities.google_calendar.build")
     @patch("activities.google_calendar.Credentials")

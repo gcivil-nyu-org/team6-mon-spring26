@@ -253,6 +253,18 @@ class RegisterViewTests(TestCase):
         self.assertTrue(CustomUser.objects.filter(username="newuser").exists())
 
 
+class AuthViewsWithoutSocialAppTests(TestCase):
+    def test_login_get_without_google_social_app(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Continue with Google")
+
+    def test_register_get_without_google_social_app(self):
+        response = self.client.get(reverse("register"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Continue with Google")
+
+
 class StaticPageViewTests(TestCase):
     def test_static_pages(self):
         for name in ["faq", "terms", "privacy"]:

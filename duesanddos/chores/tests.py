@@ -431,6 +431,24 @@ class ChoreViewTests(ChoresBaseTestCase):
             chore, [item["chore"] for item in response.context["occurrences"]]
         )
 
+    def test_chores_list_highlights_targeted_chore_block(self):
+        chore = self.create_chore(
+            description="Highlight this chore",
+            due_date=date.today(),
+        )
+
+        response = self.client.get(
+            reverse("chores_list"),
+            {"highlight_chore": str(chore.id)},
+        )
+
+        self.assertContains(response, f'id="chore-{chore.id}"', html=False)
+        self.assertContains(
+            response,
+            f'data-highlight-chore="{chore.id}"',
+            html=False,
+        )
+
     def test_add_chore_get_redirects(self):
         response = self.client.get(reverse("add_chore"))
         self.assertRedirects(response, reverse("chores_list"))
