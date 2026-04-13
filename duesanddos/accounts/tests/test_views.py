@@ -66,11 +66,16 @@ class AuthAndProfileTests(TestCase):
             "last_name": "NewLast",
             "email": self.user.email,
             "username": self.user.username,
-            "bio": "New Bio",
+            "bio": "Updated bio",
             "notifications_enabled": True,
+            "theme": "dark",
+            "default_calendar_view": "timeGridWeek",
         }
         response = self.client.post(url, data)
         self.assertRedirects(response, url)
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.bio, "Updated bio")
+        self.assertEqual(self.user.profile.theme, "dark")  # Verify the change
 
     def test_profile_view_post_change_password(self):
         url = reverse("profile")
