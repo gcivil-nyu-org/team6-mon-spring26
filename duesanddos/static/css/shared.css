@@ -171,3 +171,68 @@ input:focus, select:focus {
     filter: brightness(1.1);
     transform: translateY(-2px);
 }
+
+/* ============================================
+   DARK MODE — Full Theme
+   ============================================ */
+
+/* CSS variable overrides for dark mode */
+.dark {
+  --color-white: #1e293b;
+  --color-gray-bg: #0f172a;
+  --color-gray-border: #334155;
+  --color-text-main: #f1f5f9;
+  --color-text-muted: #94a3b8;
+}
+
+/* Body background */
+.dark body,
+.dark .app-layout {
+  background-color: var(--color-gray-bg);
+}
+
+/* All white/card boxes go dark */
+.dark .bg-white,
+.dark .card,
+.dark .form-card,
+.dark .stat-card,
+.dark .auth-card,
+.dark .dashboard-container,
+.dark .household-card,
+.dark .edit-profile-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+/* Text inside dark boxes */
+.dark .bg-white h1, .dark .bg-white h2, .dark .bg-white h3,
+.dark .bg-white h4, .dark .bg-white h5, .dark .bg-white h6,
+.dark .bg-white p, .dark .bg-white span, .dark .bg-white label,
+.dark .bg-white strong, .dark .bg-white small,
+.dark .card h1, .dark .card h2, .dark .card h3,
+.dark .card p, .dark .card span, .dark .card label, .dark .card strong,
+.dark .form-card label, .dark .form-card p, .dark .form-card span {
+  color: #f1f5f9;
+}
+
+/* Muted text */
+.dark .text-gray-500, .dark .text-gray-600 { color: #94a3b8; }
+.dark .text-gray-900, .dark .text-gray-800 { color: #f1f5f9; }
+
+/* Inputs and selects */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="password"],
+.dark input[type="email"],
+.dark select,
+.dark textarea {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}

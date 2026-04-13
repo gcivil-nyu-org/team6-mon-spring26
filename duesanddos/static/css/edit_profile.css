@@ -160,3 +160,75 @@
 input:checked + .slider { background-color: var(--color-primary-sage); }
 input:checked + .slider:before { transform: translateX(20px); }
 input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+/* ============================================
+   DARK MODE — Edit Profile Page
+   ============================================ */
+
+   .dark .edit-profile-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+.dark .card-title,
+.dark .avatar-info h2 {
+    color: #f1f5f9 !important;
+}
+
+.dark .avatar-info p,
+.dark .custom-django-form label,
+.dark .helptext {
+    color: #94a3b8 !important;
+}
+
+/* THE MAIN FIX — needs !important to beat Tailwind/shared.css */
+.dark .custom-django-form input,
+.dark .custom-django-form select,
+.dark .custom-django-form textarea {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark .custom-django-form input:disabled,
+.dark .custom-django-form select:disabled {
+    background-color: #1e293b !important;
+    color: #64748b !important;
+}
+
+/* Household icon */
+.dark .household-icon {
+    background-color: #1e3a8a !important;
+    color: #93c5fd !important;
+}
+
+/* Empty household placeholder */
+.dark .edit-profile-card div[style*="f9fafb"] {
+    background: #1e293b !important;
+}
+
+/* Danger zone card */
+.dark .edit-profile-card[style*="fef2f2"] {
+    background-color: #2d1515 !important;
+    border-color: #7f1d1d !important;
+}
+
+/* DARK MODE — Fix disabled inputs (browser UA override) */
+   .dark input:disabled,
+   .dark input[disabled],
+   .dark select:disabled,
+   .dark textarea:disabled {
+       background-color: #1a2744 !important;
+       border-color: #334155 !important;
+       color: #64748b !important;
+       -webkit-text-fill-color: #64748b !important; /* Safari fix */
+       opacity: 1 !important; /* some browsers dim disabled inputs */
+   }
+   
+   /* Also target by attribute directly for maximum specificity */
+   .dark .custom-django-form input[disabled],
+   .dark .custom-django-form input:disabled {
+       background-color: #1a2744 !important;
+       -webkit-text-fill-color: #64748b !important;
+       opacity: 1 !important;
+   }

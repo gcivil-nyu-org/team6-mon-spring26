@@ -116,6 +116,79 @@
             justify-content: center;
             flex-shrink: 0;
         }
+
+        /* Dark mode — Navbar */
+        .dark .top-navbar {
+            background-color: #1e293b;
+            border-bottom-color: #334155;
+        }
+
+        .dark .top-navbar-id {
+            color: #f1f5f9;
+        }
+
+        /* Dark mode — Notification Dropdown (keep button itself unchanged) */
+        .dark .notification-dropdown {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        .dark .notification-header {
+            background-color: #1e293b;
+            border-bottom-color: #334155;
+        }
+
+        .dark .notification-item {
+            border-bottom-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .dark .notification-item:hover {
+            background-color: #0f172a;
+        }
+
+        .dark .notification-item.overdue {
+            background-color: #1c1400;
+        }
+
+        .dark .notification-title {
+            color: #f1f5f9;
+        }
+
+        .dark .notification-details {
+            color: #94a3b8;
+        }
+
+        .dark .notification-timestamp {
+            color: #64748b;
+        }
+
+        .dark .notification-footer {
+            background-color: #0f172a;
+            border-top-color: #334155;
+        }
+
+        /* Dark mode — Bell button should NOT be white */
+        .dark .notification-btn {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+
+        .dark .notification-btn svg {
+            stroke: #f1f5f9;
+        }
+
+        /* Dark mode — "Dues & Do's" brand text visible */
+        .dark .brand-text,
+        .dark .sidebar-brand span,
+        .dark .sidebar-brand a span {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .empty-notifications p {
+            color: #94a3b8;
+        }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -140,7 +213,7 @@
             <div class="sidebar-brand">
                 <a href="{% url 'home' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; overflow: hidden; white-space: nowrap;">
                     <img src="{% static 'images/logo.png' %}" alt="Dues & Do's Logo" style="width: 28px; height: 28px; border-radius: 8px; object-fit: contain; flex-shrink: 0;">
-                    <span class="sidebar-text" style="font-size: 1.1rem; font-weight: 700; color: var(--color-text-main);">Dues <span style="color: var(--color-text-muted);">&</span> Do's</span>
+                    <span class="sidebar-text" style="font-size: 1.1rem; font-weight: 700;">Dues <span style="color: var(--color-text-muted);">&</span> Do's</span>
                 </a>
                 <button id="sidebarPinBtn" onclick="toggleSidebarPin()" class="pin-btn" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'" title="Pin/Unpin Sidebar">
                     <svg id="pinIcon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

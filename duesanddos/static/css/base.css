@@ -25,42 +25,6 @@
     padding: 24px 16px;
 }
 
-/* Sidebar and Background */
-.dark .sidebar {
-    background-color: #0f172a; /* Dark Navy */
-    border-right: 1px solid #1e293b;
-}
-
-.dark .main-content {
-    background-color: #020617; /* Near Black */
-    color: #f8fafc;
-}
-
-/* Top Navbar */
-.dark .top-navbar {
-    background-color: #0f172a !important;
-    border-bottom: 1px solid #1e293b !important;
-}
-
-.dark .top-navbar-id {
-    color: #f8fafc !important;
-}
-
-/* Cards and Containers */
-.dark .bg-white {
-    background-color: #1e293b !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
-
-.dark .text-gray-900 {
-    color: #f8fafc !important;
-}
-
-.dark .text-gray-500 {
-    color: #94a3b8 !important;
-}
-
 .sidebar-text {
     opacity: 0;
     transform: translateX(-10px);
@@ -119,7 +83,7 @@
     align-items: center;
     gap: 12px;
     padding: 8px;
-    background-color: #f0fdf4;
+    background-color: #eff6ff;
     border-radius: 12px;
     margin-bottom: 32px;
     cursor: pointer;
@@ -247,4 +211,74 @@
 
 .content-inner::-webkit-scrollbar {
     width: 0px;
+}
+
+/* ============================================
+   DARK MODE — Sidebar & Layout
+   ============================================ */
+
+/* Sidebar */
+.dark .sidebar {
+    background-color: #1e293b;
+    border-right-color: #334155;
+}
+
+.dark .sidebar-brand {
+    border-bottom-color: #334155;
+}
+
+.dark .sidebar-text {
+    color: #f1f5f9;
+}
+
+.dark .nav-item {
+    color: #94a3b8;
+}
+
+.dark .nav-item:hover {
+    background-color: #0f172a;
+    color: #f1f5f9;
+}
+
+.dark .nav-item.active {
+    background-color: #1e3a8a;
+    color: #93c5fd;
+}
+
+.dark .nav-item.active svg {
+    color: #93c5fd;
+}
+
+.dark .household-switcher {
+    background-color: #172554;
+    border-color: #1e3a8a;
+}
+
+.dark .household-switcher span {
+    color: #f1f5f9;
+}
+
+.dark .household-icon {
+    background-color: #1e3a8a;
+    color: #93c5fd;
+}
+
+.dark .user-pill:hover {
+    background-color: #0f172a;
+}
+
+/* Logout popover */
+.dark #logoutBox {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+/* Main content area */
+.dark .main-content {
+    background-color: #0f172a;
+}
+
+/* Content inner */
+.dark .content-inner {
+    background-color: #0f172a;
 }

@@ -68,3 +68,21 @@
 .brand-action-btn:hover {
     background-color: var(--color-primary-dark);
 }
+
+/* DARK MODE — Profile view page */
+.dark .page-main-title {
+    color: #f1f5f9;
+}
+
+.dark .detail-row {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.dark .detail-value {
+    color: #f1f5f9;
+}
+
+.dark .detail-label {
+    color: #93c5fd;
+}
