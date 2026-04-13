@@ -30,7 +30,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "duesanddos-development.us-east-1.elasticbeanstalk.com",
-    "duesanddos-prod.eba-k3ekrrfk.us-east-1.elasticbeanstalk.com",
+    "duesanddos.us-east-1.elasticbeanstalk.com",
     "127.0.0.1",
     "localhost",
 ]
