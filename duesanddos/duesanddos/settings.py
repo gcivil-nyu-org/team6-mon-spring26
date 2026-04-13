@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import socket
 
 load_dotenv()
 
@@ -31,6 +32,13 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
+
+try:
+    internal_ip = socket.gethostbyname(socket.gethostname())
+    if internal_ip:
+        ALLOWED_HOSTS.append(internal_ip)
+except Exception:
+    pass
 
 # Application definition
 INSTALLED_APPS = [
