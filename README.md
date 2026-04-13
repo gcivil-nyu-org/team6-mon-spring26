@@ -11,7 +11,7 @@ Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spr
 
 •⁠  ⁠Development : http://duesanddos-development.us-east-1.elasticbeanstalk.com/
 
-•⁠  ⁠Production: http://duesanddos-prod.eba-k3ekrrfk.us-east-1.elasticbeanstalk.com/
+•⁠  ⁠Production: http://duesanddos.us-east-1.elasticbeanstalk.com/
 
 ## 🚀 Key Features
 
