@@ -173,10 +173,9 @@ input:focus, select:focus {
 }
 
 /* ============================================
-   DARK MODE — Full Theme
+   DARK MODE — Global Theme (FINAL)
    ============================================ */
 
-/* CSS variable overrides for dark mode */
 .dark {
   --color-white: #1e293b;
   --color-gray-bg: #0f172a;
@@ -185,54 +184,80 @@ input:focus, select:focus {
   --color-text-muted: #94a3b8;
 }
 
-/* Body background */
-.dark body,
-.dark .app-layout {
-  background-color: var(--color-gray-bg);
-}
-
-/* All white/card boxes go dark */
+/* All white/light surface boxes */
 .dark .bg-white,
-.dark .card,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
 .dark .form-card,
-.dark .stat-card,
-.dark .auth-card,
-.dark .dashboard-container,
-.dark .household-card,
-.dark .edit-profile-card {
-  background-color: #1e293b;
-  border-color: #334155;
-  color: #f1f5f9;
+.dark .card,
+.dark .edit-profile-card,
+.dark .settings-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
 }
 
-/* Text inside dark boxes */
-.dark .bg-white h1, .dark .bg-white h2, .dark .bg-white h3,
-.dark .bg-white h4, .dark .bg-white h5, .dark .bg-white h6,
-.dark .bg-white p, .dark .bg-white span, .dark .bg-white label,
-.dark .bg-white strong, .dark .bg-white small,
-.dark .card h1, .dark .card h2, .dark .card h3,
-.dark .card p, .dark .card span, .dark .card label, .dark .card strong,
-.dark .form-card label, .dark .form-card p, .dark .form-card span {
-  color: #f1f5f9;
+/* General text */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #f1f5f9 !important;
 }
 
-/* Muted text */
-.dark .text-gray-500, .dark .text-gray-600 { color: #94a3b8; }
-.dark .text-gray-900, .dark .text-gray-800 { color: #f1f5f9; }
+.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 {
+    color: #f1f5f9 !important;
+}
 
-/* Inputs and selects */
+.dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-600 {
+    color: #94a3b8 !important;
+}
+
+/* Keep ledger/status colors */
+.dark .text-red-500, .dark .text-red-600 { color: #fb7185 !important; }
+.dark .text-green-500, .dark .text-green-600 { color: #4ade80 !important; }
+
+/* Global inputs */
 .dark input[type="text"],
 .dark input[type="number"],
 .dark input[type="password"],
 .dark input[type="email"],
 .dark select,
 .dark textarea {
-  background-color: #1e293b;
-  border-color: #334155;
-  color: #f1f5f9;
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
 }
 
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #64748b;
+.dark input:disabled,
+.dark input[disabled],
+.dark select:disabled,
+.dark textarea:disabled {
+    background-color: #1a2744 !important;
+    border-color: #334155 !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
 }
+
+/* Buttons */
+.dark .btn-primary,
+.dark .brand-action-btn {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+
+/* Chore/filter toggle buttons that appear white */
+.dark button.bg-white,
+.dark a.bg-white {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+/* Danger zone */
+.dark section[style*="fef2f2"],
+.dark .edit-profile-card[style*="fef2f2"],
+.dark .danger-card {
+    background-color: #2d1515 !important;
+    border-color: #7f1d1d !important;
+}
+
+/* SVG strokes follow text color */
+.dark svg { stroke: currentColor; }

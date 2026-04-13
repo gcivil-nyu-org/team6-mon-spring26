@@ -185,7 +185,7 @@ input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
 .dark .custom-django-form input,
 .dark .custom-django-form select,
 .dark .custom-django-form textarea {
-    background-color: #0f172a !important;
+    background-color: #1e293b !important; /* Lighter shade to match card background */
     border-color: #334155 !important;
     color: #f1f5f9 !important;
 }
@@ -209,26 +209,19 @@ input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
 
 /* Danger zone card */
 .dark .edit-profile-card[style*="fef2f2"] {
-    background-color: #2d1515 !important;
-    border-color: #7f1d1d !important;
+    background-color: #1e293b !important; /* Keep card background consistent */
+    border: 2px solid #7f1d1d !important; /* Use a strong red border instead */
 }
 
 /* DARK MODE — Fix disabled inputs (browser UA override) */
-   .dark input:disabled,
-   .dark input[disabled],
-   .dark select:disabled,
-   .dark textarea:disabled {
-       background-color: #1a2744 !important;
-       border-color: #334155 !important;
-       color: #64748b !important;
-       -webkit-text-fill-color: #64748b !important; /* Safari fix */
-       opacity: 1 !important; /* some browsers dim disabled inputs */
-   }
-   
-   /* Also target by attribute directly for maximum specificity */
-   .dark .custom-django-form input[disabled],
-   .dark .custom-django-form input:disabled {
-       background-color: #1a2744 !important;
-       -webkit-text-fill-color: #64748b !important;
-       opacity: 1 !important;
-   }
+.dark input:disabled,
+.dark input[disabled],
+.dark select:disabled,
+.dark textarea:disabled,
+.dark .custom-django-form input:disabled {
+    background-color: #263349 !important; /* Slightly lighter than the card to show it's disabled */
+    border-color: #334155 !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 0.8 !important;
+}

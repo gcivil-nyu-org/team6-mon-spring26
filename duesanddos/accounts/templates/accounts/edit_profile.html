@@ -5,7 +5,7 @@
 {% block title %}Profile Settings | Dues & Do's{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}?v=6">
 {% endblock %}
 
 {% block content %}
@@ -161,11 +161,9 @@
                     
                     {% for field in profile_form %}
                     {% if field.name != 'avatar' %}
-                        <div class="form-group">
-                            {{ field.label_tag }}
+                        <div class="form-group mb-4"> {{ field.label_tag }}
                             {{ field }}
-                            ...
-                        </div>
+                            </div>
                         {% endif %}
                     {% endfor %}
                 </div>

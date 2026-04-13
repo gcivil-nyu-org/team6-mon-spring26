@@ -151,6 +151,10 @@
     background-color: #f8fafc;
 }
 
+.dark .member-row-current {
+    background-color: #263349 !important;
+}
+
 .member-row:last-child {
     border-bottom: none;
     padding-bottom: 0;
@@ -327,4 +331,66 @@
     flex: 1 1 0;
     min-width: 0;
     box-sizing: border-box;
+}
+
+/* ============================================
+   DARK MODE — Household Settings
+   ============================================ */
+
+.dark .settings-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+.dark .settings-card-title,
+.dark .member-name,
+.dark .danger-text h3 {
+    color: #f1f5f9 !important;
+}
+
+.dark .member-email,
+.dark .danger-text p,
+.dark .switch-group {
+    color: #94a3b8 !important;
+}
+
+/* THE WHITE STRIP FIX — member-row-current hardcoded bg */
+.dark .member-row-current {
+    background-color: #263349 !important;
+}
+
+.dark .member-row {
+    border-bottom-color: #334155 !important;
+}
+
+/* Inputs inside settings cards */
+.dark .input-with-button input,
+.dark .switch-select {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+/* Role select pill */
+.dark .role-member {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+    border-color: #475569 !important;
+}
+
+/* Danger card */
+.dark .danger-card {
+    background-color: #2d1515 !important;
+    border-color: #7f1d1d !important;
+}
+
+/* btn-outline (Cancel button etc) */
+.dark .btn-outline {
+    background-color: transparent !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark .btn-outline:hover {
+    background-color: #1e293b !important;
 }

@@ -4,7 +4,50 @@
 {% block title %}Household Settings | Dues & Do's{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/household_settings.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/household_settings.css' %}?v=2">
+<style>
+    /* These modals have inline style="background: white" which CSS classes can't override */
+    /* We target by ID to beat inline styles */
+    .dark #invite-confirm-modal,
+    .dark #danger-modal,
+    .dark #leave-modal {
+        background: #1e293b !important;
+        color: #f1f5f9 !important;
+    }
+
+    /* Warning box inside invite modal */
+    .dark #invite-confirm-modal div[style*="fff7ed"] {
+        background: #1c1000 !important;
+        border-color: #78350f !important;
+    }
+
+    /* Admin transfer box inside leave modal */
+    .dark #leave-admin-assignment {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+    }
+
+    .dark #leave-admin-assignment p[style*="0f172a"] {
+        color: #f1f5f9 !important;
+    }
+
+    .dark #leave-admin-assignment p[style*="64748b"] {
+        color: #94a3b8 !important;
+    }
+
+    /* Danger zone card — has inline style */
+    .dark .settings-card[style*="fef2f2"] {
+        background-color: #2d1515 !important;
+        border-color: #7f1d1d !important;
+    }
+
+    /* "not admin" warning bar */
+    .dark div[style*="fffbeb"] {
+        background-color: #1c1200 !important;
+        border-color: #78350f !important;
+        color: #fbbf24 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
