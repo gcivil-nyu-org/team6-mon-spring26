@@ -99,3 +99,22 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+
+class Expense(models.Model):
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="expenses"
+    )
+    payer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="paid_expenses"
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=255)
+    split_details = models.TextField(help_text="JSON or text detailing how the split was calculated")
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]  # Sort by date (newest first)
+
+    def __str__(self):
+        return f"{self.description} - ${self.amount} by {self.payer.username}"

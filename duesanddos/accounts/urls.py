@@ -49,4 +49,5 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    path("history/", views.expense_history_view, name="expense_history"),
 ]
