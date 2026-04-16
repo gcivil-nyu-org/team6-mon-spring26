@@ -73,7 +73,11 @@ def calendar_view(request):
     return render(
         request,
         "activities/calendar.html",
-        {"members": members, "active_household": active_hh, "default_calendar_view": request.user.profile.default_calendar_view},
+        {
+            "members": members,
+            "active_household": active_hh,
+            "default_calendar_view": request.user.profile.default_calendar_view,
+        },
     )
 
 
