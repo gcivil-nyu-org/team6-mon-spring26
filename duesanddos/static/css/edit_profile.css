@@ -36,6 +36,10 @@
     object-fit: cover;
 }
 
+.avatar-info {
+    overflow: auto;
+}
+
 .avatar-info h2 {
     font-size: 1.25rem;
     font-weight: 800;
