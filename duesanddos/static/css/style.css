@@ -149,9 +149,9 @@ input::placeholder,
 .animate-fade-up { animation: fade-up 250ms var(--ease-smooth) both; }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+/* ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background-color: #d6d3d1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background-color: #d6d3d1; border-radius: 9999px; } */
 
 .dark {
   background-color: #0f172a;
