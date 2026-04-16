@@ -109,6 +109,10 @@
         border-color: #0a317d !important;
     }
 
+    .fc-direction-ltr .fc-button-group > .fc-button:not(:first-child) {
+        margin-left: 5px;
+    }
+
     /* Today Button specific - make it stand out */
     .fc .fc-today-button {
         background-color: #eff6ff !important;
@@ -250,9 +254,12 @@
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    const defaultCalendarView = "{{ default_calendar_view|escapejs }}";
+    console.log("default_calendar_view", defaultCalendarView);
+
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
+      initialView: defaultCalendarView || 'dayGridMonth',
       height: 'auto',
       headerToolbar: {
         left: 'prev,next today',
