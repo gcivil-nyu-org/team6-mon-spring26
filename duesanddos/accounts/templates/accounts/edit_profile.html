@@ -164,7 +164,6 @@
                         <div class="form-group">
                             {{ field.label_tag }}
                             {{ field }}
-                            ...
                         </div>
                         {% endif %}
                     {% endfor %}
@@ -181,6 +180,7 @@
 
         <!-- Middle Column: Change Password -->
         <section class="edit-profile-card h-full flex flex-col justify-center items-center text-center">
+            {% if not google_account and user.has_usable_password %}
             <div class="mb-4 text-[#051f52]">
                 <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
@@ -191,6 +191,7 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 Change Password
             </button>
+            {% endif %}
 
             <!-- Connected Accounts -->
             <div class="mt-10 pt-8 border-t border-gray-100 w-full">

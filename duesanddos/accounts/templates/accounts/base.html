@@ -240,7 +240,7 @@
                         {% endif %}
                         <div class="sidebar-text" style="display: flex; flex-direction: column; overflow: hidden; white-space: nowrap;">
                             <strong style="font-size: 0.85rem; color: var(--color-text-main); text-overflow: ellipsis; overflow: hidden;">{{ user.first_name|default:user.username }} {{ user.last_name }}</strong>
-                            <span style="font-size: 0.70rem; color: var(--color-text-muted); text-overflow: ellipsis; overflow: hidden;">{{ user.email|truncatechars:20 }}</span>
+                            <span class="email-text" style="font-size: 0.70rem; color: var(--color-text-muted); text-overflow: ellipsis; overflow: hidden;">{{ user.email|truncatechars:20 }}</span>
                         </div>
                     </div>
                     <svg class="logout-icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>

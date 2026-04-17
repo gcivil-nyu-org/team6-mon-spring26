@@ -468,15 +468,40 @@ function revealCode(code) {
     }
 }
 
-function copyCode(code) {
-    navigator.clipboard.writeText(code).then(() => {
-        const copyBtn = document.getElementById('copyButton');
+async function copyCode(code) {
+    const copyBtn = document.getElementById('copyButton');
+
+    try {
+        if (!window.isSecureContext || !navigator.clipboard) {
+            // Fallback for older / restricted environments
+            const tempInput = document.createElement('input');
+            tempInput.value = code;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
+            document.body.appendChild(tempInput);
+            tempInput.focus();
+            tempInput.select();
+
+            const success = document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            if (!success) {
+                throw new Error('Fallback copy failed');
+            }
+        } else {
+            await navigator.clipboard.writeText(code);
+        }
+
         copyBtn.innerText = 'Copied!';
         showNotificationToast('success', 'Invite code copied to clipboard!');
+    } catch (err) {
+        console.error('Clipboard copy failed:', err);
+        showNotificationToast('error', 'Could not copy code. Please copy it manually.');
+    } finally {
         setTimeout(() => {
             copyBtn.innerText = 'Copy';
         }, 2000);
-    });
+    }
 }
 </script>
 {% endblock %}
