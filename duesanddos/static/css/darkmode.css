@@ -1,0 +1,1012 @@
+/* ============================================================
+   darkmode.css — Dues & Do's Comprehensive Dark Mode
+   Add this AFTER all other CSS files in base.html
+   ============================================================ */
+
+/* ── CSS Variables Override ── */
+.dark {
+  --color-white: #1e293b;
+  --color-gray-bg: #0f172a;
+  --color-gray-border: #334155;
+  --color-text-main: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-primary-sage: #60a5fa;
+  --color-primary-dark: #e2e8f0;
+  --color-primary-bright: #93c5fd;
+}
+
+/* ── Body & Layout ── */
+.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+.dark .app-layout {
+  background-color: #0f172a;
+}
+
+.dark .main-content {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* ── Top Navbar & notification bell ── */
+.dark .top-navbar,
+.dark nav.top-navbar {
+  background-color: #0f172a !important;
+  border-bottom-color: #1e293b !important;
+}
+
+.dark .main-content header {
+  background-color: #0f172a !important;
+  border-bottom-color: #1e293b !important;
+}
+
+/* White bell/notification button fix */
+.dark .main-content header a,
+.dark .main-content header button {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+/* ── Sidebar ── */
+.dark .sidebar {
+  background-color: #0f172a;
+  border-right-color: #1e293b;
+}
+
+.dark .sidebar-brand {
+  border-bottom-color: #1e293b;
+}
+
+.dark .household-switcher {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .nav-item {
+  color: #94a3b8;
+}
+
+.dark .nav-item:hover {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark .nav-item.active {
+  background-color: #172554;
+  color: #60a5fa;
+}
+
+.dark .user-pill:hover {
+  background-color: #1e293b;
+}
+
+.dark .logout-popover,
+.dark #logoutBox {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ── Household switcher in sidebar (was showing white card) ── */
+.dark .household-switcher {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .household-switcher span,
+.dark .household-switcher div {
+  color: #f1f5f9 !important;
+}
+
+/* ── Notification bell (white on white fix) ── */
+.dark .top-navbar-right button,
+.dark [data-notification-bell],
+.dark .notification-bell,
+.dark header button svg,
+.dark .top-navbar button {
+  color: #f1f5f9 !important;
+}
+
+/* The unread badge/bell button in top right corner */
+.dark body > div > header button,
+.dark .main-content > header button {
+  color: #f1f5f9 !important;
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ── Activity Hub table header (gray-on-dark fix) ── */
+.dark thead tr th,
+.dark .bg-slate-50 th,
+.dark table thead {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+/* Activity hub specifically - the gradient header row */
+.dark table thead tr {
+  background: linear-gradient(to right, #1e293b, #1e3a5f) !important;
+}
+
+.dark table thead th {
+  color: #cbd5e1 !important;
+}
+
+/* ── Settings card text (dark on dark fix) ── */
+.dark .settings-card label,
+.dark .settings-card h3,
+.dark .settings-card p,
+.dark .settings-card > *,
+.dark .settings-card-title {
+  color: #f1f5f9 !important;
+}
+
+.dark .settings-card p {
+  color: #94a3b8 !important;
+}
+
+/* Inline style overrides for household_settings inputs */
+.dark input[style*="background-color: var(--color-white)"],
+.dark textarea[style*="background-color: var(--color-white)"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* ── Tailwind bg-white overrides ── */
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+/* ── Tailwind text overrides ── */
+.dark .text-gray-900,
+.dark .text-slate-900,
+.dark .text-gray-800,
+.dark .text-slate-800,
+.dark .text-gray-700,
+.dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-600,
+.dark .text-slate-600,
+.dark .text-gray-500,
+.dark .text-slate-500,
+.dark .text-gray-400,
+.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-300,
+.dark .text-slate-300 {
+  color: #64748b !important;
+}
+
+/* ── Tailwind border overrides ── */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-slate-100,
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+/* ── Tailwind divide overrides ── */
+.dark .divide-y > * + * {
+  border-color: #334155 !important;
+}
+
+/* ── Cards & Containers ── */
+.dark .form-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+/* Custom CSS class cards */
+.dark .settings-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .settings-card-title {
+  color: #f1f5f9;
+}
+
+.dark .edit-profile-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .detail-row {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .detail-label {
+  color: #60a5fa;
+}
+
+.dark .detail-value {
+  color: #f1f5f9;
+}
+
+.dark .insights-stat-card,
+.dark .chart-card,
+.dark .insights-filter-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .insights-stat-card h2,
+.dark .chart-card__header h3 {
+  color: #f1f5f9;
+}
+
+.dark .insights-stat-card span,
+.dark .chart-card__header p {
+  color: #94a3b8;
+}
+
+.dark .top-spender-row {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.dark .top-spender-row strong,
+.dark .top-spender-amount {
+  color: #f1f5f9;
+}
+
+/* ── Tables ── */
+.dark thead,
+.dark .bg-gray-50 thead {
+  background-color: #1e293b !important;
+}
+
+.dark thead th {
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #1e293b !important;
+}
+
+.dark tbody td {
+  color: #cbd5e1 !important;
+}
+
+.dark .bg-white.rounded-xl {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ── Inputs & Selects ── */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark input:disabled,
+.dark select:disabled,
+.dark textarea:disabled {
+  background-color: #1e293b !important;
+  color: #64748b !important;
+}
+
+.dark .expense-select {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .input-with-button input {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .switch-select {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+/* ── Chores page ── */
+.dark .filter-chip {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.dark .filter-chip:hover {
+  background-color: #0f172a;
+}
+
+.dark .filter-chip.active {
+  background-color: #1d4ed8;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+.dark .weekday-pill {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .delete-dropdown-menu {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .delete-dropdown-item {
+  color: #cbd5e1;
+}
+
+.dark .delete-dropdown-item:hover {
+  background-color: #0f172a;
+}
+
+.dark .delete-dropdown-item.danger {
+  color: #f87171;
+}
+
+.dark .delete-dropdown-item.danger:hover {
+  background-color: #450a0a;
+}
+
+/* ── Dashboard specific ── */
+.dark .shadow-gray-200\/40 {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Member hover dropdown */
+.dark .absolute.bg-white {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .absolute.bg-white p {
+  color: #94a3b8 !important;
+}
+
+.dark .absolute.bg-white span {
+  color: #f1f5f9 !important;
+}
+
+/* ── Activity Hub ── */
+.dark #actionDropdownMenu,
+.dark #dateFilterDropdown {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark #actionDropdownMenu a:hover,
+.dark #dateFilterDropdown a:hover {
+  background-color: #0f172a !important;
+}
+
+.dark #actionDropdownMenu span,
+.dark #dateFilterDropdown span {
+  color: #f1f5f9 !important;
+}
+
+.dark #actionDropdownBtn,
+.dark [onclick="toggleDateFilter(event)"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .bg-slate-50\/20 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
+
+/* ── Household Settings ── */
+.dark .member-row {
+  border-color: #334155;
+}
+
+.dark .member-row-current {
+  background-color: #172554;
+  border-color: #334155;
+}
+
+.dark .member-name {
+  color: #f1f5f9;
+}
+
+.dark .member-email {
+  color: #94a3b8;
+}
+
+.dark .role-member {
+  background-color: #334155;
+  color: #cbd5e1;
+  border-color: #475569;
+}
+
+.dark .danger-card {
+  background-color: #450a0a;
+  border-color: #991b1b;
+}
+
+.dark .danger-text h3 {
+  color: #f1f5f9;
+}
+
+.dark .danger-text p {
+  color: #94a3b8;
+}
+
+/* ── Buttons ── */
+.dark .btn-outline {
+  background-color: transparent;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .btn-outline:hover {
+  background-color: #1e293b;
+}
+
+/* ── Misc Tailwind helpers ── */
+.dark .border-dashed {
+  border-color: #334155 !important;
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.4) !important;
+}
+
+/* ── Yellow / warning banners ── */
+.dark .bg-yellow-50 {
+  background-color: #422006 !important;
+  border-color: #92400e !important;
+}
+
+.dark .text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+.dark .text-yellow-700 {
+  color: #fbbf24 !important;
+}
+
+/* ── Profile page ── */
+.dark .page-main-title {
+  color: #f1f5f9;
+}
+
+/* ── Toast notifications ── */
+.dark #toast-container > div {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ── Modals (inline background: white overrides) ── */
+.dark #danger-modal,
+.dark #invite-confirm-modal,
+.dark #leave-modal {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark #danger-modal h3,
+.dark #invite-confirm-modal h3,
+.dark #leave-modal h3 {
+  color: #f1f5f9 !important;
+}
+
+.dark #danger-modal p,
+.dark #invite-confirm-modal p,
+.dark #leave-modal p {
+  color: #94a3b8 !important;
+}
+
+/* Orange warning box inside invite modal */
+.dark #invite-confirm-modal > div[style*="fff7ed"] {
+  background: #431407 !important;
+  border-color: #9a3412 !important;
+}
+
+/* Modal overlay */
+.dark #modal-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ── Danger Zone card (hardcoded inline styles) ── */
+.dark .settings-card[style*="fef2f2"],
+.dark .settings-card[style*="fca5a5"] {
+  background-color: #450a0a !important;
+  border-color: #991b1b !important;
+}
+
+/* ── Chat page ── */
+.dark .chat-shell {
+  background-color: #0f172a;
+  --chat-thread-bg: #1e293b;
+  --chat-thread-border: rgba(51, 65, 85, 0.8);
+  --chat-ink: #f1f5f9;
+  --chat-ink-soft: #94a3b8;
+  --chat-soft-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+}
+
+/* Fix hardcoded white in chat composer, picker, textarea */
+.dark .chat-composer {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .chat-composer textarea {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+.dark .chat-live-status-panel {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .chat-live-status-copy strong { color: #f1f5f9 !important; }
+.dark .chat-live-status-copy p { color: #94a3b8 !important; }
+
+.dark .chat-picker-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .chat-picker-tabs button {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+.dark .chat-picker-search {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .chat-picker-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .chat-thread-header {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .chat-thread-title-row h2,
+.dark .chat-thread-header h2 { color: #f1f5f9 !important; }
+.dark .chat-eyebrow { color: #67e8f9 !important; }
+  border-right-color: #1e293b;
+}
+
+.dark .chat-sidebar-panel {
+  background-color: #0f172a;
+}
+
+.dark .chat-identity-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .chat-identity-card h1,
+.dark .chat-household {
+  color: #f1f5f9;
+}
+
+.dark .chat-eyebrow,
+.dark .chat-identity-copy,
+.dark .chat-section-kicker {
+  color: #94a3b8;
+}
+
+.dark .chat-summary-chip {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .chat-conversation-item {
+  background-color: transparent;
+  border-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark .chat-conversation-item:hover {
+  background-color: #1e293b;
+}
+
+.dark .chat-conversation-item.is-active {
+  background-color: #172554;
+}
+
+.dark .chat-conversation-preview {
+  color: #94a3b8;
+}
+
+.dark .chat-sidebar-section h2 {
+  color: #f1f5f9;
+}
+
+.dark .chat-thread {
+  background-color: #0f172a;
+}
+
+.dark .chat-thread-header {
+  background-color: #0f172a;
+  border-bottom-color: #1e293b;
+}
+
+.dark .chat-thread-header h2,
+.dark .chat-thread-title-row h2 {
+  color: #f1f5f9;
+}
+
+.dark .chat-message-list {
+  background-color: #0f172a;
+}
+
+.dark .chat-message-bubble {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark .chat-message.is-own .chat-message-bubble {
+  background-color: #172554;
+}
+
+.dark .chat-message-meta span {
+  color: #94a3b8;
+}
+
+.dark .chat-composer,
+.dark .chat-composer-wrap {
+  background-color: #0f172a;
+  border-top-color: #1e293b;
+}
+
+.dark .chat-composer textarea,
+.dark .chat-textarea {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+.dark .chat-member-button {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+.dark .chat-member-button:hover {
+  background-color: #334155;
+}
+
+.dark .chat-empty-state,
+.dark .chat-empty-copy {
+  color: #94a3b8;
+}
+
+.dark .chat-picker {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .chat-picker-item {
+  color: #f1f5f9;
+}
+
+.dark .chat-picker-item:hover {
+  background-color: #0f172a;
+}
+
+.dark .chat-live-status-panel {
+  color: #94a3b8;
+}
+
+/* ── Calendar page ── */
+.dark .fc,
+.dark .fc-view,
+.dark .fc-scroller,
+.dark .fc-view-harness {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  border-color: #1e293b !important;
+}
+
+.dark .fc-col-header-cell,
+.dark .fc-timegrid-axis {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+.dark .fc-timegrid-slot-label {
+  color: #64748b !important;
+}
+
+.dark .fc-daygrid-day,
+.dark .fc-timegrid-col {
+  background-color: #0f172a !important;
+}
+
+.dark .fc-day-today {
+  background-color: #172554 !important;
+}
+
+.dark .fc-scrollgrid {
+  border-color: #1e293b !important;
+}
+
+.dark .fc-button {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .fc-button-active,
+.dark .fc-button:focus {
+  background-color: #172554 !important;
+  border-color: #3b82f6 !important;
+}
+
+/* ── Calendar: fix Saturday (fc-day-sat) and all day columns being white ── */
+.dark .fc-day-sat,
+.dark .fc-day-sun,
+.dark td.fc-day,
+.dark .fc-timegrid-col.fc-day,
+.dark .fc-daygrid-day {
+  background-color: #0f172a !important;
+}
+
+.dark .fc-col-header-cell.fc-day-sat,
+.dark .fc-col-header-cell.fc-day-sun {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+/* Fix white column header row (Mon-Fri) */
+.dark .fc-col-header,
+.dark .fc-col-header-cell,
+.dark th.fc-col-header-cell {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+.dark .fc-col-header-cell-cushion {
+  color: #94a3b8 !important;
+}
+
+/* Fix dark title text (Apr 12-18, 2026) */
+.dark .fc-toolbar-title,
+.dark .fc .fc-toolbar-title,
+.dark h2.fc-toolbar-title {
+  color: #f1f5f9 !important;
+  opacity: 1 !important;
+}
+
+/* Fix nav arrow buttons */
+.dark .fc-prev-button,
+.dark .fc-next-button,
+.dark .fc-today-button {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Fix Month/Week/Day toggle buttons */
+.dark .fc-button-group .fc-button {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .fc-button-group .fc-button.fc-button-active {
+  background-color: #1d3a8a !important;
+  color: #ffffff !important;
+}
+
+/* ── btn-primary text always white ── */
+.dark .btn-primary {
+  color: #ffffff !important;
+  background-color: #1d3a8a !important;
+}
+
+.dark .btn-primary:disabled {
+  opacity: 0.5 !important;
+  color: #ffffff !important;
+}
+
+/* Inline-styled buttons in household_settings ── */
+.dark button[class*="btn-primary"],
+.dark .settings-card button.btn-primary {
+  color: #ffffff !important;
+}
+
+/* ── Fix dark toolbar title ── */
+.dark .fc-toolbar-title {
+  color: #f1f5f9 !important;
+}
+
+/* ── Fix insights stat card colored top borders ── */
+.dark .insights-stat-card {
+  background-color: #1e293b !important;
+  border-left-color: #334155 !important;
+  border-right-color: #334155 !important;
+  border-bottom-color: #334155 !important;
+  /* Do NOT override border-top so colored borders show through */
+}
+
+/* Restore Tailwind colored top borders explicitly */
+.dark .insights-stat-card.border-t-emerald-500,
+.dark .border-t-emerald-500 { border-top-color: #10b981 !important; }
+
+.dark .insights-stat-card.border-t-blue-500,
+.dark .border-t-blue-500 { border-top-color: #3b82f6 !important; }
+
+.dark .insights-stat-card.border-t-violet-500,
+.dark .border-t-violet-500 { border-top-color: #8b5cf6 !important; }
+
+.dark .insights-stat-card.border-t-amber-500,
+.dark .border-t-amber-500 { border-top-color: #f59e0b !important; }
+
+/* Dashboard card colored top borders */
+.dark .border-t-green-500 { border-top-color: #22c55e !important; }
+.dark .border-t-red-500   { border-top-color: #ef4444 !important; }
+.dark .border-t-blue-500  { border-top-color: #3b82f6 !important; }
+.dark .border-t-indigo-500 { border-top-color: #6366f1 !important; }
+.dark .border-t-yellow-500 { border-top-color: #eab308 !important; }
+.dark .border-t-purple-500 { border-top-color: #a855f7 !important; }
+.dark .border-t-pink-500   { border-top-color: #ec4899 !important; }
+
+/* ── Edit profile danger zone ── */
+.dark .edit-profile-card[style*="fef2f2"],
+.dark section.edit-profile-card[style*="fef2f2"] {
+  background-color: #450a0a !important;
+  border-color: #991b1b !important;
+}
+
+.dark .edit-profile-card[style*="fef2f2"] p,
+.dark .edit-profile-card[style*="fef2f2"] button {
+  color: #fca5a5 !important;
+  border-color: #991b1b !important;
+  background-color: #450a0a !important;
+}
+
+/* ── Chat message list white box fix ── */
+.dark .chat-message-list {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .chat-empty-state {
+  color: #94a3b8 !important;
+}
+
+.dark .chat-empty-state h3 {
+  color: #f1f5f9 !important;
+}
+.dark .notification-dropdown {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+}
+
+.dark .notification-header {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .notification-footer {
+  background-color: #0f172a !important;
+  border-top-color: #334155 !important;
+  color: #60a5fa !important;
+}
+
+.dark .notification-footer a {
+  color: #60a5fa !important;
+}
+
+.dark .notification-item {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .notification-item:hover {
+  background-color: #0f172a !important;
+}
+
+.dark .notification-item.overdue {
+  background-color: #431407 !important;
+}
+
+.dark .notification-title {
+  color: #f1f5f9 !important;
+}
+
+.dark .notification-details {
+  color: #94a3b8 !important;
+}
+
+.dark .notification-timestamp {
+  color: #64748b !important;
+}
+
+.dark .notification-icon {
+  background-color: #1e3a5f !important;
+  color: #60a5fa !important;
+}
+
+.dark .empty-notifications {
+  color: #94a3b8 !important;
+}
+
+/* ── Household icon in sidebar (light icon on light bg fix) ── */
+.dark .household-icon {
+  background-color: #1e3a5f !important;
+  color: #60a5fa !important;
+}
+
+.dark .household-switcher .household-icon svg {
+  color: #60a5fa !important;
+  stroke: #60a5fa !important;
+}
