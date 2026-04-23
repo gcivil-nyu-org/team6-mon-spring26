@@ -248,3 +248,51 @@ class ChatMessageDeletionTests(TestCase):
 
         self.assertEqual(response_for_me.status_code, 404)
         self.assertEqual(response_for_everyone.status_code, 404)
+
+    def test_hidden_message_string_representation(self):
+        hidden = HiddenMessage.objects.create(message=self.message, user=self.peer)
+        rendered = str(hidden)
+        self.assertIn(str(self.message.id), rendered)
+        self.assertIn(str(self.peer.id), rendered)
+
+    def test_delete_for_me_requires_post(self):
+        self.login(self.peer)
+
+        response = self.client.get(
+            reverse("chat:delete_for_me", args=[self.message.id])
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response.json()["error"], "POST required.")
+
+    def test_delete_for_everyone_requires_post(self):
+        self.login(self.author)
+
+        response = self.client.get(
+            reverse("chat:delete_for_everyone", args=[self.message.id])
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response.json()["error"], "POST required.")
+
+    def test_delete_endpoints_return_404_when_message_missing(self):
+        self.login(self.peer)
+
+        response = self.client.post(reverse("chat:delete_for_me", args=[999999]))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_endpoints_return_404_when_no_active_household(self):
+        no_house_user = CustomUser.objects.create_user(
+            username="nohouse",
+            email="nohouse@example.com",
+            password=TEST_PASSWORD,
+        )
+        Profile.objects.create(user=no_house_user, active_household=None)
+        self.login(no_house_user)
+
+        response = self.client.post(
+            reverse("chat:delete_for_me", args=[self.message.id])
+        )
+
+        self.assertEqual(response.status_code, 404)

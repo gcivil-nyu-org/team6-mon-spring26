@@ -262,7 +262,7 @@ class ChatViewTests(TestCase):
         self.assertContains(response, "chat-message-avatar")
         self.assertContains(response, "chat-thread-badge")
         self.assertContains(response, 'data-message-author-initial="O"')
-        self.assertContains(response, "Live updates")
+        self.assertContains(response, "Live Updates")
 
     def test_chat_page_uses_thread_messages_context_without_populating_toast_messages(
         self,
