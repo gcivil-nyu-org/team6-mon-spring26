@@ -248,3 +248,100 @@
 .content-inner::-webkit-scrollbar {
     width: 0px;
 }
+
+
+
+.sidebar.sidebar-collapsed .sidebar-text, 
+.sidebar.sidebar-collapsed .email-text,
+.sidebar.sidebar-collapsed strong {
+    display: none !important; 
+}
+
+.sidebar.pinned {
+    width: 260px !important;
+    padding: 24px 16px !important;
+}
+
+.sidebar.pinned .sidebar-text {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+    width: 100% !important;
+    pointer-events: auto !important;
+}
+
+.sidebar.pinned .pin-btn {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.pin-btn:hover #pinIcon {
+    stroke-width: 2.5;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important; 
+        top: 0;
+        width: 280px !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        transition: left 0.3s ease-in-out !important;
+        background: white !important;
+        box-shadow: none !important;
+        padding: 24px 16px !important;
+    }
+
+    .sidebar.pinned {
+        left: 0 !important;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.15) !important;
+    }
+
+    .pin-btn {
+        display: none !important;
+    }
+
+    .sidebar.pinned .sidebar-text,
+    .sidebar.pinned .email-text,
+    .sidebar.pinned strong {
+        opacity: 1 !important;
+        width: auto !important;
+        display: inline-flex !important;
+        transform: translateX(0) !important;
+        pointer-events: auto !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        flex: 1;
+    }
+    
+    .app-layout {
+        display: block; 
+    }
+}
+
+@media (min-width: 1025px) {
+    .sidebar:not(.pinned):hover {
+        width: 260px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .sidebar-brand {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    
+    .sidebar.pinned .sidebar-brand {
+        padding: 0 8px !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .sidebar:not(.pinned):hover .sidebar-text {
+        width: 100%;
+        opacity: 1;
+    }
+}
