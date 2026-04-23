@@ -181,7 +181,9 @@ class ConversationParticipant(models.Model):
 
     @property
     def unread_count(self):
-        queryset = self.conversation.messages.exclude(author=self.user)
+        queryset = self.conversation.messages.exclude(author=self.user).exclude(
+            hidden_entries__user=self.user
+        )
         if self.last_read_message_id:
             queryset = queryset.filter(id__gt=self.last_read_message_id)
         return queryset.count()
@@ -211,6 +213,14 @@ class Message(models.Model):
     )
     body = models.TextField(max_length=MAX_BODY_LENGTH, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="chat_deleted_messages",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["created_at", "id"]
@@ -260,6 +270,34 @@ class Message(models.Model):
         Conversation.objects.filter(pk=self.conversation_id).update(
             updated_at=timezone.now()
         )
+
+
+class HiddenMessage(models.Model):
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name="hidden_entries",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="hidden_chat_messages",
+    )
+    hidden_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["message", "user"],
+                name="chat_unique_hidden_message_per_user",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "hidden_at"]),
+        ]
+
+    def __str__(self):
+        return f"Hidden message {self.message_id} for user {self.user_id}"
 
 
 class MessageReference(models.Model):

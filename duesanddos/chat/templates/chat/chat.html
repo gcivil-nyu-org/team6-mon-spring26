@@ -151,7 +151,7 @@
             <div class="chat-live-status-panel">
                 <span class="chat-live-status-dot" aria-hidden="true"></span>
                 <div class="chat-live-status-copy">
-                    <strong data-live-status>Live updates</strong>
+                    <strong data-live-status>Live Updates</strong>
                     <p data-live-status-detail>Checking for new messages every 5 seconds.</p>
                 </div>
             </div>
@@ -164,23 +164,62 @@
             data-messages-url="{% url 'chat:messages' active_conversation.id %}"
             data-mark-read-url="{% url 'chat:mark_read' active_conversation.id %}"
             data-poll-interval="{{ poll_interval_ms }}"
+            data-csrf-token="{{ csrf_token }}"
         >
             {% if thread_messages %}
                 {% for message in thread_messages %}
                     <article
                         class="chat-message {% if message.author_id == request.user.id %}is-own{% endif %}"
                         data-message-id="{{ message.id }}"
-                        data-message-author-initial="{{ message.author.username|first|upper }}"
+                        data-message-author-initial="{{ message.author_username|first|upper }}"
+                        data-delete-for-me-url="{{ message.delete_for_me_url }}"
+                        data-delete-for-everyone-url="{{ message.delete_for_everyone_url }}"
                     >
-                        <div class="chat-message-avatar" aria-hidden="true">{{ message.author.username|first|upper }}</div>
+                        <div class="chat-message-avatar" aria-hidden="true">{{ message.author_username|first|upper }}</div>
                         <div class="chat-message-bubble">
-                            <div class="chat-message-meta">
-                                <strong>{{ message.author.username }}</strong>
-                                <span>{{ message.created_at|date:"M j, g:i A" }}</span>
+                            <div class="chat-message-row">
+                                <div class="chat-message-meta">
+                                    <strong>{{ message.author_username }}</strong>
+                                    <span>{{ message.created_at_display }}</span>
+                                </div>
+                                <div class="chat-message-actions">
+                                    <button
+                                        type="button"
+                                        class="chat-message-menu-trigger"
+                                        data-action-menu-toggle
+                                        aria-label="Message actions"
+                                    >
+                                        ⋯
+                                    </button>
+                                    <div class="chat-message-menu is-hidden" data-action-menu>
+                                        {% if message.can_delete_for_me %}
+                                            <button
+                                                type="button"
+                                                data-delete-for-me
+                                                data-url="{{ message.delete_for_me_url }}"
+                                            >
+                                                Delete For Me
+                                            </button>
+                                        {% endif %}
+                                        {% if message.can_delete_for_everyone and not message.is_deleted %}
+                                            <button
+                                                type="button"
+                                                class="is-danger"
+                                                data-delete-for-everyone
+                                                data-url="{{ message.delete_for_everyone_url }}"
+                                            >
+                                                Delete For Everyone
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
-                            {% if message.reference_cards %}
+                            {% if message.is_deleted %}
+                                <p class="chat-message-tombstone">{{ message.deleted_label }}</p>
+                            {% endif %}
+                            {% if message.references and not message.is_deleted %}
                                 <div class="chat-message-references">
-                                    {% for reference in message.reference_cards %}
+                                    {% for reference in message.references %}
                                         {% if reference.is_available and reference.href %}
                                             <a
                                                 href="{{ reference.href }}"
@@ -208,7 +247,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            {% if message.body %}
+                            {% if message.body and not message.is_deleted %}
                                 <p>{{ message.body|linebreaksbr }}</p>
                             {% endif %}
                         </div>
@@ -313,6 +352,7 @@
 
         const messagesUrl = messageList.dataset.messagesUrl;
         const markReadUrl = messageList.dataset.markReadUrl;
+        const csrfToken = messageList.dataset.csrfToken;
         const pollInterval = Number(messageList.dataset.pollInterval || '5000');
         const nearBottomThreshold = 120;
         let lastSuccessfulPoll = null;
@@ -345,7 +385,7 @@
                 );
                 return;
             }
-            setLiveStatus('Live updates', '');
+            setLiveStatus('Live Updates', '');
         }
 
         function isNearBottom() {
@@ -365,6 +405,12 @@
             avatar.textContent = initial;
             avatar.setAttribute('aria-hidden', 'true');
             return { avatar, initial };
+        }
+
+        function closeAllActionMenus() {
+            messageList.querySelectorAll('[data-action-menu]').forEach(function (menu) {
+                menu.classList.add('is-hidden');
+            });
         }
 
         function buildReferenceCard(reference) {
@@ -405,16 +451,21 @@
             return body;
         }
 
-        function appendMessage(message) {
+        function buildMessageElement(message, isNew) {
             const article = document.createElement('article');
-            article.className = `chat-message${message.is_own_message ? ' is-own' : ''} is-new`;
+            article.className = `chat-message${message.is_own_message ? ' is-own' : ''}${isNew ? ' is-new' : ''}`;
             article.dataset.messageId = message.id;
+            article.dataset.deleteForMeUrl = message.delete_for_me_url || '';
+            article.dataset.deleteForEveryoneUrl = message.delete_for_everyone_url || '';
 
             const { avatar, initial } = buildAvatar(message);
             article.dataset.messageAuthorInitial = initial;
 
             const bubble = document.createElement('div');
             bubble.className = 'chat-message-bubble';
+
+            const row = document.createElement('div');
+            row.className = 'chat-message-row';
 
             const meta = document.createElement('div');
             meta.className = 'chat-message-meta';
@@ -426,9 +477,52 @@
             timestamp.textContent = new Date(message.created_at).toLocaleString();
 
             meta.append(author, timestamp);
-            bubble.append(meta);
 
-            if (Array.isArray(message.references) && message.references.length) {
+            const actions = document.createElement('div');
+            actions.className = 'chat-message-actions';
+
+            const menuTrigger = document.createElement('button');
+            menuTrigger.type = 'button';
+            menuTrigger.className = 'chat-message-menu-trigger';
+            menuTrigger.dataset.actionMenuToggle = '';
+            menuTrigger.setAttribute('aria-label', 'Message actions');
+            menuTrigger.textContent = '⋯';
+
+            const menu = document.createElement('div');
+            menu.className = 'chat-message-menu is-hidden';
+            menu.dataset.actionMenu = '';
+
+            if (message.can_delete_for_me) {
+                const deleteForMe = document.createElement('button');
+                deleteForMe.type = 'button';
+                deleteForMe.dataset.deleteForMe = '';
+                deleteForMe.dataset.url = message.delete_for_me_url;
+                deleteForMe.textContent = 'Delete For Me';
+                menu.appendChild(deleteForMe);
+            }
+
+            if (message.can_delete_for_everyone && !message.is_deleted) {
+                const deleteForEveryone = document.createElement('button');
+                deleteForEveryone.type = 'button';
+                deleteForEveryone.className = 'is-danger';
+                deleteForEveryone.dataset.deleteForEveryone = '';
+                deleteForEveryone.dataset.url = message.delete_for_everyone_url;
+                deleteForEveryone.textContent = 'Delete For Everyone';
+                menu.appendChild(deleteForEveryone);
+            }
+
+            actions.append(menuTrigger, menu);
+            row.append(meta, actions);
+            bubble.append(row);
+
+            if (message.is_deleted) {
+                const tombstone = document.createElement('p');
+                tombstone.className = 'chat-message-tombstone';
+                tombstone.textContent = message.deleted_label || 'Message deleted';
+                bubble.append(tombstone);
+            }
+
+            if (!message.is_deleted && Array.isArray(message.references) && message.references.length) {
                 const references = document.createElement('div');
                 references.className = 'chat-message-references';
                 message.references.forEach(function (reference) {
@@ -437,24 +531,85 @@
                 bubble.append(references);
             }
 
-            if (message.body) {
+            if (!message.is_deleted && message.body) {
                 bubble.append(buildMessageBody(message.body));
             }
             article.append(avatar, bubble);
-            messageList.appendChild(article);
-
-            window.setTimeout(function () {
-                article.classList.remove('is-new');
-            }, 1200);
+            return article;
         }
 
         async function postMarkRead() {
             await fetch(markReadUrl, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': csrfToken,
                 },
             });
+        }
+
+        function ensureEmptyState() {
+            if (messageList.querySelector('[data-message-id]')) {
+                const existing = messageList.querySelector('.chat-empty-state');
+                if (existing) {
+                    existing.remove();
+                }
+                return;
+            }
+
+            if (!messageList.querySelector('.chat-empty-state')) {
+                const empty = document.createElement('div');
+                empty.className = 'chat-empty-state';
+                empty.innerHTML = '<div class="chat-empty-state-icon" aria-hidden="true">+</div><h3>No Messages</h3>';
+                messageList.appendChild(empty);
+            }
+        }
+
+        function reconcileMessages(messages) {
+            const existing = new Map();
+            messageList.querySelectorAll('[data-message-id]').forEach(function (node) {
+                existing.set(String(node.dataset.messageId), node);
+            });
+
+            const activeIds = new Set();
+            let newCount = 0;
+
+            messages.forEach(function (message) {
+                const id = String(message.id);
+                activeIds.add(id);
+                const freshNode = buildMessageElement(message, !existing.has(id));
+                if (!existing.has(id)) {
+                    messageList.appendChild(freshNode);
+                    newCount += 1;
+                    window.setTimeout(function () {
+                        freshNode.classList.remove('is-new');
+                    }, 1200);
+                    return;
+                }
+                existing.get(id).replaceWith(freshNode);
+            });
+
+            existing.forEach(function (node, id) {
+                if (!activeIds.has(id)) {
+                    node.remove();
+                }
+            });
+
+            ensureEmptyState();
+            return newCount;
+        }
+
+        async function postDelete(url) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`Delete failed with status ${response.status}`);
+            }
+            return response.json();
         }
 
         function updateCharacterCount() {
@@ -617,13 +772,8 @@
 
         async function pollMessages() {
             const shouldStickToBottom = isNearBottom();
-            const messages = messageList.querySelectorAll('[data-message-id]');
-            const lastMessage = messages[messages.length - 1];
-            const lastMessageId = lastMessage ? lastMessage.dataset.messageId : null;
-            const url = lastMessageId ? `${messagesUrl}?after_id=${lastMessageId}` : messagesUrl;
-
             try {
-                const response = await fetch(url, {
+                const response = await fetch(messagesUrl, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 });
                 if (!response.ok) {
@@ -631,19 +781,15 @@
                 }
 
                 const payload = await response.json();
-                if (payload.messages.length) {
-                    const emptyState = messageList.querySelector('.chat-empty-state');
-                    if (emptyState) {
-                        emptyState.remove();
-                    }
-                    payload.messages.forEach(appendMessage);
-                    if (shouldStickToBottom) {
-                        scrollToBottom();
-                    }
+                const newCount = reconcileMessages(payload.messages);
+                if (shouldStickToBottom && payload.messages.length) {
+                    scrollToBottom();
+                }
+                if (newCount > 0) {
                     await postMarkRead();
                     await pollUnreadCounts();
                 }
-                updateLiveStatusFromSuccess(payload.server_time, payload.messages.length);
+                updateLiveStatusFromSuccess(payload.server_time, newCount);
             } catch (error) {
                 const detail = lastSuccessfulPoll
                     ? `Last successful sync was at ${formatClock(lastSuccessfulPoll)}.`
@@ -671,6 +817,63 @@
                 badge.classList.toggle('is-hidden', count === 0);
             });
         }
+
+        messageList.addEventListener('click', async function (event) {
+            const toggle = event.target.closest('[data-action-menu-toggle]');
+            if (toggle) {
+                const wrapper = toggle.closest('.chat-message-actions');
+                const menu = wrapper ? wrapper.querySelector('[data-action-menu]') : null;
+                if (!menu) {
+                    return;
+                }
+                const isHidden = menu.classList.contains('is-hidden');
+                closeAllActionMenus();
+                menu.classList.toggle('is-hidden', !isHidden);
+                return;
+            }
+
+            const deleteForMe = event.target.closest('[data-delete-for-me]');
+            if (deleteForMe) {
+                try {
+                    await postDelete(deleteForMe.dataset.url);
+                    const row = deleteForMe.closest('[data-message-id]');
+                    if (row) {
+                        row.remove();
+                    }
+                    ensureEmptyState();
+                    closeAllActionMenus();
+                    await pollUnreadCounts();
+                } catch (error) {
+                    window.alert('Unable to delete message right now.');
+                }
+                return;
+            }
+
+            const deleteForEveryone = event.target.closest('[data-delete-for-everyone]');
+            if (deleteForEveryone) {
+                if (!window.confirm('Delete this message for everyone?')) {
+                    return;
+                }
+                try {
+                    const payload = await postDelete(deleteForEveryone.dataset.url);
+                    if (payload.message) {
+                        const row = deleteForEveryone.closest('[data-message-id]');
+                        if (row) {
+                            row.replaceWith(buildMessageElement(payload.message, false));
+                        }
+                    }
+                    closeAllActionMenus();
+                } catch (error) {
+                    window.alert('Unable to delete message for everyone right now.');
+                }
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.chat-message-actions')) {
+                closeAllActionMenus();
+            }
+        });
 
         if (textarea && composer) {
             updateCharacterCount();
