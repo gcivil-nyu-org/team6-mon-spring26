@@ -14,14 +14,16 @@ from .models import Message
 from .services import (
     compute_message_preview_text,
     create_message_with_references,
+    delete_message_for_everyone,
     ensure_chat_context,
     get_accessible_conversations,
     get_conversation_or_404,
+    get_visible_messages_queryset,
     get_chore_picker_items,
     get_or_create_dm,
     get_participant_or_404,
     get_expense_picker_items,
-    serialize_reference,
+    hide_message_for_user,
     serialize_message,
     unread_counts_for_user,
 )
@@ -52,26 +54,33 @@ def chat_index(request, conversation_id=None):
     selected_participant = get_participant_or_404(selected_conversation, request.user)
 
     for conversation in conversations:
-        latest = conversation.messages.last()
+        latest = (
+            get_visible_messages_queryset(conversation, request.user)
+            .prefetch_related("references")
+            .order_by("id")
+            .last()
+        )
         if latest is None:
             conversation.preview_text = "No Messages"
         else:
             conversation.preview_text = compute_message_preview_text(
                 body=latest.body,
                 has_references=latest.references.exists(),
+                is_deleted=latest.deleted_at is not None,
             )
 
-    thread_messages = list(
-        selected_conversation.messages.select_related("author")
+    thread_queryset = (
+        get_visible_messages_queryset(selected_conversation, request.user)
+        .select_related("author")
         .prefetch_related("references__expense__payer", "references__chore__assignees")
         .order_by("-id")[:MESSAGE_PAGE_SIZE]
     )
+    thread_messages = list(thread_queryset)
     thread_messages.reverse()
-    for message in thread_messages:
-        message.reference_cards = [
-            serialize_reference(reference) for reference in message.references.all()
-        ]
     selected_participant.mark_read(thread_messages[-1] if thread_messages else None)
+    serialized_thread_messages = [
+        _serialize_message(message, request.user) for message in thread_messages
+    ]
 
     other_members = (
         HouseholdMember.objects.filter(household=household)
@@ -84,7 +93,7 @@ def chat_index(request, conversation_id=None):
         "active_conversation": selected_conversation,
         "conversations": conversations,
         "group_conversation": group_conversation,
-        "thread_messages": thread_messages,
+        "thread_messages": serialized_thread_messages,
         "other_members": other_members,
         "expense_picker_items": get_expense_picker_items(household),
         "chore_picker_items": get_chore_picker_items(household),
@@ -163,19 +172,16 @@ def messages_json(request, conversation_id):
     get_participant_or_404(conversation, request.user)
 
     queryset = (
-        conversation.messages.select_related("author")
+        get_visible_messages_queryset(conversation, request.user)
+        .select_related("author")
         .prefetch_related("references__expense__payer", "references__chore__assignees")
         .order_by("id")
     )
-    after_id = request.GET.get("after_id")
-    if after_id:
-        queryset = queryset.filter(id__gt=after_id)
-    else:
-        last_ids = list(
-            queryset.order_by("-id")[:MESSAGE_PAGE_SIZE].values_list("id", flat=True)
-        )
-        if last_ids:
-            queryset = queryset.filter(id__in=last_ids)
+    last_ids = list(
+        queryset.order_by("-id")[:MESSAGE_PAGE_SIZE].values_list("id", flat=True)
+    )
+    if last_ids:
+        queryset = queryset.filter(id__in=last_ids)
 
     serialized = [_serialize_message(message, request.user) for message in queryset]
     return JsonResponse(
@@ -207,6 +213,62 @@ def mark_read(request, conversation_id):
 
     conversation = get_conversation_or_404(request.user, household, conversation_id)
     participant = get_participant_or_404(conversation, request.user)
-    latest_message = conversation.messages.order_by("-id").first()
+    latest_message = (
+        get_visible_messages_queryset(conversation, request.user)
+        .order_by("-id")
+        .first()
+    )
     participant.mark_read(latest_message)
     return JsonResponse({"status": "ok"})
+
+
+def _get_message_in_user_household_or_404(request_user, message_id):
+    household, _group_conversation = ensure_chat_context(request_user)
+    if household is None:
+        raise Http404("Conversation not found.")
+
+    message = (
+        Message.objects.select_related("author", "conversation")
+        .prefetch_related("references__expense__payer", "references__chore__assignees")
+        .filter(pk=message_id)
+        .first()
+    )
+    if message is None:
+        raise Http404("Message not found.")
+
+    conversation = get_conversation_or_404(
+        request_user, household, message.conversation_id
+    )
+    get_participant_or_404(conversation, request_user)
+    return message
+
+
+@login_required
+@transaction.atomic
+def delete_for_me(request, message_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required."}, status=405)
+
+    message = _get_message_in_user_household_or_404(request.user, message_id)
+    hide_message_for_user(message, request.user)
+    return JsonResponse({"status": "ok", "message_id": message.id})
+
+
+@login_required
+@transaction.atomic
+def delete_for_everyone(request, message_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required."}, status=405)
+
+    message = _get_message_in_user_household_or_404(request.user, message_id)
+    if message.author_id != request.user.id:
+        return JsonResponse({"error": "Forbidden."}, status=403)
+
+    delete_message_for_everyone(message, request.user)
+    return JsonResponse(
+        {
+            "status": "ok",
+            "message_id": message.id,
+            "message": _serialize_message(message, request.user),
+        }
+    )
