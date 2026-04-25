@@ -145,15 +145,17 @@ def insights_view(request):
         "assignees", "completions", "skips"
     )
 
-    chore_expected = 0
-    chore_completed = 0
-    chore_skipped = 0
+    due_chore_count = 0
+    completed_chore_count = 0
+    skipped_chore_count = 0
     member_completion_counts = {}
 
     completions_in_window = ChoreCompletion.objects.filter(
         chore__household=active_hh,
-        occurrence_date__range=(chore_window_start, end_date),
+        completed_at__date__range=(chore_window_start, end_date),
     )
+    completed_chore_count = completions_in_window.count()
+
     for row in (
         completions_in_window.values("completed_by__username")
         .annotate(total=Count("id"))
@@ -167,25 +169,27 @@ def insights_view(request):
             occurrence_date__range=(chore_window_start, end_date),
         ).values_list("chore_id", "occurrence_date")
     )
-    completion_pairs = set(
-        completions_in_window.values_list("chore_id", "occurrence_date")
+
+    completion_pairs_for_due_window = set(
+        ChoreCompletion.objects.filter(
+            chore__household=active_hh,
+            occurrence_date__range=(chore_window_start, end_date),
+        ).values_list("chore_id", "occurrence_date")
     )
 
     cursor = chore_window_start
     while cursor <= end_date:
         for chore in chores:
             if chore.occurs_on(cursor):
-                chore_expected += 1
-                if (chore.id, cursor) in completion_pairs:
-                    chore_completed += 1
-                elif (chore.id, cursor) in skip_pairs:
-                    chore_skipped += 1
+                due_chore_count += 1
+                if (chore.id, cursor) in skip_pairs:
+                    skipped_chore_count += 1
         cursor += timedelta(days=1)
 
-    completion_rate = (
-        round((chore_completed / chore_expected) * 100, 1) if chore_expected else 0
+    open_chore_count = max(
+        due_chore_count - len(completion_pairs_for_due_window) - skipped_chore_count,
+        0,
     )
-    open_chore_count = max(chore_expected - chore_completed - chore_skipped, 0)
 
     insights_cards = {
         "total_spent": float(total_spent),
@@ -194,7 +198,8 @@ def insights_view(request):
         ),
         "previous_total": float(previous_total),
         "spending_change": spending_change,
-        "completion_rate": completion_rate,
+        "completed_chores": completed_chore_count,
+        "due_chores": due_chore_count,
     }
 
     context = {
@@ -209,9 +214,15 @@ def insights_view(request):
         "member_totals_json": json.dumps(member_totals),
         "daily_labels_json": json.dumps(daily_labels),
         "daily_values_json": json.dumps(daily_values),
-        "chore_status_labels_json": json.dumps(["Completed", "Skipped", "Open"]),
+        "chore_status_labels_json": json.dumps(
+            ["Completed on time/in-window", "Skipped", "Still open"]
+        ),
         "chore_status_values_json": json.dumps(
-            [chore_completed, chore_skipped, open_chore_count]
+            [
+                len(completion_pairs_for_due_window),
+                skipped_chore_count,
+                open_chore_count,
+            ]
         ),
         "completion_member_labels_json": json.dumps(
             list(member_completion_counts.keys())
