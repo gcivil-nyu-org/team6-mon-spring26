@@ -1,35 +1,25 @@
 {% extends "accounts/base.html" %}
 {% load static %}
 {% load socialaccount %}
-
 {% block title %}Profile Settings | Dues & Do's{% endblock %}
-
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/edit_profile.css' %}?v=5">
 {% endblock %}
-
 {% block content %}
 <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <!-- Compact Header -->
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Profile Settings</h1>
             <p class="text-gray-500 mt-1 font-medium">Manage your personal presence and account info.</p>
         </div>
-        <button id="enableEditBtn" onclick="enableEditing()" class="px-6 py-2 text-white rounded-xl text-sm font-black transition-all active:scale-95" style="background-color: var(--color-primary-sage); box-shadow: var(--btn-shadow);">
-            Edit Details
-        </button>
     </div>
-
-    <!-- Forms in Three Columns -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start h-full">
-        
-        <!-- Left Column: Personal info card -->
-        <section class="edit-profile-card h-full">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start ">
+        <div class="flex flex-col gap-6"> 
+            <section class="edit-profile-card" >
             <form id="profileForm" method="post" enctype="multipart/form-data" class="flex flex-col h-full">
                 {% csrf_token %}
                 
-                <div class="profile-avatar-section" style="position: relative;">
+                <div class="profile-avatar-section" style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
                     <label for="id_avatar" style="cursor: pointer; position: relative; display: inline-block;" class="avatar-upload-wrapper" title="Click to change avatar" onclick="handleAvatarClick(event)">
                         {% if profile.avatar %}
                             <img src="{{ profile.avatar.url }}" alt="{{ user.first_name|default:user.username }}" class="avatar-large" id="avatarPreviewImg" style="object-fit: cover; width: 80px; height: 80px; border-radius: 50%;">
@@ -52,9 +42,14 @@
                         }
                     </style>
 
-                    <div class="avatar-info">
-                        <h2>{{ user.first_name|default:user.username }} {{ user.last_name }}</h2>
-                        <p>{{ user.email }}</p>
+                    <div class="avatar-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column;">
+                            <h2>{{ user.first_name|default:user.username }} {{ user.last_name }}</h2>
+                            <p style="margin-top: 2px;">{{ user.email }}</p>
+                        </div>
+                        <button id="enableEditBtn" type="button" onclick="enableEditing()" class="mt-3 block px-6 py-2 text-white rounded-xl text-sm font-black transition-all active:scale-95" style="background-color: var(--color-primary-sage); box-shadow: var(--btn-shadow); width: fit-content;">
+                            Edit Profile
+                        </button>
                         <p id="avatar-hint" style="font-size: 0.72rem; color: var(--color-text-muted); margin-top: 4px; display: none;">Click the photo to upload a new avatar</p>
                     </div>
                 </div>
@@ -69,14 +64,12 @@
                                 const img = new Image();
                                 img.onload = () => {
                                     const canvas = document.createElement('canvas');
-                                    // Scale down if wider than 1200px
                                     const MAX_DIM = 1200;
                                     const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
                                     canvas.width = Math.round(img.width * scale);
                                     canvas.height = Math.round(img.height * scale);
                                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                                    // Iteratively reduce quality until ≤ maxBytes
                                     let quality = 0.85;
                                     const tryCompress = () => {
                                         canvas.toBlob((blob) => {
@@ -96,7 +89,6 @@
                         });
                     }
 
-                    // Store compressed blob globally so the form submit can access it
                     let _compressedAvatarBlob = null;
                     let _compressedAvatarName = null;
 
@@ -104,7 +96,6 @@
                         if (!input.files || !input.files[0]) return;
                         const original = input.files[0];
 
-                        // Show loading state
                         const hint = document.getElementById('avatar-hint');
                         if (hint) hint.textContent = 'Compressing…';
 
@@ -112,20 +103,17 @@
                         _compressedAvatarBlob = blob;
                         _compressedAvatarName = original.name.replace(/\.[^.]+$/, '') + '_compressed.jpg';
 
-                        // Preview
                         const previewImg = document.getElementById('avatarPreviewImg');
                         previewImg.src = URL.createObjectURL(blob);
                         previewImg.style.display = 'block';
                         const initials = document.getElementById('avatarInitials');
                         if (initials) initials.style.display = 'none';
 
-                        // Show size info
                         const kb = (blob.size / 1024).toFixed(0);
                         const origKb = (original.size / 1024).toFixed(0);
                         if (hint) hint.textContent = `Compressed: ${kb} KB (from ${origKb} KB) — ready to save`;
                     }
 
-                    // Intercept form submit — inject compressed blob into the file input
                     document.addEventListener('DOMContentLoaded', function() {
                         const form = document.getElementById('profileForm');
                         if (!form) return;
@@ -137,34 +125,88 @@
                             dataTransfer.items.add(new File([_compressedAvatarBlob], _compressedAvatarName, { type: 'image/jpeg' }));
                             fileInput.files = dataTransfer.files;
                             _compressedAvatarBlob = null;
-                            // Add save_profile as a hidden field (form.submit() skips buttons entirely)
-                            // This avoids requestSubmit's re-trigger loop that caused the double-click bug
                             const hidden = document.createElement('input');
                             hidden.type = 'hidden';
                             hidden.name = 'save_profile';
                             hidden.value = '';
                             form.appendChild(hidden);
-                            form.submit(); // native submit — bypasses all event listeners, no loop
+                            form.submit(); 
                         });
                     });
                 </script>
 
-                <div class="custom-django-form flex-grow">
+                <style>
+                    .profile-form-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        column-gap: 1rem !important;
+                        row-gap: 0.35rem !important;
+                        align-content: start !important;
+                    }
+
+                    .form-group {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        margin-bottom: 0 !important;
+                    }
+
+                    .form-group label {
+                        margin-bottom: 2px !important;
+                    }
+
+                    .form-group p.helptext {
+                        margin-top: 2px !important;
+                        margin-bottom: 0 !important;
+                        line-height: 1.1 !important;
+                    }
+
+                    .custom-django-form input,
+                    .custom-django-form select,
+                    .custom-django-form textarea {
+                        margin: 0 !important;
+                    }
+
+                    textarea[name="bio"] {
+                        height: 70px !important;
+                        resize: none !important;
+                        overflow-y: auto !important;
+                    }
+
+                    .full-width-field {
+                        grid-column: span 2 !important;
+                    }
+
+                    @media (max-width: 640px) {
+                        .profile-form-grid {
+                            grid-template-columns: 1fr !important;
+                        }
+
+                        .full-width-field {
+                            grid-column: span 1 !important;
+                        }
+                    }
+                </style>
+
+                <div class="custom-django-form profile-form-grid">
                     {% for field in user_form %}
-                        <div class="form-group mb-4">
+                        <div class="form-group mb-1 {% if field.name == 'username' %}full-width-field{% endif %}">
                             {{ field.label_tag }}
                             {{ field }}
-                            {% if field.help_text %}<p class="helptext">{{ field.help_text|safe }}</p>{% endif %}
+                            {% if field.help_text %}<p class="helptext text-xs text-gray-500 mt-0">{{ field.help_text|safe }}</p>{% endif %}
                             {{ field.errors }}
                         </div>
                     {% endfor %}
                     
                     {% for field in profile_form %}
-                    {% if field.name != 'avatar' %}
-                        <div class="form-group">
-                            {{ field.label_tag }}
-                            {{ field }}
-                        </div>
+                        {% if field.name != 'avatar' %} 
+                            <div class="form-group mb-1 
+                                {% if field.name == 'bio' %}
+                                    full-width-field
+                                {% endif %}">  
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {{ field.errors }}
+                            </div>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -176,111 +218,122 @@
                     </button>
                 </div>
             </form>
+
         </section>
+        <section class="edit-profile-card shrink-0">
+    <div class="card-header">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <h3 class="card-title">My Households</h3>
+    </div>
 
-        <!-- Middle Column: Change Password -->
-        <section class="edit-profile-card h-full flex flex-col justify-center items-center text-center">
-            {% if not google_account and user.has_usable_password %}
-            <div class="mb-4 text-[#051f52]">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Password Settings</h3>
-            <p class="text-sm text-gray-500 mb-6 max-w-xs">Update your password to keep your account secure. We recommend changing it periodically.</p>
-            
-            <button type="button" onclick="openPasswordModal()" class="px-6 py-2.5 bg-[#051f52] text-white text-sm font-bold rounded-lg shadow-sm hover:bg-[#0a317d] transition-colors flex items-center gap-2">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                Change Password
-            </button>
-            {% endif %}
-
-            <!-- Connected Accounts -->
-            <div class="mt-10 pt-8 border-t border-gray-100 w-full">
-                <div class="mb-4 flex justify-center">
-                    <!-- Google "G" logo SVG -->
-                    <svg width="40" height="40" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                        <path fill="none" d="M0 0h48v48H0z"/>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for membership in memberships %}
+        <div class="user-info-group mb-0" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="household-icon" style="background-color: #dbeafe; color: var(--color-primary-sage); width: 40px; height: 40px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                 </div>
-                <h3 class="text-lg font-bold text-gray-800 mb-1">Google Account</h3>
-                <p class="text-sm text-gray-500 mb-5 px-2">Link your Google account to sign in with Google and sync your Google Calendar.</p>
-
-                {% if google_account %}
-                    <!-- Connected State -->
-                    <div class="w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 mb-4 flex items-center gap-3">
-                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
-                        </div>
-                        <div class="text-left min-w-0">
-                            <p class="text-sm font-bold text-green-700">Linked with Google</p>
-                            <p class="text-xs text-green-600 truncate">{{ google_account.extra_data.email }}</p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-4 px-2">You can sign in with Google and your Calendar is synced.</p>
-                    <!-- Disconnect form (POST for CSRF safety) -->
-                    <form method="POST" action="{% url 'disconnect_google' %}" id="disconnectGoogleForm">
-                        {% csrf_token %}
-                        <button type="button"
-                                onclick="confirmDisconnectGoogle()"
-                                class="text-xs text-red-400 hover:text-red-600 underline transition-colors bg-transparent border-0 cursor-pointer p-0">
-                            Disconnect Google
-                        </button>
-                    </form>
-                {% else %}
-                    {% if google_app_configured %}
-                        <!-- Not Connected State: app configured, user can connect -->
-                        <a href="{% provider_login_url 'google' process='connect' next='/accounts/profile/' %}"
-                           class="w-full flex items-center justify-center gap-3 px-5 py-2.5 bg-white text-gray-700 text-sm font-bold rounded-xl border border-gray-300 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm">
-                            <svg width="16" height="16" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                            </svg>
-                            Connect Google Account
-                        </a>
-                        <p class="text-xs text-gray-400 mt-3 px-2">Enables Google sign-in and Calendar sync.</p>
-                    {% else %}
-                        <!-- No Google SocialApp configured; hide connect UI but don't break page -->
-                        <p class="text-xs text-gray-400 mt-3 px-2">Google sign-in is not available right now.</p>
-                    {% endif %}
-                {% endif %}
+                <span style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-main);">
+                    {{ membership.household.name }}
+                </span>
             </div>
-        </section>
 
+            <span class="household-badge"
+                {% if membership.role == 'Admin' %}
+                style="background-color: var(--color-primary-sage); color: white;"
+                {% endif %}>
+                {{ membership.role }}
+            </span>
+        </div>
+        {% empty %}
+        <div style="padding: 12px; background: #f9fafb; border-radius: 8px; text-align: center;">
+            <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+                You are not a member of any household yet.
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+    </div>
+        
+        <div class="flex flex-col gap-6 overflow-y-auto" style="padding-right: 4px;">
 
-        <!-- Right Column: Households & Danger Zone -->
-        <div class="flex flex-col gap-6 h-full overflow-y-auto" style="padding-right: 4px;">
-            <!-- Households Card -->
-            <section class="edit-profile-card shrink-0">
-                <div class="card-header">
-                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <h3 class="card-title">My Households</h3>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    {% for membership in memberships %}
-                    <div class="user-info-group mb-0" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div class="household-icon" style="background-color: #dbeafe; color: var(--color-primary-sage); width: 40px; height: 40px;">
-                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                            </div>
-                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-main);">{{ membership.household.name }}</span>
+            <section class="edit-profile-card flex flex-col justify-center items-center text-center">
+                        {% if not google_account and user.has_usable_password %}
+                        <div class="mb-4 text-[#051f52]">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         </div>
-                        <span class="household-badge" {% if membership.role == 'Admin' %}style="background-color: var(--color-primary-sage); color: white;"{% endif %}>{{ membership.role }}</span>
-                    </div>
-                    {% empty %}
-                    <div style="padding: 12px; background: #f9fafb; border-radius: 8px; text-align: center;">
-                        <span style="font-size: 0.85rem; color: var(--color-text-muted);">You are not a member of any household yet.</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </section>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">Password Settings</h3>
+                        <p class="text-sm text-gray-500 mb-6 max-w-xs">Update your password to keep your account secure. We recommend changing it periodically.</p>
+                        
+                        <button type="button" onclick="openPasswordModal()" class="px-6 py-2.5 bg-[#051f52] text-white text-sm font-bold rounded-lg shadow-sm hover:bg-[#0a317d] transition-colors flex items-center gap-2">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Change Password
+                        </button>
+                        {% endif %}
+
+                        <div class="mt-10 pt-8 border-t border-gray-100 w-full">
+                            <div class="mb-4 flex justify-center">
+                                <svg width="40" height="40" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                                    <path fill="none" d="M0 0h48v48H0z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">Google Account</h3>
+                            <p class="text-sm text-gray-500 mb-5 px-2">Link your Google account to sign in with Google and sync your Google Calendar.</p>
+
+                            {% if google_account %}
+                                <div class="w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 mb-4 flex items-center gap-3">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                                    </div>
+                                    <div class="text-left min-w-0">
+                                        <p class="text-sm font-bold text-green-700">Linked with Google</p>
+                                        <p class="text-xs text-green-600 truncate">{{ google_account.extra_data.email }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-400 mb-4 px-2">You can sign in with Google and your Calendar is synced.</p>
+                                <form method="POST" action="{% url 'disconnect_google' %}" id="disconnectGoogleForm">
+                                    {% csrf_token %}
+                                    <button type="button"
+                                            onclick="confirmDisconnectGoogle()"
+                                            class="text-xs text-red-400 hover:text-red-600 underline transition-colors bg-transparent border-0 cursor-pointer p-0">
+                                        Disconnect Google
+                                    </button>
+                                </form>
+                            {% else %}
+                                {% if google_app_configured %}
+                                    <a href="{% provider_login_url 'google' process='connect' next='/accounts/profile/' %}"
+                                    class="w-full flex items-center justify-center gap-3 px-5 py-2.5 bg-white text-gray-700 text-sm font-bold rounded-xl border border-gray-300 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm">
+                                        <svg width="16" height="16" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                                        </svg>
+                                        Connect Google Account
+                                    </a>
+                                    <p class="text-xs text-gray-400 mt-3 px-2">Enables Google sign-in and Calendar sync.</p>
+                                {% else %}
+                                    <p class="text-xs text-gray-400 mt-3 px-2">Google sign-in is not available right now.</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </section>
+
+            
 
             <!-- Danger Zone -->
-            <section class="edit-profile-card border-red-200 mt-auto shrink-0" style="border: 1px solid #fecaca; background-color: #fef2f2;">
+            <section class="edit-profile-card border-red-200 shrink-0" style="border: 1px solid #fecaca; background-color: #fef2f2;">
                 <div class="card-header pb-2 border-b-0">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="15"></line></svg>
                     <h3 class="card-title text-red-600 font-bold" style="color: #dc2626;">Danger Zone</h3>
@@ -296,7 +349,6 @@
     </div>
 </div>
 
-<!-- Delete Account Modal (Hidden by default) -->
 <div id="deleteAccountModal" data-requires-text="{% if user.has_usable_password %}false{% else %}true{% endif %}" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50" style="backdrop-filter: blur(2px);">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
         <div class="flex items-center gap-3 mb-4 text-red-600">
@@ -332,10 +384,7 @@
         </form>
     </div>
 </div>
-
 </div>
-
-<!-- Change Password Modal -->
 <div id="changePasswordModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50" style="backdrop-filter: blur(2px);">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         <div class="flex items-center gap-3 mb-4 text-[#051f52] shrink-0">
@@ -352,7 +401,7 @@
                         <div class="mt-1">
                             {{ field }}
                         </div>
-                        {% if field.help_text %}<p class="helptext text-xs text-gray-500 mt-1">{{ field.help_text|safe }}</p>{% endif %}
+                        {% if field.help_text %}<p class="helptext text-xs text-gray-500 mt-0">{{ field.help_text|safe }}</p>{% endif %}
                         {{ field.errors }}
                     </div>
                 {% endfor %}
@@ -369,9 +418,7 @@
         </form>
     </div>
 </div>
-
 <script>
-    // Track edit mode state
     let isEditMode = false;
 
     function confirmDisconnectGoogle() {
@@ -380,14 +427,12 @@
         }
     }
 
-    // Delete Account Modal handlers
     const deleteInput = document.getElementById('deleteConfirmation');
     const deleteSubmitBtn = document.getElementById('deleteSubmitBtn');
 
     function validateDeleteInput() {
         if (!deleteInput || !deleteSubmitBtn) return;
         
-        // Check if the user is required to type DELETE specifically
         const isDeleteTextRequired = document.getElementById('deleteAccountModal').dataset.requiresText === "true";
         
         if (isDeleteTextRequired) {
@@ -399,7 +444,6 @@
                 deleteSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         } else {
-            // If checking a password, just ensure it's not empty
             if (deleteInput.value.length > 0) {
                 deleteSubmitBtn.disabled = false;
                 deleteSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -438,19 +482,14 @@
         if (deleteInput) deleteInput.value = '';
     }
 
-    // Avatar click guard
     function handleAvatarClick(e) {
         if (!isEditMode) {
             e.preventDefault();
-            // Show a toast nudge via the base.html toast system
             if (typeof showNotificationToast === 'function') {
                 showNotificationToast('info', 'Click "Edit Details" to update your profile.');
             }
         }
-        // else: allow the native label-for behaviour to open the file picker
     }
-
-    // Initialize fields as disabled
     document.addEventListener('DOMContentLoaded', function() {
         disableAllFields();
     });
@@ -458,7 +497,6 @@
     function disableAllFields() {
         const inputs = document.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea');
         inputs.forEach(input => {
-            // Do not disable the text inputs inside the Delete Account modal
             if (input.name !== 'csrfmiddlewaretoken' && !input.closest('#deleteAccountModal')) {
                 input.disabled = true;
             }
@@ -473,7 +511,6 @@
         });
         document.getElementById('enableEditBtn').style.display = 'none';
         document.getElementById('saveProfileBtn').classList.remove('hidden');
-        // Show avatar upload hint and update cursor title
         const avatarHint = document.getElementById('avatar-hint');
         if (avatarHint) avatarHint.style.display = 'block';
         const avatarWrapper = document.querySelector('.avatar-upload-wrapper');
