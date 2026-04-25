@@ -11,6 +11,7 @@ class Household(models.Model):
     invite_code = models.CharField(max_length=12, unique=True, null=True, blank=True)
     invite_code_expires = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    fridge_note = models.TextField(blank=True, default="")
 
     def __str__(self):
         return self.name

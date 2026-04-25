@@ -208,6 +208,24 @@ def disconnect_google_view(request):
 @login_required
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
+
+    # NOTES: Handle form submissions for fridge note and personal to-do updates
+    if request.method == "POST":
+        if "save_fridge" in request.POST:
+            if profile.active_household:
+                profile.active_household.fridge_note = request.POST.get(
+                    "fridge_note", ""
+                )
+                profile.active_household.save()
+                messages.success(request, "Household Fridge updated!")
+
+        elif "save_todo" in request.POST:
+            profile.personal_todo = request.POST.get("personal_todo", "")
+            profile.save()
+            messages.success(request, "Personal To-Do updated!")
+
+        return redirect("dashboard")
+
     try:
         active_hh = profile.active_household
     except Household.DoesNotExist:
@@ -331,6 +349,7 @@ def dashboard_view(request):
             user_net = net
 
     context = {
+        "profile": profile,
         "active_household": active_hh,
         "members": members,
         "pending_chores": pending_chores[:5],
