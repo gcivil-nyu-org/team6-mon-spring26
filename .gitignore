@@ -253,3 +253,7 @@ Temporary Items
 .apdisk
 
 media/
+
+# Django Static Files
+staticfiles/
+static_root/
