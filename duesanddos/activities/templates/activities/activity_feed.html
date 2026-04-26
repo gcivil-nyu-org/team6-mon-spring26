@@ -15,4 +15,9 @@
     {% endfor %}
     </ul>
 </div>
+
+{% load tz %}
+<div class="activity-time">
+    {{ activity.timestamp|localtime|date:"M d, Y h:i A" }}
+</div>
 {% endblock %}
