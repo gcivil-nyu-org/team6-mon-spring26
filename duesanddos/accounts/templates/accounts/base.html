@@ -1,4 +1,5 @@
 {% load static %}
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,7 +326,7 @@
                                         <div class="notification-content">
                                             <p class="notification-title">{{ activity.get_action_display }}</p>
                                             <p class="notification-details">{{ activity.details|truncatechars:60 }}</p>
-                                            <span class="notification-timestamp">{{ activity.timestamp|timesince }} ago</span>
+                                            <span class="notification-timestamp">{{ activity.timestamp|localtime|timesince }} ago</span>
                                         </div>
                                     </div>
                                 {% empty %}
