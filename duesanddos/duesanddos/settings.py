@@ -194,6 +194,11 @@ SOCIALACCOUNT_PROVIDERS = {
         "AUTH_PARAMS": {
             "access_type": "offline",  # To get refresh token
         },
+        "APP": {
+            "client_id": os.getenv("GOOGLE_OAUTH2_CLIENT_ID"),
+            "secret": os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET"),
+            "key": "",
+        },
     }
 }
 

@@ -73,9 +73,6 @@ instance/
 # Sphinx documentation
 docs/
 
-# Codex workspace
-.codex/
-
 # PyBuilder
 .pybuilder/
 target/

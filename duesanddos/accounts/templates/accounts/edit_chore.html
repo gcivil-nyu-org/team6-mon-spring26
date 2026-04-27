@@ -20,7 +20,10 @@
             {% csrf_token %}
 
             <div>
-                <input type="text" name="description" value="{{ chore.description }}" placeholder="Chore description" required>
+                <input type="text" name="description" id="choreDescription" value="{{ chore.description }}" placeholder="Chore description" required maxlength="255" class="w-full" oninput="updateCharCount(this)">
+                <div class="mt-1 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <span id="charCount">0</span>/255
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,9 +161,26 @@ function toggleDueFields() {
     }
 }
 
+function updateCharCount(input) {
+    const counter = document.getElementById('charCount');
+    if (counter) {
+        counter.innerText = input.value.length;
+        if (input.value.length >= 240) {
+            counter.parentElement.classList.remove('text-gray-400');
+            counter.parentElement.classList.add('text-amber-500');
+        } else {
+            counter.parentElement.classList.remove('text-amber-500');
+            counter.parentElement.classList.add('text-gray-400');
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     toggleRepeatFields();
     toggleDueFields();
+    
+    const descInput = document.getElementById('choreDescription');
+    if (descInput) updateCharCount(descInput);
 });
 </script>
 {% endblock %}

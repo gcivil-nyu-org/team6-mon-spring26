@@ -36,12 +36,13 @@ def expenses_list_view(request):
         expenses = expenses.filter(payer_id=selected_payer)
 
     expenses = expenses.order_by("-date_spent")
-    members = active_hh.members.select_related("user")
+    members = active_hh.members.filter(user__is_deactivated=False).select_related("user")
+    all_members = active_hh.members.select_related("user") # For summary calculations including deactivated
     summary = []
     you_are_owed = 0.0
     you_owe = 0.0
 
-    for member in members:
+    for member in all_members:
         if member.user == request.user:
             continue
         they_owed_q = (
@@ -120,10 +121,17 @@ def expenses_list_view(request):
 def request_settlement(request):
     if request.method == "POST":
         receiver_id = request.POST.get("receiver")
-        amount = Decimal(request.POST.get("amount", "0"))
-        hh = request.user.profile.active_household
-        if amount <= 0 or not receiver_id:
-            messages.error(request, "Invalid amount or recipient.")
+        try:
+            amount = Decimal(request.POST.get("amount", "0"))
+            hh = request.user.profile.active_household
+            if amount <= 0 or not receiver_id:
+                messages.error(request, "Invalid amount or recipient.")
+                return redirect("expenses_list")
+            if amount >= Decimal("1000000000"):
+                messages.error(request, "Amount is too large. Max allowed is $999,999,999.99")
+                return redirect("expenses_list")
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, "Please enter a valid amount (numbers only).")
             return redirect("expenses_list")
         receiver = CustomUser.objects.get(id=receiver_id)
         Settlement.objects.create(
@@ -266,15 +274,17 @@ def add_expense_pro(request, expense_id=None):
         if total_amount <= 0:
             messages.error(request, "Total amount must be greater than 0.")
             return redirect("expenses_list")
+        if total_amount >= Decimal("1000000000"):
+            messages.error(request, "Amount is too large. Max allowed is $999,999,999.99")
+            return redirect("expenses_list")
     except (InvalidOperation, TypeError, ValueError):
-        messages.error(request, "Please enter a valid total amount.")
-        messages.error(request, "Invalid amount.")
+        messages.error(request, "Please enter a valid total amount (numbers only).")
         return redirect("expenses_list")
 
     payer_id = request.POST.get("payer")
     if payer_id:
         try:
-            payer = CustomUser.objects.get(id=payer_id)
+            payer = CustomUser.objects.get(id=payer_id, is_deactivated=False)
         except (CustomUser.DoesNotExist, ValueError):
             messages.error(request, "Selected payer was not found.")
             return redirect("expenses_list")
@@ -295,10 +305,10 @@ def add_expense_pro(request, expense_id=None):
     else:
         participants = list(CustomUser.objects.filter(id__in=p_ids))
         hh_user_ids = list(hh.members.values_list("user_id", flat=True))
-        if any(p.id not in hh_user_ids for p in participants) or len(
+        if any(p.id not in hh_user_ids for p in participants) or any(p.is_deactivated for p in participants) or len(
             participants
         ) != len(p_ids):
-            messages.error(request, "One or more selected participants are invalid.")
+            messages.error(request, "One or more selected participants are invalid or deactivated.")
             return redirect("expenses_list")
 
     split_data = []

@@ -50,6 +50,8 @@ class Command(BaseCommand):
                     # It's overdue! Sync to all assignees
                     sync_success = False
                     for user in chore.assignees.all():
+                        if getattr(user, "is_deactivated", False):
+                            continue
                         service = GoogleCalendarService(user)
                         if service.service:
                             if service.mark_occurrence_overdue(chore, occ_date):

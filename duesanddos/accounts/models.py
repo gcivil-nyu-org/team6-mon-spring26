@@ -49,6 +49,7 @@ def make_upload_path(category: str) -> UploadToPath:
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)  # required + unique
     phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
+    is_deactivated = models.BooleanField(default=False)
 
     # Keep defaults:
     # USERNAME_FIELD = 'username'

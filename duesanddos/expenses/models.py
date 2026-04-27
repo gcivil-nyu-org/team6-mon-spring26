@@ -11,7 +11,7 @@ class Expense(models.Model):
     )
 
     title = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     payer = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="expenses_paid"
     )
@@ -34,7 +34,7 @@ class ExpenseSplit(models.Model):
         Expense, on_delete=models.CASCADE, related_name="splits"
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount_owed = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    amount_owed = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     is_settled = models.BooleanField(default=False)
     settled_at = models.DateTimeField(null=True, blank=True)
     settled_by = models.ForeignKey(
@@ -72,7 +72,7 @@ class Settlement(models.Model):
     household = models.ForeignKey(
         "households.Household", on_delete=models.CASCADE, related_name="settlements"
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)

@@ -1,8 +1,10 @@
 from datetime import datetime
 from django.contrib import messages
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, update_session_auth_hash, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db import transaction, models
@@ -22,12 +24,27 @@ from .forms import (
 
 
 def is_google_app_configured():
+    from django.conf import settings
+    # Check if configured in settings.py (allauth 0.47+)
+    google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+    if "APP" in google_config and google_config["APP"].get("client_id"):
+        return True
+    
+    # Fallback: check database (SocialApp model)
     site = Site.objects.get_current()
     return SocialApp.objects.filter(provider="google", sites=site).exists()
 
 
 class CustomLoginView(LoginView):
     template_name = "accounts/login.html"
+
+    def form_valid(self, form):
+        user = form.get_user()
+        if user.is_deactivated:
+            # Store user info in session for reactivation
+            self.request.session["pending_reactivation_user_id"] = user.id
+            return redirect("reactivate_account_confirm")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -151,6 +168,62 @@ class ProtectedLogoutView(LoginRequiredMixin, LogoutView):
 
     def get(self, request, *args, **kwargs):
         return self.render_to_response(self.get_context_data())
+
+
+@login_required
+@transaction.atomic
+def deactivate_account_view(request):
+    if request.method == "POST":
+        confirmation = request.POST.get("confirmation", "")
+        user = request.user
+
+        if user.has_usable_password():
+            if not user.check_password(confirmation):
+                messages.error(request, "Incorrect password. Deactivation aborted.")
+                return redirect("profile")
+        else:
+            if confirmation != "DEACTIVATE":
+                messages.error(request, "Please type 'DEACTIVATE' to confirm.")
+                return redirect("profile")
+
+        user.is_deactivated = True
+        user.save(update_fields=["is_deactivated"])
+        
+        logout(request)
+        messages.success(request, "Your account has been deactivated. You have been logged out.")
+        return redirect("login")
+
+    return redirect("profile")
+
+
+def reactivate_account_confirm_view(request):
+    user_id = request.session.get("pending_reactivation_user_id")
+    if not user_id:
+        return redirect("login")
+    
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == "POST":
+        user.is_deactivated = False
+        user.save(update_fields=["is_deactivated"])
+        
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        del request.session["pending_reactivation_user_id"]
+        
+        messages.success(request, f"Welcome back, {user.username}! Your account is now active.")
+        return redirect("dashboard")
+        
+    return render(request, "accounts/reactivate_confirm.html", {"user": user})
+
+
+@login_required
+def toggle_theme(request):
+    if request.method == "POST":
+        profile = request.user.profile
+        profile.theme = "dark" if profile.theme == "light" else "light"
+        profile.save(update_fields=["theme"])
+        return JsonResponse({"theme": profile.theme})
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 @login_required
