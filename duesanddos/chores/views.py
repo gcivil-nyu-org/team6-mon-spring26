@@ -426,6 +426,7 @@ def complete_chore_occurrence_view(request, chore_id):
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
+        action="CHORE_COMPLETED",
         details=(
             f"Completed chore '{chore.description}' "
             f"for {occurrence_date.strftime('%-d %B').lower()}."

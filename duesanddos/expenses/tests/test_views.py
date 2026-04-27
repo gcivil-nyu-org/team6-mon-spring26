@@ -628,6 +628,32 @@ class ExpenseViewTests(TestCase):
         ).exists()
         self.assertTrue(settlement_exists, "Settlement object was NOT created.")
 
+    def test_request_settlement_invalid_amount(self):
+        url = reverse("request_settlement")
+        self.client.login(username="exuser", password=TEST_PASSWORD)
+        response = self.client.post(url, {"amount": "invalid", "receiver": self.user2.id})
+        self.assertRedirects(response, reverse("expenses_list"))
+
+    def test_request_settlement_large_amount(self):
+        url = reverse("request_settlement")
+        self.client.login(username="exuser", password=TEST_PASSWORD)
+        response = self.client.post(url, {"amount": "1000000000.00", "receiver": self.user2.id})
+        self.assertRedirects(response, reverse("expenses_list"))
+
+    def test_add_expense_pro_large_amount(self):
+        url = reverse("add_expense_pro")
+        response = self.client.post(
+            url,
+            {
+                "title": "Too Large",
+                "amount": "1000000000.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id],
+            },
+        )
+        self.assertRedirects(response, reverse("expenses_list"))
+
     def test_confirm_settlement_logic(self):
         from expenses.models import Settlement, Expense, ExpenseSplit
 
