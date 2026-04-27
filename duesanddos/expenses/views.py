@@ -255,6 +255,13 @@ def add_expense_pro(request, expense_id=None):
         if expense.payer != request.user:
             messages.error(request, "Only the payer can edit this expense.")
             return redirect("expenses_list")
+        if expense.splits.filter(is_settled=True).exists():
+            messages.error(
+                request,
+                "Cannot edit an expense that has already been partially or fully settled. "
+                "Please void the settlements first.",
+            )
+            return redirect("expenses_list")
 
     if request.method != "POST":
         return redirect("expenses_list")
@@ -386,6 +393,10 @@ def add_expense_pro(request, expense_id=None):
             split_data.append((u, s))
 
     is_new = expense is None
+    old_amount = None
+    if not is_new:
+        old_amount = expense.amount
+
     if is_new:
         expense = Expense.objects.create(
             title=title,
@@ -408,18 +419,23 @@ def add_expense_pro(request, expense_id=None):
     for u, amt in split_data:
         ExpenseSplit.objects.create(expense=expense, user=u, amount_owed=amt)
 
-    action_str = "Added" if is_new else "Updated"
-    log_details = f"{action_str} expense '{title}' of ${total_amount}."
+    if is_new:
+        log_details = f"Added expense '{title}' of ${total_amount}."
+    else:
+        if old_amount != total_amount:
+            log_details = f"Updated expense '{title}': amount changed from ${old_amount} to ${total_amount}."
+        else:
+            log_details = f"Updated details for expense '{title}' (${total_amount})."
 
     ActivityLog.objects.create(
         user=request.user,
         household=hh,
-        action="EXPENSE_ADDED" if is_new else "EXPENSE_UPDATED",
+        action="EXPENSE_ADDED" if is_new else "EXPENSE_EDITED",
         details=log_details,
     )
 
     messages.success(
-        request, "updated successfully" if not is_new else "Expense added!"
+        request, "Updated successfully" if not is_new else "Expense added!"
     )
 
     if (

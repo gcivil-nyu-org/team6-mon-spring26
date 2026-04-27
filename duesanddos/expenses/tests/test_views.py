@@ -91,7 +91,7 @@ class ExpenseViewTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(response, "updated successfully")
+        self.assertContains(response, "Updated successfully")
         expense.refresh_from_db()
         self.assertEqual(expense.title, "New Title")
         self.assertEqual(expense.splits.count(), 2)
