@@ -175,7 +175,7 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Please enter a valid total amount.")
+        self.assertContains(response, "Please enter a valid total amount (numbers only).")
 
         # Negative amount
         response = self.client.post(
@@ -229,7 +229,9 @@ class ExpenseViewTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(response, "One or more selected participants are invalid.")
+        self.assertContains(
+            response, "One or more selected participants are invalid or deactivated."
+        )
 
     def test_add_expense_pro_invalid_split_type(self):
         url = reverse("add_expense_pro")
@@ -465,7 +467,7 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Invalid amount.")
+        self.assertContains(response, "Please enter a valid total amount (numbers only).")
 
     def test_edit_expense_pro_split_types(self):
         expense = Expense.objects.create(
