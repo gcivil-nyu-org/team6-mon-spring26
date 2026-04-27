@@ -175,7 +175,9 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Please enter a valid total amount (numbers only).")
+        self.assertContains(
+            response, "Please enter a valid total amount (numbers only)."
+        )
 
         # Negative amount
         response = self.client.post(
@@ -467,7 +469,9 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Please enter a valid total amount (numbers only).")
+        self.assertContains(
+            response, "Please enter a valid total amount (numbers only)."
+        )
 
     def test_edit_expense_pro_split_types(self):
         expense = Expense.objects.create(
