@@ -189,18 +189,23 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": [
             "profile",
             "email",
-            "https://www.googleapis.com/auth/calendar.events",  # Create/edit events
+            "https://www.googleapis.com/auth/calendar.events",
         ],
         "AUTH_PARAMS": {
-            "access_type": "offline",  # To get refresh token
-        },
-        "APP": {
-            "client_id": os.getenv("GOOGLE_OAUTH2_CLIENT_ID"),
-            "secret": os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET"),
-            "key": "",
+            "access_type": "offline",
         },
     }
 }
+
+_google_client_id = os.environ.get("GOOGLE_OAUTH2_CLIENT_ID")
+_google_secret = os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET")
+
+if _google_client_id and _google_secret:
+    SOCIALACCOUNT_PROVIDERS["google"]["APP"] = {
+        "client_id": _google_client_id,
+        "secret": _google_secret,
+        "key": "",
+    }
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 

@@ -87,7 +87,9 @@ def chores_list_view(request):
         .order_by("description")
     )
 
-    members = HouseholdMember.objects.filter(household=active_hh, user__is_deactivated=False).select_related("user")
+    members = HouseholdMember.objects.filter(
+        household=active_hh, user__is_deactivated=False
+    ).select_related("user")
 
     completions = ChoreCompletion.objects.filter(
         chore__household=active_hh,

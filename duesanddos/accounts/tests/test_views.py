@@ -36,7 +36,7 @@ def _make_google_social_app():
     return app
 
 
-@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT, SOCIALACCOUNT_PROVIDERS={})
 class AuthAndProfileTests(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
@@ -389,6 +389,7 @@ class AuthAndProfileTests(TestCase):
         self.assertNotIn(skipped_chore, response.context["pending_chores"])
 
 
+@override_settings(SOCIALACCOUNT_PROVIDERS={})
 class RegisterViewTests(TestCase):
     def setUp(self):
         # register.html uses {% provider_login_url 'google' %} — needs a fixture.
@@ -427,6 +428,7 @@ class RegisterViewTests(TestCase):
         self.assertFalse(CustomUser.objects.filter(email="bad-email").exists())
 
 
+@override_settings(SOCIALACCOUNT_PROVIDERS={})
 class AuthViewsWithoutSocialAppTests(TestCase):
     def test_login_get_without_google_social_app(self):
         response = self.client.get(reverse("login"))
