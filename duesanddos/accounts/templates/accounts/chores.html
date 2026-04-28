@@ -416,6 +416,9 @@ function toggleRepeatFields() {
     } else {
         recurringFields.classList.remove("hidden");
         startDateField.required = true;
+        if (!startDateField.value) {
+            startDateField.value = new Date().toISOString().split('T')[0];
+        }
 
         if (repeatType === "WEEKLY") {
             weeklyFields.classList.remove("hidden");
