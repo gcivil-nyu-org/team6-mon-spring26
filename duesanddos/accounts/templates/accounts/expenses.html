@@ -130,13 +130,23 @@
         </table>
     </div>
     {% if summary.paginator.count > 0 %}
-    <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
-        <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-            {{ summary.start_index }}-{{ summary.end_index }} of {{ summary.paginator.count }} people
-        </span>
+    <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest whitespace-nowrap">
+                {{ summary.start_index }}-{{ summary.end_index }} of {{ summary.paginator.count }} people
+            </span>
+            <div class="flex items-center gap-2">
+                <span class="text-[9px] font-black uppercase text-gray-300 tracking-widest">Show</span>
+                <select onchange="changePerPage('ledger_per_page', this.value)" class="bg-transparent border-none text-[10px] font-black text-gray-500 focus:ring-0 cursor-pointer p-0">
+                    <option value="10" {% if ledger_per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if ledger_per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if ledger_per_page == 50 %}selected{% endif %}>50</option>
+                </select>
+            </div>
+        </div>
         <div class="flex items-center gap-2">
             {% if summary.has_previous %}
-                <a href="?ledger_page={{ summary.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}" 
+                <a href="?ledger_page={{ summary.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                    class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
                 </a>
@@ -147,7 +157,7 @@
             {% endif %}
 
             {% if summary.has_next %}
-                <a href="?ledger_page={{ summary.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}" 
+                <a href="?ledger_page={{ summary.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                    class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
                 </a>
@@ -210,13 +220,23 @@
             </table>
         </div>
         {% if expenses.paginator.count > 0 %}
-        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
-            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-                {{ expenses.start_index }}-{{ expenses.end_index }} of {{ expenses.paginator.count }} expenses
-            </span>
+        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest whitespace-nowrap">
+                    {{ expenses.start_index }}-{{ expenses.end_index }} of {{ expenses.paginator.count }} expenses
+                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black uppercase text-gray-300 tracking-widest">Show</span>
+                    <select onchange="changePerPage('expenses_per_page', this.value)" class="bg-transparent border-none text-[10px] font-black text-gray-500 focus:ring-0 cursor-pointer p-0">
+                        <option value="10" {% if expenses_per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if expenses_per_page == 20 %}selected{% endif %}>20</option>
+                        <option value="50" {% if expenses_per_page == 50 %}selected{% endif %}>50</option>
+                    </select>
+                </div>
+            </div>
             <div class="flex items-center gap-2">
                 {% if expenses.has_previous %}
-                    <a href="?expenses_page={{ expenses.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}" 
+                    <a href="?expenses_page={{ expenses.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                        class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
                     </a>
@@ -227,7 +247,7 @@
                 {% endif %}
 
                 {% if expenses.has_next %}
-                    <a href="?expenses_page={{ expenses.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}" 
+                    <a href="?expenses_page={{ expenses.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                        class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
                     </a>
@@ -277,13 +297,23 @@
             </table>
         </div>
         {% if completed_settlements.paginator.count > 0 %}
-        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
-            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-                {{ completed_settlements.start_index }}-{{ completed_settlements.end_index }} of {{ completed_settlements.paginator.count }} settlements
-            </span>
+        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest whitespace-nowrap">
+                    {{ completed_settlements.start_index }}-{{ completed_settlements.end_index }} of {{ completed_settlements.paginator.count }} settlements
+                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black uppercase text-gray-300 tracking-widest">Show</span>
+                    <select onchange="changePerPage('settlements_per_page', this.value)" class="bg-transparent border-none text-[10px] font-black text-gray-500 focus:ring-0 cursor-pointer p-0">
+                        <option value="10" {% if settlements_per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if settlements_per_page == 20 %}selected{% endif %}>20</option>
+                        <option value="50" {% if settlements_per_page == 50 %}selected{% endif %}>50</option>
+                    </select>
+                </div>
+            </div>
             <div class="flex items-center gap-2">
                 {% if completed_settlements.has_previous %}
-                    <a href="?settlements_page={{ completed_settlements.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}" 
+                    <a href="?settlements_page={{ completed_settlements.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                        class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
                     </a>
@@ -294,7 +324,7 @@
                 {% endif %}
 
                 {% if completed_settlements.has_next %}
-                    <a href="?settlements_page={{ completed_settlements.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}" 
+                    <a href="?settlements_page={{ completed_settlements.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}&ledger_per_page={{ ledger_per_page }}&expenses_per_page={{ expenses_per_page }}&settlements_per_page={{ settlements_per_page }}" 
                        class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
                     </a>
@@ -310,6 +340,15 @@
 </div>
 
 <script>
+function changePerPage(paramName, value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set(paramName, value);
+    // Reset to page 1 if we change per_page to avoid being on a non-existent page
+    const pageParam = paramName.replace('_per_page', '_page');
+    url.searchParams.set(pageParam, 1);
+    window.location.href = url.toString();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const marker = document.querySelector('[data-highlight-expense]');
     if (!marker) {

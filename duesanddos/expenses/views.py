@@ -99,19 +99,28 @@ def expenses_list_view(request):
         .order_by("-confirmed_at")
     )
 
+    # 0. Get per_page counts
+    def get_per_page(key):
+        val = request.GET.get(key, "10")
+        return int(val) if val in ["10", "20", "50"] else 10
+
+    expenses_per_page = get_per_page("expenses_per_page")
+    settlements_per_page = get_per_page("settlements_per_page")
+    ledger_per_page = get_per_page("ledger_per_page")
+
     # 1. Paginate Expense History
     expenses_page_num = request.GET.get("expenses_page", 1)
-    expenses_paginator = Paginator(expenses, 10)
+    expenses_paginator = Paginator(expenses, expenses_per_page)
     expenses_page_obj = expenses_paginator.get_page(expenses_page_num)
 
     # 2. Paginate Settlement History
     settlements_page_num = request.GET.get("settlements_page", 1)
-    settlements_paginator = Paginator(completed_settlements_qs, 10)
+    settlements_paginator = Paginator(completed_settlements_qs, settlements_per_page)
     settlements_page_obj = settlements_paginator.get_page(settlements_page_num)
 
     # 3. Paginate Household Ledger (summary)
     ledger_page_num = request.GET.get("ledger_page", 1)
-    ledger_paginator = Paginator(summary, 10)
+    ledger_paginator = Paginator(summary, ledger_per_page)
     ledger_page_obj = ledger_paginator.get_page(ledger_page_num)
 
     pending_incoming = Settlement.objects.filter(
@@ -125,6 +134,9 @@ def expenses_list_view(request):
             "expenses": expenses_page_obj,
             "summary": ledger_page_obj,
             "completed_settlements": settlements_page_obj,
+            "expenses_per_page": expenses_per_page,
+            "settlements_per_page": settlements_per_page,
+            "ledger_per_page": ledger_per_page,
             "members": members,
             "active_household": active_hh,
             "you_are_owed": you_are_owed,

@@ -128,6 +128,14 @@ def profile_view(request):
         user=request.user, provider="google"
     ).first()
 
+    # Detect when connected but refresh token is missing (needs re-link for calendar sync)
+    google_needs_relink = False
+    if google_account:
+        from allauth.socialaccount.models import SocialToken
+        token = SocialToken.objects.filter(account=google_account).first()
+        if token and not token.token_secret:
+            google_needs_relink = True
+
     return render(
         request,
         "accounts/edit_profile.html",
@@ -139,6 +147,7 @@ def profile_view(request):
             "memberships": memberships,
             "google_account": google_account,
             "google_app_configured": is_google_app_configured(),
+            "google_needs_relink": google_needs_relink,
         },
     )
 

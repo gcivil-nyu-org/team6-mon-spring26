@@ -69,7 +69,14 @@ class GoogleCalendarService:
 
         # Refresh if expired or about to expire (within 5 min)
         now = timezone.now()
-        if creds.expired or (db_expiry and db_expiry < now + timedelta(minutes=5)):
+        needs_refresh = creds.expired or (db_expiry and db_expiry < now + timedelta(minutes=5))
+        if needs_refresh:
+            if not creds.refresh_token:
+                logger.warning(
+                    f"GCal sync skipped for {self.user.username}: no refresh token stored. "
+                    "User must disconnect and reconnect their Google account in Profile Settings."
+                )
+                return None
             try:
                 creds.refresh(Request())
                 # Persist the refreshed token back to the DB

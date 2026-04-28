@@ -254,6 +254,17 @@
                             <p class="text-sm text-gray-500 mb-5 px-2">Link your Google account to sign in with Google and sync your Google Calendar.</p>
 
                             {% if google_account %}
+                                {% if google_needs_relink %}
+                                <div class="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-4 flex items-start gap-3">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                                    </div>
+                                    <div class="text-left min-w-0">
+                                        <p class="text-sm font-bold text-amber-700">Calendar sync needs re-linking</p>
+                                        <p class="text-xs text-amber-600 mt-0.5">Your Google account is connected but Calendar sync has stopped working. Disconnect and reconnect below to fix it.</p>
+                                    </div>
+                                </div>
+                                {% else %}
                                 <div class="w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 mb-4 flex items-center gap-3">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
@@ -263,7 +274,10 @@
                                         <p class="text-xs text-green-600 truncate">{{ google_account.extra_data.email }}</p>
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-400 mb-4 px-2">You can sign in with Google and your Calendar is synced.</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-400 mb-4 px-2">
+                                    {% if google_needs_relink %}Disconnect then reconnect to restore Calendar sync.{% else %}You can sign in with Google and your Calendar is synced.{% endif %}
+                                </p>
                                 <form method="POST" action="{% url 'disconnect_google' %}" id="disconnectGoogleForm">
                                     {% csrf_token %}
                                     <button type="button"
