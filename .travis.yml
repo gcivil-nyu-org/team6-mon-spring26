@@ -31,6 +31,13 @@ script:
 after_success:
   - coveralls --verbose
 
+before_deploy:
+  - echo "APP=$AWS_APP"
+  - echo "ENV_MAIN=$AWS_ENV_MAIN"
+  - echo "ENV_DEVELOP=$AWS_ENV_DEVELOP"
+  - echo "REGION=$AWS_S3_REGION_NAME"
+  - echo "BUCKET=$AWS_DEPLOYMENT_BUCKET"
+
 deploy:
   - provider: elasticbeanstalk
     access_key_id: "$AWS_ACCESS_KEY_ID"
