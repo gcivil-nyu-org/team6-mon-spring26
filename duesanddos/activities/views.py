@@ -211,3 +211,25 @@ def activity_feed_view(request):
         )[:50]
 
     return render(request, "activities/activity_feed.html", {"activities": activities})
+
+
+@login_required
+def update_calendar_view_pref(request):
+    """Saves the user's last selected calendar view (Month/Week/Day)."""
+    if request.method == "POST":
+        import json
+        from accounts.models import Profile
+
+        try:
+            data = json.loads(request.body)
+            new_view = data.get("view")
+            # Validate against Profile choices
+            valid_views = [choice[0] for choice in Profile.DEFAULT_VIEW_CHOICES]
+            if new_view in valid_views:
+                profile = request.user.profile
+                profile.default_calendar_view = new_view
+                profile.save()
+                return JsonResponse({"status": "success"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "error", "message": "POST required"}, status=400)

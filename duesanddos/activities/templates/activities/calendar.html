@@ -266,6 +266,9 @@
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
+      datesSet: function(info) {
+          saveViewPreference(info.view.type);
+      },
       buttonText: {
           today: 'Go to Today',
           month: 'Month',
@@ -347,6 +350,27 @@
     document.getElementById('memberFilter').addEventListener('change', function() {
         calendar.setOption('events', '/activities/api/calendar-events/?user_id=' + this.value);
     });
+
+    let lastSavedView = defaultCalendarView;
+    function saveViewPreference(viewType) {
+        if (viewType === lastSavedView) return;
+        
+        fetch('{% url "update_calendar_view_pref" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ view: viewType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                lastSavedView = viewType;
+            }
+        })
+        .catch(error => console.error('Error saving view preference:', error));
+    }
   });
 </script>
 {% endblock %}
