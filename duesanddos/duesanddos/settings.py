@@ -193,6 +193,7 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         "AUTH_PARAMS": {
             "access_type": "offline",
+            "prompt": "consent",  # force Google to return a refresh_token every time
         },
     }
 }

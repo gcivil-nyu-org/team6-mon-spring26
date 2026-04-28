@@ -226,33 +226,6 @@
         
         <div class="flex flex-col gap-6 overflow-y-auto" style="padding-right: 4px;">
 
-<section class="edit-profile-card">
-    <div class="card-header border-b-0 pb-2">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 8v4l3 3"></path>
-        </svg>
-        <h3 class="card-title">Display Preferences</h3>
-    </div>
-    <form method="POST" class="px-5 pb-5">
-        {% csrf_token %}
-        <div class="space-y-4">
-            {% for field in profile_form %}
-                {% if field.name == 'theme' or field.name == 'default_calendar_view' %}
-                    <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{{ field.label }}</label>
-                        <div class="mt-1">
-                            {{ field }}
-                        </div>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-        <button type="submit" name="update_preferences" class="w-full mt-6 py-2.5 bg-blue-50 text-blue-700 text-sm font-bold rounded-lg hover:bg-blue-100 transition-colors">
-            Update Preferences
-        </button>
-    </form>
-</section>
 
 <section class="edit-profile-card flex flex-col justify-center items-center text-center">
     {% if not google_account and user.has_usable_password %}

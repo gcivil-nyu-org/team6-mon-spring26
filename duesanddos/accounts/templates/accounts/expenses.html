@@ -129,6 +129,28 @@
             </tbody>
         </table>
     </div>
+    {% if summary.has_other_pages %}
+    <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
+        <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+            {{ summary.start_index }}-{{ summary.end_index }} of {{ summary.paginator.count }} people
+        </span>
+        <div class="flex items-center gap-2">
+            {% if summary.has_previous %}
+                <a href="?ledger_page={{ summary.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}" 
+                   class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+                </a>
+            {% endif %}
+            {% if summary.has_next %}
+                <a href="?ledger_page={{ summary.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&expenses_page={{ expenses.number }}&settlements_page={{ completed_settlements.number }}" 
+                   class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
 
 
     <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
@@ -178,6 +200,27 @@
                 </tbody>
             </table>
         </div>
+        {% if expenses.has_other_pages %}
+        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                {{ expenses.start_index }}-{{ expenses.end_index }} of {{ expenses.paginator.count }} expenses
+            </span>
+            <div class="flex items-center gap-2">
+                {% if expenses.has_previous %}
+                    <a href="?expenses_page={{ expenses.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}" 
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+                    </a>
+                {% endif %}
+                {% if expenses.has_next %}
+                    <a href="?expenses_page={{ expenses.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&settlements_page={{ completed_settlements.number }}" 
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
 
@@ -215,6 +258,27 @@
                 </tbody>
             </table>
         </div>
+        {% if completed_settlements.has_other_pages %}
+        <div class="px-8 py-4 bg-gray-50/20 border-t border-gray-50 flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                {{ completed_settlements.start_index }}-{{ completed_settlements.end_index }} of {{ completed_settlements.paginator.count }} settlements
+            </span>
+            <div class="flex items-center gap-2">
+                {% if completed_settlements.has_previous %}
+                    <a href="?settlements_page={{ completed_settlements.previous_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}" 
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+                    </a>
+                {% endif %}
+                {% if completed_settlements.has_next %}
+                    <a href="?settlements_page={{ completed_settlements.next_page_number }}&filter_month={{ selected_month }}&filter_payer={{ selected_payer }}&ledger_page={{ summary.number }}&expenses_page={{ expenses.number }}" 
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 

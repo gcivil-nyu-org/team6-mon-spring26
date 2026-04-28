@@ -96,16 +96,8 @@ def profile_view(request):
     profile_form = ProfileUpdateForm(instance=profile)
     password_form = CustomPasswordChangeForm(request.user)
     if request.method == "POST":
-        # 1. NEW: Handle the Theme/Calendar auto-submit
-        if "update_preferences" in request.POST:
-            profile_form = ProfileUpdateForm(request.POST, instance=profile)
-            if profile_form.is_valid():
-                profile_form.save()
-                messages.success(request, "Display preferences updated.")
-                return redirect("profile")
-
         # 2. Handle the main "Save Changes" button
-        elif "save_profile" in request.POST:
+        if "save_profile" in request.POST:
             user_form = UserUpdateForm(request.POST, instance=request.user)
             profile_form = ProfileUpdateForm(
                 request.POST, request.FILES, instance=profile

@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from accounts.models import CustomUser
 from activities.models import ActivityLog
@@ -92,11 +93,26 @@ def expenses_list_view(request):
                 }
             )
 
-    completed_settlements = (
+    completed_settlements_qs = (
         Settlement.objects.filter(household=active_hh)
         .filter(Q(status="CONFIRMED") | Q(status="DELETE_PENDING"))
-        .order_by("-confirmed_at")[:10]
+        .order_by("-confirmed_at")
     )
+
+    # 1. Paginate Expense History
+    expenses_page_num = request.GET.get("expenses_page", 1)
+    expenses_paginator = Paginator(expenses, 10)
+    expenses_page_obj = expenses_paginator.get_page(expenses_page_num)
+
+    # 2. Paginate Settlement History
+    settlements_page_num = request.GET.get("settlements_page", 1)
+    settlements_paginator = Paginator(completed_settlements_qs, 10)
+    settlements_page_obj = settlements_paginator.get_page(settlements_page_num)
+
+    # 3. Paginate Household Ledger (summary)
+    ledger_page_num = request.GET.get("ledger_page", 1)
+    ledger_paginator = Paginator(summary, 10)
+    ledger_page_obj = ledger_paginator.get_page(ledger_page_num)
 
     pending_incoming = Settlement.objects.filter(
         receiver=request.user, household=active_hh, status="PENDING"
@@ -106,14 +122,14 @@ def expenses_list_view(request):
         request,
         "accounts/expenses.html",
         {
-            "expenses": expenses,
+            "expenses": expenses_page_obj,
+            "summary": ledger_page_obj,
+            "completed_settlements": settlements_page_obj,
             "members": members,
             "active_household": active_hh,
-            "summary": summary,
             "you_are_owed": you_are_owed,
             "you_owe": you_owe,
             "pending_incoming": pending_incoming,
-            "completed_settlements": completed_settlements,
             "selected_month": selected_month,
             "selected_payer": selected_payer,
         },

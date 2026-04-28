@@ -144,13 +144,60 @@ class GoogleCalendarService:
         assignees = ", ".join(
             u.get_full_name() or u.username for u in chore.assignees.all()
         )
+
+        # Build a detailed description with every available field
+        lines = [
+            "📌 Synced from Dues & Do's",
+            f"🏠 Household: {chore.household.name}",
+            f"👥 Assigned to: {assignees}",
+            "",
+        ]
+
+        # Schedule type
+        type_label = dict(chore.REPEAT_TYPE_CHOICES).get(chore.repeat_type, chore.repeat_type)
+        lines.append(f"🔁 Type: {type_label}")
+
+        if chore.repeat_type == "ONE_TIME":
+            if chore.has_due_date and chore.due_date:
+                lines.append(f"📅 Due date: {chore.due_date.strftime('%A, %B %-d, %Y')}")
+            else:
+                lines.append("📅 Due date: No due date")
+            if chore.due_time:
+                lines.append(f"⏰ Due time: {chore.due_time.strftime('%-I:%M %p')}")
+            else:
+                lines.append("⏰ Due time: Any time")
+
+        else:
+            if chore.start_date:
+                lines.append(f"📅 Starts: {chore.start_date.strftime('%A, %B %-d, %Y')}")
+            if chore.end_date:
+                lines.append(f"🏁 Ends: {chore.end_date.strftime('%A, %B %-d, %Y')}")
+            else:
+                lines.append("🏁 Ends: No end date (ongoing)")
+            if chore.due_time:
+                lines.append(f"⏰ Time: {chore.due_time.strftime('%-I:%M %p')}")
+            else:
+                lines.append("⏰ Time: Any time (defaulting to 9:00 AM)")
+
+            if chore.repeat_type == "WEEKLY":
+                day_names = []
+                day_map = [
+                    (chore.repeat_monday, "Monday"),
+                    (chore.repeat_tuesday, "Tuesday"),
+                    (chore.repeat_wednesday, "Wednesday"),
+                    (chore.repeat_thursday, "Thursday"),
+                    (chore.repeat_friday, "Friday"),
+                    (chore.repeat_saturday, "Saturday"),
+                    (chore.repeat_sunday, "Sunday"),
+                ]
+                for flag, name in day_map:
+                    if flag:
+                        day_names.append(name)
+                lines.append(f"📆 Repeats on: {', '.join(day_names)}")
+
         event_body = {
             "summary": summary,
-            "description": (
-                f"📌 Synced from Dues & Do's\n"
-                f"🏠 Household: {chore.household.name}\n"
-                f"👥 Assigned to: {assignees}"
-            ),
+            "description": "\n".join(lines),
             "start": {"dateTime": aware_start.isoformat()},
             "end": {"dateTime": end_dt.isoformat()},
             "reminders": {"useDefault": True},

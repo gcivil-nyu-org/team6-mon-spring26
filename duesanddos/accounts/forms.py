@@ -67,15 +67,13 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["avatar", "bio", "theme", "default_calendar_view"]
+        fields = ["avatar", "bio"]
         widgets = {
             "bio": forms.Textarea(attrs={
                 "class": "w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all resize-none",
                 "placeholder": "Tell us a bit about yourself...",
                 "rows": 3
             }),
-            "theme": forms.Select(attrs={"class": "expense-select"}),
-            "default_calendar_view": forms.Select(attrs={"class": "expense-select"}),
         }
 
     def __init__(self, *args, **kwargs):
