@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 
+from django.conf import settings
 from django.utils import timezone
 from allauth.socialaccount.models import SocialToken
 from google.oauth2.credentials import Credentials
