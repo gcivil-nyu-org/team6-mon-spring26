@@ -70,6 +70,7 @@ class ActivitiesViewsTests(TestCase):
             has_due_date=True,
             due_time=datetime.time(14, 0),
         )
+        chore_on_time.assignees.add(self.user)
         ChoreCompletion.objects.create(
             chore=chore_on_time,
             occurrence_date=fixed_now.date(),
@@ -92,6 +93,7 @@ class ActivitiesViewsTests(TestCase):
             has_due_date=True,
             due_time=datetime.time(8, 0),
         )
+        chore_late.assignees.add(self.user)
         ChoreCompletion.objects.create(
             chore=chore_late, occurrence_date=fixed_now.date(), completed_by=self.user
         )
@@ -111,6 +113,7 @@ class ActivitiesViewsTests(TestCase):
             has_due_date=True,
             due_time=datetime.time(8, 0),  # Missed
         )
+        chore_overdue.assignees.add(self.user)
 
         response = self.client.get(reverse("calendar_events_api"))
         self.assertEqual(response.status_code, 200)

@@ -103,13 +103,12 @@ def calendar_events_api(request):
 
     completion_map = {(c.chore_id, c.occurrence_date): c for c in completions}
 
-    # Filter by roommate (#39)
-    member_id = request.GET.get("user_id")
+    # Default to the logged-in user; allow filtering by any household member
+    member_id = request.GET.get("user_id") or str(request.user.id)
 
     events = []
     for chore in chores:
-        # Skip if filter is active and user is not an assignee
-        if member_id and not chore.assignees.filter(id=member_id).exists():
+        if not chore.assignees.filter(id=member_id).exists():
             continue
 
         # Get occurrences using teammate's logic

@@ -47,12 +47,23 @@ class GoogleCalendarService:
         # so we must strip the tzinfo before passing expiry to the constructor.
         naive_expiry = db_expiry.replace(tzinfo=None) if db_expiry else None
 
+        # allauth 65.x stores app config in settings, so token_obj.app may be None
+        if token_obj.app:
+            client_id = token_obj.app.client_id
+            client_secret = token_obj.app.secret
+        else:
+            google_app = (
+                settings.SOCIALACCOUNT_PROVIDERS.get("google", {}).get("APP", {})
+            )
+            client_id = google_app.get("client_id", "")
+            client_secret = google_app.get("secret", "")
+
         creds = Credentials(
             token=token_obj.token,
             refresh_token=token_obj.token_secret or None,
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=token_obj.app.client_id,
-            client_secret=token_obj.app.secret,
+            client_id=client_id,
+            client_secret=client_secret,
             expiry=naive_expiry,
         )
 

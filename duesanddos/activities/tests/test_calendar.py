@@ -22,8 +22,8 @@ class CalendarApiTests(TestCase):
         )
 
     def test_calendar_api_returns_chores(self):
-        """Test if the API correctly fetches a chore occurrence."""
-        Chore.objects.create(
+        """Test if the API correctly fetches a chore occurrence for the logged-in user."""
+        chore = Chore.objects.create(
             description="Test Calendar Chore",
             household=self.household,
             created_by=self.user,
@@ -31,6 +31,7 @@ class CalendarApiTests(TestCase):
             has_due_date=True,
             due_date=datetime.date.today(),
         )
+        chore.assignees.add(self.user)
 
         response = self.client.get(reverse("calendar_events_api"))
         self.assertEqual(response.status_code, 200)
