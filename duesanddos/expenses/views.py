@@ -19,6 +19,9 @@ def expenses_list_view(request):
         return redirect("household_settings")
 
     selected_month = request.GET.get("filter_month")
+    if not selected_month:
+        selected_month = timezone.now().strftime("%Y-%m")
+    
     selected_payer = request.GET.get("filter_payer")
     expenses = (
         active_hh.expenses.all()
