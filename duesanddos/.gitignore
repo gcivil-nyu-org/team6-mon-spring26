@@ -234,7 +234,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Graphify
-graphify-out/
+*graphify-out/
 
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
