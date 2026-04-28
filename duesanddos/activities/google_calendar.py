@@ -40,18 +40,24 @@ class GoogleCalendarService:
         if not token_obj:
             return None
 
+        # Normalize the DB expiry to timezone-aware UTC for Django comparisons
+        db_expiry = self._normalize_expiry(token_obj.expires_at)
+        # google-auth's Credentials.expired compares against datetime.utcnow() (naive),
+        # so we must strip the tzinfo before passing expiry to the constructor.
+        naive_expiry = db_expiry.replace(tzinfo=None) if db_expiry else None
+
         creds = Credentials(
             token=token_obj.token,
             refresh_token=token_obj.token_secret or None,
             token_uri="https://oauth2.googleapis.com/token",
             client_id=token_obj.app.client_id,
             client_secret=token_obj.app.secret,
+            expiry=naive_expiry,
         )
 
         # Refresh if expired or about to expire (within 5 min)
         now = timezone.now()
-        expiry = self._normalize_expiry(creds.expiry)
-        if creds.expired or (expiry and expiry < now + timedelta(minutes=5)):
+        if creds.expired or (db_expiry and db_expiry < now + timedelta(minutes=5)):
             try:
                 creds.refresh(Request())
                 # Persist the refreshed token back to the DB

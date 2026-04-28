@@ -434,8 +434,6 @@
     </div>
 </div>
 <script>
-    let isEditMode = false;
-
     function confirmDisconnectGoogle() {
         if (confirm("Disconnect your Google account?\n\nYou won't be able to sign in with Google until you reconnect.")) {
             document.getElementById('disconnectGoogleForm').submit();
@@ -504,6 +502,31 @@
         document.getElementById('deleteAccountModal').classList.add('hidden');
         if (deleteInput) deleteInput.value = '';
     }
+
+    // Dirty check logic
+    let isDirty = false;
+    const profileForm = document.getElementById('profileForm');
+    
+    if (profileForm) {
+        // Track changes in all inputs
+        profileForm.querySelectorAll('input, textarea, select').forEach(input => {
+            input.addEventListener('change', () => { isDirty = true; });
+            input.addEventListener('input', () => { isDirty = true; });
+        });
+
+        // Clear flag on submit
+        profileForm.addEventListener('submit', () => {
+            isDirty = false;
+        });
+    }
+
+    window.addEventListener('beforeunload', (e) => {
+        if (isDirty) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
 
     // Removed global field disabling as requested - fields are now directly editable.
 </script>
