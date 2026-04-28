@@ -258,7 +258,8 @@ def add_expense_pro(request, expense_id=None):
         if expense.splits.filter(is_settled=True).exists():
             messages.error(
                 request,
-                "Cannot edit an expense that has already been partially or fully settled. "
+                "Cannot edit an expense that has already been "
+                "partially or fully settled. "
                 "Please void the settlements first.",
             )
             return redirect("expenses_list")
@@ -423,7 +424,10 @@ def add_expense_pro(request, expense_id=None):
         log_details = f"Added expense '{title}' of ${total_amount}."
     else:
         if old_amount != total_amount:
-            log_details = f"Updated expense '{title}': amount changed from ${old_amount} to ${total_amount}."
+            log_details = (
+                f"Updated expense '{title}': amount changed "
+                f"from ${old_amount} to ${total_amount}."
+            )
         else:
             log_details = f"Updated details for expense '{title}' (${total_amount})."
 

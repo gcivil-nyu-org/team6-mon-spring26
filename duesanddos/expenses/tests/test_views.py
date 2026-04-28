@@ -96,6 +96,41 @@ class ExpenseViewTests(TestCase):
         self.assertEqual(expense.title, "New Title")
         self.assertEqual(expense.splits.count(), 2)
 
+    def test_edit_expense_pro_fails_if_settled(self):
+        from decimal import Decimal
+        from expenses.models import Expense, ExpenseSplit
+
+        expense = Expense.objects.create(
+            title="Old Title",
+            amount=Decimal("100.00"),
+            payer=self.user,
+            household=self.hh,
+        )
+        ExpenseSplit.objects.create(
+            expense=expense,
+            user=self.user2,
+            amount_owed=Decimal("100.00"),
+            is_settled=True,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "New Title",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "participants": [self.user.id, self.user2.id],
+                "split_type": "EQUAL",
+            },
+            follow=True,
+        )
+        self.assertContains(
+            response,
+            "Cannot edit an expense that has already been partially or fully settled",
+        )
+        expense.refresh_from_db()
+        self.assertEqual(expense.title, "Old Title")
+
     def test_add_expense_pro_success_percent(self):
         url = reverse("add_expense_pro")
         response = self.client.post(
@@ -631,13 +666,17 @@ class ExpenseViewTests(TestCase):
     def test_request_settlement_invalid_amount(self):
         url = reverse("request_settlement")
         self.client.login(username="exuser", password=TEST_PASSWORD)
-        response = self.client.post(url, {"amount": "invalid", "receiver": self.user2.id})
+        response = self.client.post(
+            url, {"amount": "invalid", "receiver": self.user2.id}
+        )
         self.assertRedirects(response, reverse("expenses_list"))
 
     def test_request_settlement_large_amount(self):
         url = reverse("request_settlement")
         self.client.login(username="exuser", password=TEST_PASSWORD)
-        response = self.client.post(url, {"amount": "1000000000.00", "receiver": self.user2.id})
+        response = self.client.post(
+            url, {"amount": "1000000000.00", "receiver": self.user2.id}
+        )
         self.assertRedirects(response, reverse("expenses_list"))
 
     def test_add_expense_pro_large_amount(self):
