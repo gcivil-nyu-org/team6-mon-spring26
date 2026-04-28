@@ -1,34 +1,59 @@
 {% extends "accounts/base.html" %}
+{% load static %}
+{% load tz %}
 
 {% block title %}Dashboard | Dues & Do's{% endblock %}
 
 {% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
+    
+    .sticky-note-text {
+        font-family: 'Caveat', cursive;
+        font-size: 1.65rem;
+        line-height: 1.4;
+        letter-spacing: 0.5px;
+        /* Smooth scrolling for the auto-scroll feature */
+        scroll-behavior: smooth;
+    }
+
+    /* Subtle Scrollbar */
+    .sticky-note-text::-webkit-scrollbar { width: 5px; }
+    .sticky-note-text::-webkit-scrollbar-track { background: transparent; }
+    .sticky-note-text::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+    .note-fridge { border-radius: 0 40px 0 0 !important; transform: rotate(-0.3deg); }
+    .note-personal { border-radius: 0 0 0 40px !important; transform: rotate(0.3deg); }
+
+    .force-light-text { color: #422006 !important; } 
+    .force-blue-text { color: #1e3a8a !important; }  
+    .header-yellow { color: #78350f !important; }
+    .badge-yellow { background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #f59e0b; }
+</style>
+
 <div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
     
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
             <div class="flex items-center gap-4">
-                <h1 class="text-4xl font-black text-gray-900 tracking-tight">
+                <h1 class="text-4xl font-black text-gray-900 tracking-tight dark:text-white">
                     {% if active_household %}{{ active_household.name }}{% else %}Household{% endif %}
                 </h1>
                 
                 {% if active_household %}
                 <div class="relative group mt-1">
-                    <button class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center gap-1">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <button class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full text-[11px] font-black uppercase hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
                         {{ members.count }} Members
                     </button>
 
-                    <div class="absolute left-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-2xl p-4 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Members</p>
+                    <div class="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl p-4 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Household Members</p>
                         <ul class="space-y-2">
                             {% for member in members %}
                             <li class="flex items-center gap-2">
                                 <div class="w-2 h-2 rounded-full {% if member.role == 'Admin' %}bg-green-500{% else %}bg-blue-400{% endif %}"></div>
-                                <span class="text-sm font-bold text-gray-700">{{ member.user.username }}</span>
-                                {% if member.role == 'Admin' %}
-                                    <span class="text-[8px] font-black bg-green-50 text-green-600 px-1 rounded">ADMIN</span>
-                                {% endif %}
+                                <span class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ member.user.username }}</span>
                             </li>
                             {% endfor %}
                         </ul>
@@ -36,96 +61,156 @@
                 </div>
                 {% endif %}
             </div>
-            <p class="text-gray-500 mt-1 font-bold uppercase text-[10px] tracking-widest opacity-60">Overview</p>
+            <p class="text-gray-500 mt-1 font-bold uppercase text-[10px] tracking-widest opacity-60">Household Overview</p>
         </div>
     </div>
 
     {% if no_household %}
     <div class="bg-yellow-50 p-12 rounded-[3rem] border border-yellow-100 text-center">
-        <h2 class="text-2xl font-black text-yellow-800 mb-2 text-center">No Household Found</h2>
+        <h2 class="text-2xl font-black text-yellow-800">No Household Found</h2>
         <p class="text-yellow-700">Go to Settings to create one.</p>
     </div>
     {% else %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    
-    <div class="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40 border-t-8 border-t-green-500 min-h-[220px] flex flex-col justify-between">
-        <div>
-            <span class="text-xs font-black text-green-500 uppercase tracking-widest">You Are Owed</span>
-            <h2 class="text-6xl font-black text-green-600 mt-2">${{ you_are_owed|floatformat:2 }}</h2>
-        </div>
-        <p class="text-[10px] font-black uppercase text-gray-300 tracking-tight">Total others need to pay you</p>
-    </div>
-
-    <div class="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40 border-t-8 border-t-red-500 min-h-[220px] flex flex-col justify-between">
-        <div>
-            <span class="text-xs font-black text-red-500 uppercase tracking-widest">You Owe</span>
-            <h2 class="text-6xl font-black text-red-500 mt-2">${{ you_owe|floatformat:2 }}</h2>
-        </div>
-        <div class="flex items-center justify-between">
-            <p class="text-[10px] font-black uppercase text-gray-300 tracking-tight">Total you need to pay out</p>
-            <a href="{% url 'expenses_list' %}" class="bg-red-50 text-red-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center gap-2">
-                SETTLE NOW
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </a>
-        </div>
-    </div>
-</div>
-<div class="mt-8">
-    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40">
-        <div class="flex items-center justify-between mb-6">
-    <h3 class="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600">
-            <path d="M9 11l3 3L22 4"></path>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-        </svg>
-        Daily Chores
-    </h3>
-    <a href="{% url 'chores_list' %}" class="bg-indigo-50 text-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2">
-        OPEN PLANNER
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-    </a>
-</div>
-
-        {% if pending_chores %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for chore in pending_chores %}
-            <div class="flex items-center justify-between p-5 bg-gray-50 rounded-3xl border border-transparent hover:border-indigo-100 transition-all group">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 border border-gray-100">
-                        <span class="font-black text-sm">{{ chore.description|slice:":1"|upper }}</span>
-                    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-start">
+        
+        <div class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-xl border-t-8 border-t-green-500 flex flex-col justify-between min-h-[200px]">
                     <div>
-                        <p class="text-sm font-black text-gray-800 leading-tight">{{ chore.description }}</p>
-                        <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">
-                            {{ chore.get_repeat_type_display }}
-                        </p>
+                        <span class="text-xs font-black text-green-500 uppercase">You Are Owed</span>
+                        <h2 class="text-5xl font-black text-green-600 mt-2">${{ you_are_owed|floatformat:2 }}</h2>
+                    </div>
+                    <p class="text-[10px] font-black uppercase text-gray-300 tracking-tight">Total others need to pay you</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-xl border-t-8 border-t-red-500 flex flex-col justify-between min-h-[200px]">
+                    <div>
+                        <span class="text-xs font-black text-red-500 uppercase">You Owe</span>
+                        <h2 class="text-5xl font-black text-red-500 mt-2">${{ you_owe|floatformat:2 }}</h2>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <p class="text-[10px] font-black uppercase text-gray-300 tracking-tight">Need to pay out</p>
+                        <a href="{% url 'expenses_list' %}" class="bg-red-50 dark:bg-red-900/30 text-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all flex items-center gap-2">
+                            SETTLE NOW <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
                     </div>
                 </div>
-                
-                <form method="POST" action="{% url 'complete_chore_occurrence' chore.id %}">
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-black text-gray-900 dark:text-white">Daily Chores</h3>
+                    <a href="{% url 'chores_list' %}" class="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-5 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 flex items-center gap-2 transition-all">
+                        OPEN PLANNER <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                </div>
+
+                {% if pending_chores %}
+                <div class="space-y-3">
+                    {% for chore in pending_chores %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:border-indigo-100 border border-transparent transition-all">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-white dark:bg-gray-600 rounded-xl shadow-sm flex items-center justify-center text-indigo-600 font-black text-xs">
+                                {{ chore.description|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-gray-800 dark:text-gray-200">{{ chore.description }}</p>
+                                <p class="text-[9px] font-black text-indigo-400 uppercase">{{ chore.get_repeat_type_display }}</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="{% url 'complete_chore_occurrence' chore.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="occurrence_date" value="{{ today_date|date:'Y-m-d' }}">
+                            <button type="submit" class="w-9 h-9 bg-white dark:bg-gray-600 border-2 border-gray-200 dark:border-gray-500 rounded-xl hover:bg-green-600 hover:text-white transition-all flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400 font-black text-[10px] uppercase text-center py-6">All clean! 🕺</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-yellow-100 !bg-yellow-100 p-8 shadow-xl relative group border-yellow-200/50 note-fridge border h-64 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-black header-yellow uppercase tracking-widest">The Fridge</h3>
+                    <span class="text-[8px] font-black badge-yellow px-2 py-0.5 rounded uppercase">Public</span>
+                </div>
+                <form method="POST" class="flex flex-col h-full">
                     {% csrf_token %}
-                    <input type="hidden" name="occurrence_date" value="{{ today_date|date:'Y-m-d' }}">
-                    <button type="submit" aria-label="Mark Complete" class="w-10 h-10 bg-white border-2 border-gray-200 rounded-2xl hover:bg-green-600 hover:border-green-600 transition-all flex items-center justify-center shadow-sm">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="4" class="text-gray-300 group-hover:text-white">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </button>
+                    <textarea name="fridge_note" id="fridge_area"
+                        class="w-full !bg-transparent border-none outline-none focus:ring-0 force-light-text sticky-note-text placeholder-yellow-700/30 resize-none h-32 px-4 overflow-y-auto"
+                        placeholder="1. Don't finish off the milk">{{ active_household.fridge_note }}</textarea>
+                    
+                    <div class="flex justify-end mt-auto pt-2">
+                        <button type="submit" name="save_fridge" 
+                            class="bg-[#78350f]/10 hover:bg-[#78350f] text-[#78350f] hover:text-white p-3 rounded-2xl transition-all shadow-sm border border-[#78350f]/20">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                 </form>
             </div>
-            {% endfor %}
+
+            <div class="bg-blue-100 !bg-blue-100 p-8 shadow-xl relative group border-blue-200/50 note-personal border h-64 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">Personal To-Do</h3>
+                    <span class="text-[8px] font-black bg-blue-200 text-blue-700 px-2 py-0.5 rounded uppercase border border-blue-300">Private</span>
+                </div>
+                <form method="POST" class="flex flex-col h-full">
+                    {% csrf_token %}
+                    <textarea name="personal_todo" id="todo_area"
+                        class="w-full !bg-transparent border-none outline-none focus:ring-0 force-blue-text sticky-note-text placeholder-blue-700/30 resize-none h-32 px-4 overflow-y-auto"
+                        placeholder="1. Buy milk otw back home">{{ profile.personal_todo }}</textarea>
+                    
+                    <div class="flex justify-end mt-auto pt-2">
+                        <button type="submit" name="save_todo" class="bg-blue-600/10 hover:bg-blue-600 text-blue-800 hover:text-white p-3 rounded-2xl transition-all shadow-sm border border-blue-600/20">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-        {% else %}
-        <div class="py-12 text-center bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
-            <p class="text-gray-400 font-black text-sm uppercase tracking-widest">
-                No chores assigned for today! 🕺
-            </p>
-        </div>
-        {% endif %}
     </div>
-</div>
     {% endif %}
 </div>
+
+<script>
+    const setupAutoNumber = (id) => {
+        const el = document.getElementById(id);
+        el.addEventListener('focus', () => { if (el.value.trim() === "") { el.value = "1. "; } });
+        
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cursorPos = el.selectionStart;
+                const textBefore = el.value.substring(0, cursorPos);
+                const lines = textBefore.split('\n');
+                const lastLine = lines[lines.length - 1];
+                const match = lastLine.match(/^(\d+)\.\s/);
+                
+                if (match) {
+                    e.preventDefault();
+                    const nextNum = parseInt(match[1]) + 1;
+                    const insertion = `\n${nextNum}. `;
+                    el.value = textBefore + insertion + el.value.substring(cursorPos);
+                    el.selectionStart = el.selectionEnd = cursorPos + insertion.length;
+                    
+                    // FIX: Auto-scroll to bottom so current line is visible
+                    setTimeout(() => {
+                        el.scrollTop = el.scrollHeight;
+                    }, 0);
+                }
+            }
+        });
+    };
+    setupAutoNumber('fridge_area');
+    setupAutoNumber('todo_area');
+</script>
 {% endblock %}

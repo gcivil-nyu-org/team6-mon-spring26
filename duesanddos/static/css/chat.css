@@ -454,6 +454,87 @@
     font-size: 0.8rem;
 }
 
+.chat-message-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.chat-message-row .chat-message-meta {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.chat-message-actions {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-message-menu-trigger {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--chat-ink-soft);
+    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.chat-message.is-own .chat-message-menu-trigger {
+    background: rgba(240, 249, 255, 0.16);
+    color: rgba(240, 249, 255, 0.94);
+    border-color: rgba(186, 230, 253, 0.35);
+}
+
+.chat-message-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 5;
+    min-width: 170px;
+    padding: 6px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.14);
+    display: grid;
+    gap: 4px;
+}
+
+.chat-message-menu button {
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--chat-ink);
+    cursor: pointer;
+}
+
+.chat-message-menu button:hover,
+.chat-message-menu button:focus-visible {
+    background: rgba(8, 145, 178, 0.08);
+    outline: none;
+}
+
+.chat-message-menu button.is-danger {
+    color: var(--chat-danger);
+}
+
+.chat-message-tombstone {
+    margin: 2px 0 0;
+    font-style: italic;
+    color: var(--chat-ink-soft);
+}
+
+.chat-message.is-own .chat-message-tombstone {
+    color: rgba(226, 232, 240, 0.9);
+}
+
 .chat-message-meta span {
     color: var(--chat-ink-soft);
 }

@@ -73,6 +73,9 @@ instance/
 # Sphinx documentation
 docs/
 
+# Codex workspace
+.codex/
+
 # PyBuilder
 .pybuilder/
 target/
@@ -250,3 +253,7 @@ Temporary Items
 .apdisk
 
 media/
+
+# Django Static Files
+staticfiles/
+static_root/

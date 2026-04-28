@@ -36,6 +36,10 @@
     object-fit: cover;
 }
 
+.avatar-info {
+    overflow: auto;
+}
+
 .avatar-info h2 {
     font-size: 1.25rem;
     font-weight: 800;
@@ -160,3 +164,27 @@
 input:checked + .slider { background-color: var(--color-primary-sage); }
 input:checked + .slider:before { transform: translateX(20px); }
 input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+
+
+
+.profile-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Two equal columns */
+        gap: 1.5rem;
+    }
+
+    /* Force these fields to take up the full row */
+    .full-width-field {
+        grid-column: span 2;
+    }
+
+    /* Responsive: Stack on mobile */
+    @media (max-width: 640px) {
+        .profile-form-grid {
+            grid-template-columns: 1fr;
+        }
+        .full-width-field {
+            grid-column: span 1;
+        }
+}

@@ -1,6 +1,7 @@
 import tempfile
 import shutil
 from django.contrib.sites.models import Site
+from django.contrib.messages import get_messages
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from allauth.socialaccount.models import SocialApp, SocialAccount
@@ -228,6 +229,165 @@ class AuthAndProfileTests(TestCase):
         response = self.client.get(url)
         self.assertRedirects(response, reverse("profile"))
 
+    def test_profile_view_post_update_preferences(self):
+        url = reverse("profile")
+        data = {
+            "update_preferences": "1",
+            "theme": "dark",
+            "default_calendar_view": "timeGridWeek",
+            "notifications_enabled": True,
+            "bio": self.profile.bio,
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertRedirects(response, url)
+
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.theme, "dark")
+        self.assertEqual(self.user.profile.default_calendar_view, "timeGridWeek")
+
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        self.assertIn("Display preferences updated.", messages)
+
+    def test_profile_view_post_save_profile_invalid(self):
+        url = reverse("profile")
+        data = {
+            "save_profile": "1",
+            "first_name": "NewFirst",
+            "last_name": "NewLast",
+            "email": "not-an-email",
+            "username": self.user.username,
+            "bio": "Updated bio",
+            "notifications_enabled": True,
+            "theme": "dark",
+            "default_calendar_view": "timeGridWeek",
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "test@example.com")
+
+    def test_profile_view_post_change_password_invalid(self):
+        url = reverse("profile")
+        data = {
+            "change_password": "1",
+            "old_password": "wrong-password",
+            "new_password1": NEW_PASSWORD,
+            "new_password2": NEW_PASSWORD,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(TEST_PASSWORD))
+
+    def test_delete_account_view_post_no_password_correct_delete_keyword(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+
+        url = reverse("delete_account")
+        response = self.client.post(url, {"confirmation": "DELETE"})
+        self.assertRedirects(response, reverse("login"))
+        self.assertFalse(CustomUser.objects.filter(pk=self.user.pk).exists())
+
+    def test_dashboard_post_save_fridge_without_active_household(self):
+        self.profile.active_household = None
+        self.profile.save()
+
+        url = reverse("dashboard")
+        response = self.client.post(
+            url,
+            {"save_fridge": "1", "fridge_note": "This should not save"},
+            follow=True,
+        )
+        self.assertRedirects(response, url)
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.active_household)
+
+    def test_dashboard_post_save_fridge_with_active_household(self):
+        h = Household.objects.create(name="Fridge HH", invite_code="FRIDGE1")
+        from households.models import HouseholdMember
+
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+
+        url = reverse("dashboard")
+        response = self.client.post(
+            url,
+            {"save_fridge": "1", "fridge_note": "Buy milk"},
+            follow=True,
+        )
+        self.assertRedirects(response, url)
+
+        h.refresh_from_db()
+        self.assertEqual(h.fridge_note, "Buy milk")
+
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        self.assertIn("Household Fridge updated!", messages)
+
+    def test_dashboard_post_save_todo(self):
+        url = reverse("dashboard")
+        response = self.client.post(
+            url,
+            {"save_todo": "1", "personal_todo": "Wash dishes"},
+            follow=True,
+        )
+        self.assertRedirects(response, url)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.personal_todo, "Wash dishes")
+
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        self.assertIn("Personal To-Do updated!", messages)
+
+    def test_dashboard_skips_completed_and_skipped_chores_from_pending(self):
+        from chores.models import Chore, ChoreCompletion, ChoreSkip
+        from households.models import HouseholdMember
+        from django.utils import timezone
+
+        h = Household.objects.create(name="Pending HH", invite_code="PEND1")
+        HouseholdMember.objects.create(user=self.user, household=h)
+        self.profile.active_household = h
+        self.profile.save()
+
+        today = timezone.now().date()
+
+        completed_chore = Chore.objects.create(
+            household=h,
+            description="Completed Chore",
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date=today,
+            is_active=True,
+        )
+        completed_chore.assignees.add(self.user)
+        ChoreCompletion.objects.create(
+            chore=completed_chore,
+            occurrence_date=today,
+            completed_by=self.user,
+        )
+
+        skipped_chore = Chore.objects.create(
+            household=h,
+            description="Skipped Chore",
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date=today,
+            is_active=True,
+        )
+        skipped_chore.assignees.add(self.user)
+        ChoreSkip.objects.create(
+            chore=skipped_chore,
+            occurrence_date=today,
+            skipped_by=self.user,
+        )
+
+        url = reverse("dashboard")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(completed_chore, response.context["pending_chores"])
+        self.assertNotIn(skipped_chore, response.context["pending_chores"])
+
 
 class RegisterViewTests(TestCase):
     def setUp(self):
@@ -251,6 +411,20 @@ class RegisterViewTests(TestCase):
         }
         self.client.post(url, data)
         self.assertTrue(CustomUser.objects.filter(username="newuser").exists())
+
+    def test_register_post_invalid(self):
+        url = reverse("register")
+        data = {
+            "username": "",
+            "firstName": "New",
+            "lastName": "User",
+            "email": "bad-email",
+            "password": "StrongPass123!",
+            "confirmPassword": "Mismatch123!",
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(email="bad-email").exists())
 
 
 class AuthViewsWithoutSocialAppTests(TestCase):

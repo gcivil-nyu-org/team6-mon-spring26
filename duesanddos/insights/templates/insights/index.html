@@ -63,9 +63,9 @@
             </p>
         </div>
         <div class="insights-stat-card border-t-amber-500">
-            <span>Chore completion</span>
-            <h2>{{ insights_cards.completion_rate|floatformat:1 }}%</h2>
-            <p>Based on expected chore occurrences since {{ chore_window_start|date:"M j" }}.</p>
+            <span>Completed chores</span>
+            <h2>{{ insights_cards.completed_chores }}</h2>
+            <p>Completed during the selected date range, regardless of original due date.</p>
         </div>
     </div>
 
@@ -105,8 +105,8 @@
         <section class="chart-card">
             <div class="chart-card__header">
                 <div>
-                    <h3>Chore status breakdown</h3>
-                    <p>Completion, skipped, and still-open occurrences.</p>
+                    <h3>Due chore status</h3>
+                    <p>Status of chores that were due during the selected date range.</p>
                 </div>
             </div>
             <div class="chart-wrap"><canvas id="choreStatusChart"></canvas></div>
@@ -118,7 +118,7 @@
             <div class="chart-card__header">
                 <div>
                     <h3>Completed chores by member</h3>
-                    <p>Who has completed the most chores recently.</p>
+                    <p>Based on chores completed during the selected date range.</p>
                 </div>
             </div>
             <div class="chart-wrap"><canvas id="memberCompletionChart"></canvas></div>

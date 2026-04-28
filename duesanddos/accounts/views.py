@@ -75,9 +75,20 @@ def register_view(request):
 @login_required
 def profile_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
-
+    user_form = UserUpdateForm(instance=request.user)
+    profile_form = ProfileUpdateForm(instance=profile)
+    password_form = CustomPasswordChangeForm(request.user)
     if request.method == "POST":
-        if "save_profile" in request.POST:
+        # 1. NEW: Handle the Theme/Calendar auto-submit
+        if "update_preferences" in request.POST:
+            profile_form = ProfileUpdateForm(request.POST, instance=profile)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Display preferences updated.")
+                return redirect("profile")
+
+        # 2. Handle the main "Save Changes" button
+        elif "save_profile" in request.POST:
             user_form = UserUpdateForm(request.POST, instance=request.user)
             profile_form = ProfileUpdateForm(
                 request.POST, request.FILES, instance=profile
@@ -90,6 +101,7 @@ def profile_view(request):
                 messages.success(request, "Your profile was updated.")
                 return redirect("profile")
 
+        # 3. Handle Password Change Modal
         elif "change_password" in request.POST:
             user_form = UserUpdateForm(instance=request.user)
             profile_form = ProfileUpdateForm(instance=profile)
@@ -100,21 +112,9 @@ def profile_view(request):
                 update_session_auth_hash(request, user)
                 messages.success(request, "Your password was changed successfully.")
                 return redirect("profile")
-
-        else:
-            user_form = UserUpdateForm(instance=request.user)
-            profile_form = ProfileUpdateForm(instance=profile)
-            password_form = CustomPasswordChangeForm(request.user)
-    else:
-        user_form = UserUpdateForm(instance=request.user)
-        profile_form = ProfileUpdateForm(instance=profile)
-        password_form = CustomPasswordChangeForm(request.user)
-
     memberships = HouseholdMember.objects.filter(user=request.user).select_related(
         "household"
     )
-
-    # Only show the Google connect button if a SocialApp is configured for this site.
     google_account = SocialAccount.objects.filter(
         user=request.user, provider="google"
     ).first()
@@ -208,6 +208,24 @@ def disconnect_google_view(request):
 @login_required
 def dashboard_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
+
+    # NOTES: Handle form submissions for fridge note and personal to-do updates
+    if request.method == "POST":
+        if "save_fridge" in request.POST:
+            if profile.active_household:
+                profile.active_household.fridge_note = request.POST.get(
+                    "fridge_note", ""
+                )
+                profile.active_household.save()
+                messages.success(request, "Household Fridge updated!")
+
+        elif "save_todo" in request.POST:
+            profile.personal_todo = request.POST.get("personal_todo", "")
+            profile.save()
+            messages.success(request, "Personal To-Do updated!")
+
+        return redirect("dashboard")
+
     try:
         active_hh = profile.active_household
     except Household.DoesNotExist:
@@ -331,6 +349,7 @@ def dashboard_view(request):
             user_net = net
 
     context = {
+        "profile": profile,
         "active_household": active_hh,
         "members": members,
         "pending_chores": pending_chores[:5],

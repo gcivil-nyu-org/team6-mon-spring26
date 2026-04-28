@@ -70,7 +70,7 @@ class ChatPollingTests(TestCase):
 
         self.client.login(username="alpha", password=TEST_PASSWORD)
 
-    def test_messages_endpoint_returns_only_items_after_after_id(self):
+    def test_messages_endpoint_returns_visible_thread_even_with_after_id(self):
         response = self.client.get(
             reverse("chat:messages", args=[self.conversation.id]),
             {"after_id": self.first.id},
@@ -79,8 +79,9 @@ class ChatPollingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["conversation_id"], self.conversation.id)
-        self.assertEqual(len(payload["messages"]), 1)
-        self.assertEqual(payload["messages"][0]["id"], self.second.id)
+        self.assertEqual(len(payload["messages"]), 2)
+        self.assertEqual(payload["messages"][0]["id"], self.first.id)
+        self.assertEqual(payload["messages"][1]["id"], self.second.id)
         self.assertFalse(payload["has_more"])
 
     def test_messages_endpoint_returns_expected_shape(self):
@@ -98,6 +99,12 @@ class ChatPollingTests(TestCase):
         self.assertIn("references", message)
         self.assertIn("created_at", message)
         self.assertIn("is_own_message", message)
+        self.assertIn("is_deleted", message)
+        self.assertIn("deleted_label", message)
+        self.assertIn("can_delete_for_me", message)
+        self.assertIn("can_delete_for_everyone", message)
+        self.assertIn("delete_for_me_url", message)
+        self.assertIn("delete_for_everyone_url", message)
         self.assertIn("server_time", payload)
 
     def test_messages_endpoint_serializes_references_and_unavailable_state(self):
@@ -141,8 +148,8 @@ class ChatPollingTests(TestCase):
         )
 
         payload = response.json()
-        self.assertEqual(len(payload["messages"]), 1)
-        references = payload["messages"][0]["references"]
+        self.assertEqual(len(payload["messages"]), 3)
+        references = payload["messages"][-1]["references"]
         self.assertEqual(references[0]["reference_type"], "EXPENSE")
         self.assertEqual(references[0]["title"], "Groceries")
         self.assertEqual(
@@ -194,8 +201,8 @@ class ChatPollingTests(TestCase):
         )
 
         payload = response.json()
-        self.assertEqual(len(payload["messages"]), 1)
-        references = payload["messages"][0]["references"]
+        self.assertEqual(len(payload["messages"]), 3)
+        references = payload["messages"][-1]["references"]
         self.assertEqual(references[0]["title"], "Groceries")
         self.assertEqual(
             references[0]["href"],

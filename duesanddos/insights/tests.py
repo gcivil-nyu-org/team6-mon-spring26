@@ -1,10 +1,11 @@
-from datetime import date
+from datetime import date, datetime
 import json
 from unittest.mock import patch
 
+from django.http import HttpResponse
 from django.test import TestCase
 from django.urls import reverse
-from django.http import HttpResponse
+from django.utils import timezone
 
 from accounts.models import CustomUser, Profile
 from chores.models import Chore, ChoreCompletion, ChoreSkip
@@ -90,6 +91,24 @@ class InsightsViewTests(TestCase):
         }
         payload.update(overrides)
         return Chore.objects.create(**payload)
+
+    def create_completion(
+        self,
+        chore,
+        occurrence_date,
+        completed_by,
+        completed_at,
+    ):
+        completion = ChoreCompletion.objects.create(
+            chore=chore,
+            occurrence_date=occurrence_date,
+            completed_by=completed_by,
+        )
+        ChoreCompletion.objects.filter(pk=completion.pk).update(
+            completed_at=timezone.make_aware(completed_at)
+        )
+        completion.refresh_from_db()
+        return completion
 
     def test_login_required(self):
         response = self.client.get(self.url)
@@ -214,7 +233,8 @@ class InsightsViewTests(TestCase):
         self.assertEqual(cards["average_expense"], 0)
         self.assertEqual(cards["previous_total"], 0.0)
         self.assertEqual(cards["spending_change"], 0.0)
-        self.assertEqual(cards["completion_rate"], 0)
+        self.assertEqual(cards["completed_chores"], 0)
+        self.assertEqual(cards["due_chores"], 0)
 
         self.assertEqual(json.loads(response.context["monthly_expenses_json"]), [0.0])
         self.assertEqual(
@@ -240,26 +260,35 @@ class InsightsViewTests(TestCase):
         self.assertEqual(response.context["top_spenders"], [])
 
     def test_view_builds_expected_expense_and_chore_context(self):
-        # Current selected period: Apr 1 - Apr 3
         self.create_expense("Groceries", "10.00", self.user, date(2026, 4, 1))
         self.create_expense("Utilities", "20.00", self.other_user, date(2026, 4, 2))
-
-        # Previous matching period: Mar 29 - Mar 31
         self.create_expense(
             "Previous period bill", "15.00", self.user, date(2026, 3, 30)
         )
 
-        chore = self.create_daily_chore()
+        due_chore = self.create_daily_chore(description="Due chore")
+        overdue_chore = self.create_daily_chore(
+            description="Overdue chore",
+            start_date=date(2026, 3, 28),
+        )
 
-        ChoreCompletion.objects.create(
-            chore=chore,
+        self.create_completion(
+            chore=due_chore,
             occurrence_date=date(2026, 4, 1),
             completed_by=self.user,
+            completed_at=datetime(2026, 4, 1, 9, 0, 0),
         )
         ChoreSkip.objects.create(
-            chore=chore,
+            chore=due_chore,
             occurrence_date=date(2026, 4, 2),
             skipped_by=self.other_user,
+        )
+
+        self.create_completion(
+            chore=overdue_chore,
+            occurrence_date=date(2026, 3, 31),
+            completed_by=self.other_user,
+            completed_at=datetime(2026, 4, 2, 10, 30, 0),
         )
 
         self.login()
@@ -278,7 +307,8 @@ class InsightsViewTests(TestCase):
         self.assertEqual(cards["average_expense"], 15.0)
         self.assertEqual(cards["previous_total"], 15.0)
         self.assertEqual(cards["spending_change"], 100.0)
-        self.assertAlmostEqual(cards["completion_rate"], 33.3, places=1)
+        self.assertEqual(cards["completed_chores"], 2)
+        self.assertEqual(cards["due_chores"], 6)
 
         self.assertEqual(
             json.loads(response.context["monthly_labels_json"]),
@@ -310,20 +340,20 @@ class InsightsViewTests(TestCase):
         self.assertEqual(response.context["chore_window_start"], date(2026, 4, 1))
         self.assertEqual(
             json.loads(response.context["chore_status_labels_json"]),
-            ["Completed", "Skipped", "Open"],
+            ["Completed on time/in-window", "Skipped", "Still open"],
         )
         self.assertEqual(
             json.loads(response.context["chore_status_values_json"]),
-            [1, 1, 1],
+            [1, 1, 4],
         )
 
         self.assertEqual(
             json.loads(response.context["completion_member_labels_json"]),
-            ["insightsuser"],
+            ["insightsuser", "roommate"],
         )
         self.assertEqual(
             json.loads(response.context["completion_member_values_json"]),
-            [1],
+            [1, 1],
         )
 
         top_spenders = response.context["top_spenders"]
@@ -346,22 +376,25 @@ class InsightsViewTests(TestCase):
             start_date=date(2026, 4, 5),
         )
 
-        ChoreCompletion.objects.create(
+        self.create_completion(
             chore=active_daily,
             occurrence_date=date(2026, 4, 1),
             completed_by=self.user,
+            completed_at=datetime(2026, 4, 1, 8, 0, 0),
         )
 
-        # These should not affect expected/open counts for Apr 1 - Apr 3
-        ChoreCompletion.objects.create(
+        self.create_completion(
             chore=inactive_daily,
             occurrence_date=date(2026, 4, 1),
             completed_by=self.user,
+            completed_at=datetime(2026, 4, 1, 9, 0, 0),
         )
-        ChoreCompletion.objects.create(
+
+        self.create_completion(
             chore=future_daily,
             occurrence_date=date(2026, 4, 5),
             completed_by=self.user,
+            completed_at=datetime(2026, 4, 5, 10, 0, 0),
         )
 
         self.login()
@@ -376,10 +409,53 @@ class InsightsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             json.loads(response.context["chore_status_values_json"]),
-            [1, 0, 2],
+            [2, 0, 1],
         )
-        self.assertAlmostEqual(
-            response.context["insights_cards"]["completion_rate"],
-            33.3,
-            places=1,
+        self.assertEqual(response.context["insights_cards"]["completed_chores"], 2)
+        self.assertEqual(response.context["insights_cards"]["due_chores"], 3)
+        self.assertEqual(
+            json.loads(response.context["completion_member_labels_json"]),
+            ["insightsuser"],
+        )
+        self.assertEqual(
+            json.loads(response.context["completion_member_values_json"]),
+            [2],
+        )
+
+    def test_overdue_completion_in_range_counts_without_affecting_due_status(self):
+        chore = self.create_daily_chore(
+            description="Overdue completion chore",
+            start_date=date(2026, 3, 28),
+        )
+
+        self.create_completion(
+            chore=chore,
+            occurrence_date=date(2026, 3, 31),
+            completed_by=self.user,
+            completed_at=datetime(2026, 4, 2, 14, 0, 0),
+        )
+
+        self.login()
+        response = self.client.get(
+            self.url,
+            {
+                "start_date": "2026-04-01",
+                "end_date": "2026-04-03",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["insights_cards"]["completed_chores"], 1)
+        self.assertEqual(response.context["insights_cards"]["due_chores"], 3)
+        self.assertEqual(
+            json.loads(response.context["chore_status_values_json"]),
+            [0, 0, 3],
+        )
+        self.assertEqual(
+            json.loads(response.context["completion_member_labels_json"]),
+            ["insightsuser"],
+        )
+        self.assertEqual(
+            json.loads(response.context["completion_member_values_json"]),
+            [1],
         )

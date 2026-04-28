@@ -84,6 +84,7 @@ class Profile(models.Model):
         blank=True,
         related_name="active_profiles",
     )
+    personal_todo = models.TextField(blank=True, default="")
 
     def save(self, *args, **kwargs):
         """Delete the old avatar from S3 whenever a new one is uploaded."""

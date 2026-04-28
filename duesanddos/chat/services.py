@@ -2,14 +2,22 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.urls import reverse
 from django.utils.text import Truncator
+from django.utils import timezone
 
 from chores.models import Chore
 from expenses.models import Expense
 from households.models import HouseholdMember
 
-from .models import Conversation, ConversationParticipant, Message, MessageReference
+from .models import (
+    Conversation,
+    ConversationParticipant,
+    HiddenMessage,
+    Message,
+    MessageReference,
+)
 
 MESSAGE_PREVIEW_PLACEHOLDER = "Shared references"
+DELETED_MESSAGE_LABEL = "Message deleted"
 
 
 def get_active_household_for_user(user):
@@ -89,6 +97,21 @@ def get_participant_or_404(conversation, user):
     return participant
 
 
+def get_visible_messages_queryset(conversation, user):
+    return conversation.messages.exclude(hidden_entries__user=user).distinct()
+
+
+def hide_message_for_user(message, user):
+    HiddenMessage.objects.get_or_create(message=message, user=user)
+
+
+def delete_message_for_everyone(message, user):
+    if message.deleted_at is None:
+        message.deleted_at = timezone.now()
+        message.deleted_by = user
+        message.save(update_fields=["deleted_at", "deleted_by"])
+
+
 def unread_counts_for_user(user, household):
     conversations = Conversation.objects.accessible_to(user, household)
     counts = {}
@@ -113,7 +136,14 @@ def normalize_message_body(body):
     return normalized
 
 
-def compute_message_preview_text(body="", has_references=False, max_length=72):
+def compute_message_preview_text(
+    body="",
+    has_references=False,
+    is_deleted=False,
+    max_length=72,
+):
+    if is_deleted:
+        return DELETED_MESSAGE_LABEL
     trimmed = (body or "").strip()
     if trimmed:
         return Truncator(trimmed).chars(max_length)
@@ -210,22 +240,38 @@ def serialize_message(message, request_user):
         except ValueError:
             avatar = ""
 
-    references = [
-        serialize_reference(reference) for reference in message.references.all()
-    ]
+    is_deleted = message.deleted_at is not None
+    references = []
+    if not is_deleted:
+        references = [
+            serialize_reference(reference) for reference in message.references.all()
+        ]
+    delete_for_me_url = reverse("chat:delete_for_me", args=[message.id])
+    delete_for_everyone_url = reverse("chat:delete_for_everyone", args=[message.id])
+
     return {
         "id": message.id,
         "author_id": message.author_id,
         "author_username": message.author.username,
         "author_avatar_url": avatar,
-        "body": message.body,
+        "body": "" if is_deleted else message.body,
         "preview_text": compute_message_preview_text(
             body=message.body,
             has_references=bool(references),
+            is_deleted=is_deleted,
         ),
         "references": references,
         "created_at": message.created_at.isoformat(),
+        "created_at_display": message.created_at.strftime("%b %d, %I:%M %p").replace(
+            " 0", " "
+        ),
         "is_own_message": message.author_id == request_user.id,
+        "is_deleted": is_deleted,
+        "deleted_label": DELETED_MESSAGE_LABEL,
+        "can_delete_for_everyone": message.author_id == request_user.id,
+        "can_delete_for_me": True,
+        "delete_for_me_url": delete_for_me_url,
+        "delete_for_everyone_url": delete_for_everyone_url,
     }
 
 
