@@ -29,6 +29,62 @@
     .force-blue-text { color: #1e3a8a !important; }  
     .header-yellow { color: #78350f !important; }
     .badge-yellow { background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #f59e0b; }
+
+    /* Dark mode overrides */
+    .dark .note-fridge {
+        background: linear-gradient(135deg, #2d2610 0%, #1e1b0c 100%) !important;
+        border-color: #78350f !important;
+        box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(251, 191, 36, 0.05) !important;
+    }
+    .dark .note-fridge .header-yellow {
+        color: #fbbf24 !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .dark .note-fridge .badge-yellow {
+        background-color: #78350f !important;
+        color: #fef3c7 !important;
+        border: 1px solid #b45309 !important;
+    }
+    .dark .note-fridge .force-light-text {
+        color: #fde68a !important;
+    }
+    .dark .note-fridge textarea::placeholder {
+        color: rgba(251, 191, 36, 0.25) !important;
+    }
+
+    .dark .note-personal {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+        border-color: #1e3a8a !important;
+        box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(96, 165, 250, 0.05) !important;
+    }
+    .dark .note-personal h3 {
+        color: #60a5fa !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .dark .note-personal span {
+        background-color: #1e3a8a !important;
+        color: #dbeafe !important;
+        border: 1px solid #1d4ed8 !important;
+    }
+    .dark .note-personal .force-blue-text {
+        color: #bfdbfe !important;
+    }
+    .dark .note-personal textarea::placeholder {
+        color: rgba(96, 165, 250, 0.25) !important;
+    }
+
+    .dark .note-fridge button, .dark .note-personal button {
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .dark .note-fridge button:hover {
+        background-color: #fbbf24 !important;
+        color: #451a03 !important;
+    }
+    .dark .note-personal button:hover {
+        background-color: #60a5fa !important;
+        color: #0f172a !important;
+    }
 </style>
 
 <div class="px-4 sm:px-6 lg:px-8 py-10 w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -136,7 +192,7 @@
         </div>
 
         <div class="space-y-6">
-            <div class="bg-yellow-100 !bg-yellow-100 p-8 shadow-xl relative group border-yellow-200/50 note-fridge border h-64 flex flex-col">
+            <div class="bg-yellow-100 p-8 shadow-xl relative group border-yellow-200/50 note-fridge border h-64 flex flex-col">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-sm font-black header-yellow uppercase tracking-widest">The Fridge</h3>
                     <span class="text-[8px] font-black badge-yellow px-2 py-0.5 rounded uppercase">Public</span>
@@ -159,7 +215,7 @@
                 </form>
             </div>
 
-            <div class="bg-blue-100 !bg-blue-100 p-8 shadow-xl relative group border-blue-200/50 note-personal border h-64 flex flex-col">
+            <div class="bg-blue-100 p-8 shadow-xl relative group border-blue-200/50 note-personal border h-64 flex flex-col">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">Personal To-Do</h3>
                     <span class="text-[8px] font-black bg-blue-200 text-blue-700 px-2 py-0.5 rounded uppercase border border-blue-300">Private</span>

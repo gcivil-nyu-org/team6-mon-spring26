@@ -39,6 +39,9 @@ class GoogleCalendarService:
         )
 
         if not token_obj:
+            logger.error(
+                f"GCal sync skipped for {self.user.username}: no Google account linked."
+            )
             return None
 
         # Normalize the DB expiry to timezone-aware UTC for Django comparisons
@@ -72,7 +75,7 @@ class GoogleCalendarService:
         needs_refresh = creds.expired or (db_expiry and db_expiry < now + timedelta(minutes=5))
         if needs_refresh:
             if not creds.refresh_token:
-                logger.warning(
+                logger.error(
                     f"GCal sync skipped for {self.user.username}: no refresh token stored. "
                     "User must disconnect and reconnect their Google account in Profile Settings."
                 )
@@ -202,11 +205,12 @@ class GoogleCalendarService:
                         day_names.append(name)
                 lines.append(f"📆 Repeats on: {', '.join(day_names)}")
 
+        tz_name = str(timezone.get_current_timezone())
         event_body = {
             "summary": summary,
             "description": "\n".join(lines),
-            "start": {"dateTime": aware_start.isoformat()},
-            "end": {"dateTime": end_dt.isoformat()},
+            "start": {"dateTime": aware_start.isoformat(), "timeZone": tz_name},
+            "end": {"dateTime": end_dt.isoformat(), "timeZone": tz_name},
             "reminders": {"useDefault": True},
         }
 

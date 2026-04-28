@@ -183,6 +183,7 @@
                                     data-title="{{ exp.title }}"
                                     data-amount="{{ exp.amount|floatformat:2 }}"
                                     data-payer="{{ exp.payer.id }}"
+                                    data-date="{{ exp.date_spent|date:'Y-m-d' }}"
                                     data-split-type="{{ exp.split_type }}"
                                     data-participants='[{% for s in exp.splits.all %}"{{ s.user.id }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
                                     data-split-values='{ {% for s in exp.splits.all %}"{{ s.user.id }}": "{{ s.amount_owed|floatformat:2 }}"{% if not forloop.last %},{% endif %}{% endfor %} }'
@@ -424,15 +425,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="text" name="title" placeholder="What was it for?" required class="p-4 bg-gray-50 rounded-2xl font-bold border-none">
                 <input type="number" step="0.01" min="0" max="999999999.99" name="amount" id="mainAmount" placeholder="Total Amount ($)" required class="p-4 bg-gray-50 rounded-2xl font-bold border-none" oninput="toggleSplitInputs()">
             </div>
-            <div>
-                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Who Paid?</label>
-                <select name="payer" class="w-full mt-1 p-4 bg-gray-50 border-none rounded-2xl font-bold">
-                    {% for member in members %}
-                        <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
-                            {{ member.user.username }}
-                        </option>
-                    {% endfor %}
-                </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment Date</label>
+                    <input type="date" name="date_spent" id="expenseDate" required class="w-full mt-1 p-4 bg-gray-50 border-none rounded-2xl font-bold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Who Paid?</label>
+                    <select name="payer" class="w-full mt-1 p-4 bg-gray-50 border-none rounded-2xl font-bold">
+                        {% for member in members %}
+                            <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
+                                {{ member.user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div>
                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Split Method</label>
@@ -484,6 +491,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
     function openExpenseModal() { 
+        const dateInput = document.getElementById('expenseDate');
+        if (!dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
         document.getElementById('addExpenseModal').classList.remove('hidden'); 
     }
     function closeExpenseModal() { 
@@ -493,6 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.action = "{% url 'add_expense_pro' %}";
         document.getElementById('modalTitle').innerText = 'New Shared Expense';
         form.reset();
+        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
         resetSplitEdits();
         toggleSplitInputs();
     }
@@ -514,6 +526,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.querySelector('input[name="title"]').value = btn.dataset.title;
         const totalAmount = parseFloat(btn.dataset.amount);
         form.querySelector('input[name="amount"]').value = totalAmount.toFixed(2);
+        form.querySelector('input[name="date_spent"]').value = btn.dataset.date;
         form.querySelector('select[name="payer"]').value = btn.dataset.payer;
         form.querySelector('select[name="split_type"]').value = btn.dataset.splitType;
         

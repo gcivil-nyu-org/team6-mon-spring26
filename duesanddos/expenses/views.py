@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
@@ -300,6 +301,7 @@ def add_expense_pro(request, expense_id=None):
 
     title = (request.POST.get("title") or "").strip()
     amount_raw = (request.POST.get("amount") or "").strip()
+    date_spent_raw = request.POST.get("date_spent")
     p_ids = request.POST.getlist("participants")
 
     if not title:
@@ -346,6 +348,15 @@ def add_expense_pro(request, expense_id=None):
     if split_type not in ["EQUAL", "PERCENT", "AMOUNT"]:
         messages.error(request, "Invalid split type.")
         return redirect("expenses_list")
+
+    # Handle Date Spent
+    if date_spent_raw:
+        try:
+            date_spent = datetime.strptime(date_spent_raw, "%Y-%m-%d").date()
+        except ValueError:
+            date_spent = timezone.localdate()
+    else:
+        date_spent = expense.date_spent if expense else timezone.localdate()
 
     if not p_ids:
         participants = [request.user]
@@ -436,14 +447,15 @@ def add_expense_pro(request, expense_id=None):
             payer=payer,
             household=hh,
             split_type=split_type,
-            date_spent=timezone.now().date(),
+            date_spent=date_spent,
         )
     else:
-        expense.title, expense.amount, expense.payer, expense.split_type = (
+        expense.title, expense.amount, expense.payer, expense.split_type, expense.date_spent = (
             title,
             total_amount,
             payer,
             split_type,
+            date_spent,
         )
         expense.save()
         expense.splits.all().delete()

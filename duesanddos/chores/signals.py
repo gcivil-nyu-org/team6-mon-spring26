@@ -1,6 +1,7 @@
 import threading
 import logging
 import sys
+from django.db import transaction as db_transaction
 from django.db.models.signals import post_save, pre_delete, m2m_changed
 from django.dispatch import receiver
 from .models import Chore, ChoreCompletion, ChoreSkip, ChoreGoogleEvent
@@ -31,10 +32,20 @@ def sync_chore_to_gcal(chore_id):
                     service.delete_chore_event(chore)
             return
 
-        for user in chore.assignees.all():
+        assignees = list(chore.assignees.all())
+        if not assignees:
+            logger.debug(f"GCal: chore {chore.id} has no assignees yet — skipping sync.")
+            return
+        for user in assignees:
             service = GoogleCalendarService(user)
             if service.service:
-                service.sync_chore(chore)
+                result = service.sync_chore(chore)
+                if result:
+                    logger.debug(
+                        f"GCal: synced chore {chore.id} for {user.username} → event {result.get('id')}"
+                    )
+            else:
+                logger.debug(f"GCal: no service for {user.username} — skipping.")
     except Chore.DoesNotExist:  # pragma: no cover
         pass
     except Exception as e:  # pragma: no cover
@@ -63,7 +74,10 @@ def delete_chore_from_gcal_task(google_sync_data):
 @receiver(post_save, sender=Chore)
 def handle_chore_save(sender, instance, created, **kwargs):
     """Triggered on chore creation or update."""
-    run_in_background(target=sync_chore_to_gcal, args=(instance.id,))
+    chore_id = instance.id
+    db_transaction.on_commit(
+        lambda: run_in_background(target=sync_chore_to_gcal, args=(chore_id,))
+    )
 
 
 @receiver(pre_delete, sender=Chore)
@@ -78,7 +92,10 @@ def handle_chore_delete(sender, instance, **kwargs):
 def handle_assignee_change(sender, instance, action, **kwargs):
     """Triggered when assignees are added/removed."""
     if action in ["post_add", "post_remove", "post_clear"]:
-        run_in_background(target=sync_chore_to_gcal, args=(instance.id,))
+        chore_id = instance.id
+        db_transaction.on_commit(
+            lambda: run_in_background(target=sync_chore_to_gcal, args=(chore_id,))
+        )
 
 
 def update_completion_gcal_task(completion_id):
@@ -112,7 +129,10 @@ def update_completion_gcal_task(completion_id):
 def handle_chore_completion(sender, instance, created, **kwargs):
     """Triggered when a specific chore occurrence is completed."""
     if created:
-        run_in_background(target=update_completion_gcal_task, args=(instance.id,))
+        completion_id = instance.id
+        db_transaction.on_commit(
+            lambda: run_in_background(target=update_completion_gcal_task, args=(completion_id,))
+        )
 
 
 def update_skip_gcal_task(skip_id):
