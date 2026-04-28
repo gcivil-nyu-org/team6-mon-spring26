@@ -233,6 +233,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Graphify
+graphify-out/
+
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
