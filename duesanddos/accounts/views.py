@@ -25,17 +25,10 @@ from .forms import (
 def is_google_app_configured():
     from django.conf import settings
 
-    # Check if configured in settings.py (allauth 0.47+)
-    google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
-    if "APP" in google_config and google_config["APP"].get("client_id"):
-        return True
-
-    # Fallback: check database (SocialApp model)
-    site = Site.objects.get_current()
-
     # HOTFIX: Automatically delete duplicate Google SocialApps
     # fmt: off
     try:
+        site = Site.objects.get_current()
         apps = SocialApp.objects.filter(
             provider="google", sites=site
         ).order_by("id")
@@ -46,6 +39,12 @@ def is_google_app_configured():
         pass  # pragma: no cover
     # fmt: on
 
+    # Check if configured in settings.py (allauth 0.47+)
+    google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+    if "APP" in google_config and google_config["APP"].get("client_id"):
+        return True
+
+    # Fallback: check database (SocialApp model)
     return SocialApp.objects.filter(provider="google", sites=site).exists()
 
 
