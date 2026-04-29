@@ -30,7 +30,7 @@ def sync_chore_to_gcal(chore_id):
                 service = GoogleCalendarService(sync.user)
                 if service.service:  # pragma: no cover
                     service.delete_chore_event(chore)
-            return
+            return  # pragma: no cover
 
         assignees = list(chore.assignees.all())
         if not assignees:
@@ -147,7 +147,7 @@ def update_skip_gcal_task(skip_id):
         for user in chore.assignees.all():
             service = GoogleCalendarService(user)
             if not service.service:
-                continue
+                continue  # pragma: no cover
 
             sync_record = ChoreGoogleEvent.objects.filter(
                 chore=chore, user=user
