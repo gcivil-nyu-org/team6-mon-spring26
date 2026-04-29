@@ -11,5 +11,7 @@ urlpatterns = [
         views.complete_chore_occurrence_view,
         name="complete_chore_occurrence",
     ),
-    path("chores/sync-gcal/", views.sync_chores_to_gcal_view, name="sync_chores_to_gcal"),
+    path(
+        "chores/sync-gcal/", views.sync_chores_to_gcal_view, name="sync_chores_to_gcal"
+    ),
 ]

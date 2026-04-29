@@ -435,6 +435,8 @@ def complete_chore_occurrence_view(request, chore_id):
 
     messages.success(request, "Chore marked complete.")
     return redirect("chores_list")
+
+
 @login_required
 def sync_chores_to_gcal_view(request):
     """Manually trigger a full sync of all active chores to Google Calendar."""
@@ -449,5 +451,8 @@ def sync_chores_to_gcal_view(request):
     for chore in active_chores:
         sync_chore_to_gcal(chore.id)
 
-    messages.success(request, f"Triggered sync for {active_chores.count()} active chores with Google Calendar.")
+    messages.success(
+        request,
+        f"Triggered sync for {active_chores.count()} chores with Google Calendar.",
+    )
     return redirect("chores_list")

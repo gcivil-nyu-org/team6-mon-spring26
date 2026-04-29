@@ -106,15 +106,17 @@ def profile_view(request):
 
             if user_form.is_valid() and profile_form.is_valid():
                 user_form.save()
-                # Only update fields that were actually in the POST data to avoid overwriting 
-                # theme/calendar_view with empty values if they were removed from the form.
+                # Only update fields that were actually in the POST data to avoid overwriting
+                # theme or calendar_view if they were removed from the form.
                 profile_instance = profile_form.save(commit=False)
-                if 'theme' not in request.POST:
+                if "theme" not in request.POST:
                     profile_instance.theme = profile.theme
-                if 'default_calendar_view' not in request.POST:
-                    profile_instance.default_calendar_view = profile.default_calendar_view
+                if "default_calendar_view" not in request.POST:
+                    profile_instance.default_calendar_view = (
+                        profile.default_calendar_view
+                    )
                 profile_instance.save()
-                
+
                 messages.success(request, "Your profile was updated.")
                 return redirect("profile")
 
@@ -209,7 +211,8 @@ def deactivate_account_view(request):
 
         logout(request)
         messages.success(
-            request, "Your account has been deactivated. You have been logged out."
+            request,
+            "Your account has been deactivated. You have been logged out.",
         )
         return redirect("login")
 
