@@ -73,9 +73,6 @@ instance/
 # Sphinx documentation
 docs/
 
-# Codex workspace
-.codex/
-
 # PyBuilder
 .pybuilder/
 target/
@@ -200,9 +197,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#   and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#   and can be added to the global gitignore or merged into this file. However, if you prefer,
 #   you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 .vscode/
@@ -236,6 +233,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Graphify
+*graphify-out/
+
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
@@ -251,3 +251,4 @@ __marimo__/
 Network Trash Folder
 Temporary Items
 .apdisk
+.codex

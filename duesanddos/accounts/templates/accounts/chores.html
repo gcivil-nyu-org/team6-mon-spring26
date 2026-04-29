@@ -15,14 +15,20 @@
     {% endif %}
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Chores</h1>
-        <button
-            type="button"
-            onclick="toggleChoreForm()"
-            class="btn-primary"
-            style="width: auto; padding: 10px 24px; margin-top: 0;"
-        >
-            + Add Chore
-        </button>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'sync_chores_to_gcal' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all flex items-center gap-2 shadow-sm">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                Sync GCal
+            </a>
+            <button
+                type="button"
+                onclick="toggleChoreForm()"
+                class="btn-primary"
+                style="width: auto; padding: 10px 24px; margin-top: 0;"
+            >
+                + Add Chore
+            </button>
+        </div>
     </div>
 
     <div id="choreFormCard" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
@@ -32,7 +38,10 @@
             {% csrf_token %}
 
             <div>
-                <input type="text" name="description" placeholder="Chore description" required>
+                <input type="text" name="description" id="choreDescription" placeholder="Chore description" required maxlength="255" class="w-full" oninput="updateCharCount(this)">
+                <div class="mt-1 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <span id="charCount">0</span>/255
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,7 +186,7 @@
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100" id="chore-{{ item.chore.id }}">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <div class="font-bold text-gray-900 text-lg">{{ item.chore.description }}</div>
+                        <div class="font-bold text-gray-900 text-lg break-all">{{ item.chore.description }}</div>
 
                         <div class="text-sm text-gray-500 mt-1">
                             {% if item.is_unscheduled %}
@@ -237,14 +246,15 @@
                                     </button>
 
                                     <div class="delete-dropdown-menu hidden">
-                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}">
+                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}" id="delete-occurrence-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="delete_scope" value="occurrence">
                                             {% if item.date %}
                                                 <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
                                             {% endif %}
                                             <button
-                                                type="submit"
+                                                type="button"
+                                                onclick="showConfirmModal('Delete Single Occurrence?', 'Are you sure you want to delete only this instance of the chore?', 'Delete Instance', 'danger', () => document.getElementById('delete-occurrence-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}').submit())"
                                                 class="delete-dropdown-item"
                                                 {% if not item.date %}disabled{% endif %}
                                             >
@@ -252,37 +262,43 @@
                                             </button>
                                         </form>
 
-                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}" onsubmit="return confirm('Delete all occurrences of this recurring chore?');">
+                                        <form method="POST" action="{% url 'delete_chore' item.chore.id %}" id="delete-series-form-{{ item.chore.id }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="delete_scope" value="series">
                                             {% if item.date %}
                                                 <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
                                             {% endif %}
-                                            <button type="submit" class="delete-dropdown-item danger">
+                                            <button type="button" 
+                                                    onclick="showConfirmModal('Delete All Occurrences?', 'This will permanently remove all future instances of this recurring chore.', 'Delete All', 'danger', () => document.getElementById('delete-series-form-{{ item.chore.id }}').submit())"
+                                                    class="delete-dropdown-item danger">
                                                 Delete All Occurrences
                                             </button>
                                         </form>
                                     </div>
                                 </div>
                                 {% else %}
-                                <form method="POST" action="{% url 'delete_chore' item.chore.id %}">
+                                <form method="POST" action="{% url 'delete_chore' item.chore.id %}" id="delete-series-form-simple-{{ item.chore.id }}">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_scope" value="series">
                                     {% if item.date %}
                                         <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
                                     {% endif %}
-                                    <button type="submit" class="action-link delete-link">
+                                    <button type="button" 
+                                            onclick="showConfirmModal('Delete Chore?', 'This will permanently remove this chore.', 'Delete', 'danger', () => document.getElementById('delete-series-form-simple-{{ item.chore.id }}').submit())"
+                                            class="action-link delete-link">
                                         Delete
                                     </button>
                                 </form>
                             {% endif %}
 
-                            <form method="POST" action="{% url 'complete_chore_occurrence' item.chore.id %}" onsubmit="return confirm('Mark this chore as complete?');">
+                            <form method="POST" action="{% url 'complete_chore_occurrence' item.chore.id %}" id="complete-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}">
                                 {% csrf_token %}
                                 {% if item.date %}
                                     <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
                                 {% endif %}
-                                <button type="submit" class="action-link complete-link">
+                                <button type="button" 
+                                        onclick="showConfirmModal('Mark as Complete?', 'Are you sure you want to mark this chore occurrence as finished?', 'Complete', 'success', () => document.getElementById('complete-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}').submit())"
+                                        class="action-link complete-link">
                                     Mark Complete
                                 </button>
                             </form>
@@ -299,7 +315,74 @@
     </div>
 </div>
 
+<!-- Premium Confirmation Modal -->
+<div id="genericConfirmModal" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div class="bg-white rounded-[2rem] shadow-2xl border border-gray-100 w-full max-w-sm p-8 transform transition-all animate-in zoom-in-95 duration-200 text-center">
+        <div id="modalIconContainer" class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6">
+            <svg id="modalIconDanger" class="hidden w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <svg id="modalIconSuccess" class="hidden w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+            <svg id="modalIconInfo" class="hidden w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        
+        <h3 id="confirmModalTitle" class="text-2xl font-black text-gray-900 mb-2 tracking-tight">Confirm</h3>
+        <p id="confirmModalBody" class="text-sm font-semibold text-gray-500 mb-8 leading-relaxed"></p>
+        
+        <div class="flex flex-col gap-3">
+            <button id="confirmModalActionBtn" class="w-full py-4 rounded-2xl text-sm font-black shadow-lg transition-all active:scale-95"></button>
+            <button onclick="closeConfirmModal()" class="w-full py-4 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
+let confirmAction = null;
+
+function showConfirmModal(title, body, actionText, type, action) {
+    document.getElementById('confirmModalTitle').innerText = title;
+    document.getElementById('confirmModalBody').innerText = body;
+    
+    const actionBtn = document.getElementById('confirmModalActionBtn');
+    actionBtn.innerText = actionText;
+    
+    const iconContainer = document.getElementById('modalIconContainer');
+    const iconDanger = document.getElementById('modalIconDanger');
+    const iconSuccess = document.getElementById('modalIconSuccess');
+    const iconInfo = document.getElementById('modalIconInfo');
+    
+    // Reset classes and icons
+    iconDanger.classList.add('hidden');
+    iconSuccess.classList.add('hidden');
+    iconInfo.classList.add('hidden');
+    actionBtn.className = 'w-full py-4 rounded-2xl text-sm font-black shadow-lg transition-all active:scale-95';
+    
+    if (type === 'danger') {
+        iconContainer.className = 'mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-50';
+        iconDanger.classList.remove('hidden');
+        actionBtn.classList.add('bg-red-600', 'text-white', 'shadow-red-200', 'hover:bg-red-700');
+    } else if (type === 'success') {
+        iconContainer.className = 'mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-green-50';
+        iconSuccess.classList.remove('hidden');
+        actionBtn.classList.add('bg-green-600', 'text-white', 'shadow-green-200', 'hover:bg-green-700');
+    } else {
+        iconContainer.className = 'mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-blue-50';
+        iconInfo.classList.remove('hidden');
+        actionBtn.classList.add('bg-blue-600', 'text-white', 'shadow-blue-200', 'hover:bg-blue-700');
+    }
+    
+    confirmAction = action;
+    document.getElementById('genericConfirmModal').classList.remove('hidden');
+    
+    actionBtn.onclick = function() {
+        if (confirmAction) confirmAction();
+        closeConfirmModal();
+    };
+}
+
+function closeConfirmModal() {
+    document.getElementById('genericConfirmModal').classList.add('hidden');
+    confirmAction = null;
+}
+
 function toggleChoreForm() {
     document.getElementById("choreFormCard").classList.toggle("hidden");
 }
@@ -339,6 +422,9 @@ function toggleRepeatFields() {
     } else {
         recurringFields.classList.remove("hidden");
         startDateField.required = true;
+        if (!startDateField.value) {
+            startDateField.value = new Date().toISOString().split('T')[0];
+        }
 
         if (repeatType === "WEEKLY") {
             weeklyFields.classList.remove("hidden");
@@ -385,9 +471,26 @@ document.addEventListener("click", function (event) {
     }
 });
 
+function updateCharCount(input) {
+    const counter = document.getElementById('charCount');
+    if (counter) {
+        counter.innerText = input.value.length;
+        if (input.value.length >= 240) {
+            counter.parentElement.classList.remove('text-gray-400');
+            counter.parentElement.classList.add('text-amber-500');
+        } else {
+            counter.parentElement.classList.remove('text-amber-500');
+            counter.parentElement.classList.add('text-gray-400');
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     toggleRepeatFields();
     toggleDueFields();
+    
+    const descInput = document.getElementById('choreDescription');
+    if (descInput) updateCharCount(descInput);
 });
 </script>
 {% endblock %}

@@ -1010,3 +1010,89 @@
   color: #60a5fa !important;
   stroke: #60a5fa !important;
 }
+/* ── Sticky Notes (Dashboard) ── */
+.dark .note-fridge {
+  background: linear-gradient(135deg, #2d2610 0%, #1e1b0c 100%) !important;
+  border-color: #78350f !important;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(251, 191, 36, 0.05) !important;
+}
+
+.dark .note-fridge .header-yellow {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dark .note-fridge .badge-yellow {
+  background-color: #78350f !important;
+  color: #fef3c7 !important;
+  border: 1px solid #b45309 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.dark .note-fridge textarea::placeholder {
+  color: rgba(251, 191, 36, 0.25) !important;
+}
+
+.dark .note-personal {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  border-color: #1e3a8a !important;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(96, 165, 250, 0.05) !important;
+}
+
+.dark .note-personal h3 {
+  color: #60a5fa !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dark .note-personal span {
+  background-color: #1e3a8a !important;
+  color: #dbeafe !important;
+  border: 1px solid #1d4ed8 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.dark .note-personal textarea::placeholder {
+  color: rgba(96, 165, 250, 0.25) !important;
+}
+
+.dark .force-light-text {
+  color: #fde68a !important;
+}
+
+.dark .force-blue-text {
+  color: #bfdbfe !important;
+}
+
+.dark .sticky-note-text::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.dark .note-fridge button {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  backdrop-filter: blur(4px);
+}
+
+.dark .note-fridge button:hover {
+  background-color: #fbbf24 !important;
+  color: #451a03 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.dark .note-personal button {
+  background-color: rgba(96, 165, 250, 0.1) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.3) !important;
+  backdrop-filter: blur(4px);
+}
+
+.dark .note-personal button:hover {
+  background-color: #60a5fa !important;
+  color: #0f172a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+}
+

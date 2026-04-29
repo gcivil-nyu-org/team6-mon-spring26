@@ -39,3 +39,15 @@ class SyncGcalOverduesTests(TestCase):
 
         # Should be called once or twice depending on how many occurrences are overdue
         mock_service.mark_occurrence_overdue.assert_called()
+
+    @patch("chores.management.commands.sync_gcal_overdues.GoogleCalendarService")
+    def test_sync_gcal_overdues_command_deactivated_user(self, MockGcal):
+        self.user.is_deactivated = True
+        self.user.save()
+        mock_service = MagicMock()
+        MockGcal.return_value = mock_service
+
+        out = StringIO()
+        call_command("sync_gcal_overdues", stdout=out)
+        self.assertIn("Sync complete", out.getvalue())
+        mock_service.mark_occurrence_overdue.assert_not_called()

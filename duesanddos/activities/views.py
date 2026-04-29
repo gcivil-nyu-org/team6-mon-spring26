@@ -103,13 +103,12 @@ def calendar_events_api(request):
 
     completion_map = {(c.chore_id, c.occurrence_date): c for c in completions}
 
-    # Filter by roommate (#39)
-    member_id = request.GET.get("user_id")
+    # Default to the logged-in user; allow filtering by any household member
+    member_id = request.GET.get("user_id") or str(request.user.id)
 
     events = []
     for chore in chores:
-        # Skip if filter is active and user is not an assignee
-        if member_id and not chore.assignees.filter(id=member_id).exists():
+        if not chore.assignees.filter(id=member_id).exists():
             continue
 
         # Get occurrences using teammate's logic
@@ -211,3 +210,25 @@ def activity_feed_view(request):
         )[:50]
 
     return render(request, "activities/activity_feed.html", {"activities": activities})
+
+
+@login_required
+def update_calendar_view_pref(request):
+    """Saves the user's last selected calendar view (Month/Week/Day)."""
+    if request.method == "POST":
+        import json
+        from accounts.models import Profile
+
+        try:
+            data = json.loads(request.body)
+            new_view = data.get("view")
+            # Validate against Profile choices
+            valid_views = [choice[0] for choice in Profile.DEFAULT_VIEW_CHOICES]
+            if new_view in valid_views:
+                profile = request.user.profile
+                profile.default_calendar_view = new_view
+                profile.save()
+                return JsonResponse({"status": "success"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "error", "message": "POST required"}, status=400)

@@ -69,9 +69,24 @@ class ProfileUpdateForm(forms.ModelForm):
         model = Profile
         fields = ["avatar", "bio", "theme", "default_calendar_view"]
         widgets = {
-            "theme": forms.Select(attrs={"class": "input-field"}),
-            "default_calendar_view": forms.Select(attrs={"class": "input-field"}),
+            "bio": forms.Textarea(
+                attrs={
+                    "class": (
+                        "w-full px-4 py-3 bg-gray-50 border border-gray-100 "
+                        "rounded-2xl focus:ring-2 focus:ring-blue-100 "
+                        "focus:border-blue-400 outline-none transition-all resize-none"
+                    ),
+                    "placeholder": "Tell us a bit about yourself...",
+                    "rows": 3,
+                }
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields optional to support partial updates
+        for field in self.fields:
+            self.fields[field].required = False
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):

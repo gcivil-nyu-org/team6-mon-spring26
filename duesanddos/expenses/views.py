@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
@@ -5,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from accounts.models import CustomUser
 from activities.models import ActivityLog
@@ -18,6 +20,9 @@ def expenses_list_view(request):
         return redirect("household_settings")
 
     selected_month = request.GET.get("filter_month")
+    if not selected_month:
+        selected_month = timezone.now().strftime("%Y-%m")
+
     selected_payer = request.GET.get("filter_payer")
     expenses = (
         active_hh.expenses.all()
@@ -36,12 +41,17 @@ def expenses_list_view(request):
         expenses = expenses.filter(payer_id=selected_payer)
 
     expenses = expenses.order_by("-date_spent")
-    members = active_hh.members.select_related("user")
+    members = active_hh.members.filter(user__is_deactivated=False).select_related(
+        "user"
+    )
+    all_members = active_hh.members.select_related(
+        "user"
+    )  # For summary calculations including deactivated
     summary = []
     you_are_owed = 0.0
     you_owe = 0.0
 
-    for member in members:
+    for member in all_members:
         if member.user == request.user:
             continue
         they_owed_q = (
@@ -87,11 +97,35 @@ def expenses_list_view(request):
                 }
             )
 
-    completed_settlements = (
+    completed_settlements_qs = (
         Settlement.objects.filter(household=active_hh)
         .filter(Q(status="CONFIRMED") | Q(status="DELETE_PENDING"))
-        .order_by("-confirmed_at")[:10]
+        .order_by("-confirmed_at")
     )
+
+    # 0. Get per_page counts
+    def get_per_page(key):
+        val = request.GET.get(key, "10")
+        return int(val) if val in ["10", "20", "50"] else 10
+
+    expenses_per_page = get_per_page("expenses_per_page")
+    settlements_per_page = get_per_page("settlements_per_page")
+    ledger_per_page = get_per_page("ledger_per_page")
+
+    # 1. Paginate Expense History
+    expenses_page_num = request.GET.get("expenses_page", 1)
+    expenses_paginator = Paginator(expenses, expenses_per_page)
+    expenses_page_obj = expenses_paginator.get_page(expenses_page_num)
+
+    # 2. Paginate Settlement History
+    settlements_page_num = request.GET.get("settlements_page", 1)
+    settlements_paginator = Paginator(completed_settlements_qs, settlements_per_page)
+    settlements_page_obj = settlements_paginator.get_page(settlements_page_num)
+
+    # 3. Paginate Household Ledger (summary)
+    ledger_page_num = request.GET.get("ledger_page", 1)
+    ledger_paginator = Paginator(summary, ledger_per_page)
+    ledger_page_obj = ledger_paginator.get_page(ledger_page_num)
 
     pending_incoming = Settlement.objects.filter(
         receiver=request.user, household=active_hh, status="PENDING"
@@ -101,14 +135,17 @@ def expenses_list_view(request):
         request,
         "accounts/expenses.html",
         {
-            "expenses": expenses,
+            "expenses": expenses_page_obj,
+            "summary": ledger_page_obj,
+            "completed_settlements": settlements_page_obj,
+            "expenses_per_page": expenses_per_page,
+            "settlements_per_page": settlements_per_page,
+            "ledger_per_page": ledger_per_page,
             "members": members,
             "active_household": active_hh,
-            "summary": summary,
             "you_are_owed": you_are_owed,
             "you_owe": you_owe,
             "pending_incoming": pending_incoming,
-            "completed_settlements": completed_settlements,
             "selected_month": selected_month,
             "selected_payer": selected_payer,
         },
@@ -120,10 +157,19 @@ def expenses_list_view(request):
 def request_settlement(request):
     if request.method == "POST":
         receiver_id = request.POST.get("receiver")
-        amount = Decimal(request.POST.get("amount", "0"))
-        hh = request.user.profile.active_household
-        if amount <= 0 or not receiver_id:
-            messages.error(request, "Invalid amount or recipient.")
+        try:
+            amount = Decimal(request.POST.get("amount", "0"))
+            hh = request.user.profile.active_household
+            if amount <= 0 or not receiver_id:
+                messages.error(request, "Invalid amount or recipient.")
+                return redirect("expenses_list")
+            if amount >= Decimal("1000000000"):
+                messages.error(
+                    request, "Amount is too large. Max allowed is $999,999,999.99"
+                )
+                return redirect("expenses_list")
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, "Please enter a valid amount (numbers only).")
             return redirect("expenses_list")
         receiver = CustomUser.objects.get(id=receiver_id)
         Settlement.objects.create(
@@ -241,12 +287,21 @@ def add_expense_pro(request, expense_id=None):
         if expense.payer != request.user:
             messages.error(request, "Only the payer can edit this expense.")
             return redirect("expenses_list")
+        if expense.splits.filter(is_settled=True).exists():
+            messages.error(
+                request,
+                "Cannot edit an expense that has already been "
+                "partially or fully settled. "
+                "Please void the settlements first.",
+            )
+            return redirect("expenses_list")
 
     if request.method != "POST":
         return redirect("expenses_list")
 
     title = (request.POST.get("title") or "").strip()
     amount_raw = (request.POST.get("amount") or "").strip()
+    date_spent_raw = request.POST.get("date_spent")
     p_ids = request.POST.getlist("participants")
 
     if not title:
@@ -266,15 +321,19 @@ def add_expense_pro(request, expense_id=None):
         if total_amount <= 0:
             messages.error(request, "Total amount must be greater than 0.")
             return redirect("expenses_list")
+        if total_amount >= Decimal("1000000000"):
+            messages.error(
+                request, "Amount is too large. Max allowed is $999,999,999.99"
+            )
+            return redirect("expenses_list")
     except (InvalidOperation, TypeError, ValueError):
-        messages.error(request, "Please enter a valid total amount.")
-        messages.error(request, "Invalid amount.")
+        messages.error(request, "Please enter a valid total amount (numbers only).")
         return redirect("expenses_list")
 
     payer_id = request.POST.get("payer")
     if payer_id:
         try:
-            payer = CustomUser.objects.get(id=payer_id)
+            payer = CustomUser.objects.get(id=payer_id, is_deactivated=False)
         except (CustomUser.DoesNotExist, ValueError):
             messages.error(request, "Selected payer was not found.")
             return redirect("expenses_list")
@@ -290,15 +349,28 @@ def add_expense_pro(request, expense_id=None):
         messages.error(request, "Invalid split type.")
         return redirect("expenses_list")
 
+    # Handle Date Spent
+    if date_spent_raw:
+        try:
+            date_spent = datetime.strptime(date_spent_raw, "%Y-%m-%d").date()
+        except ValueError:
+            date_spent = timezone.localdate()
+    else:
+        date_spent = expense.date_spent if expense else timezone.localdate()
+
     if not p_ids:
         participants = [request.user]
     else:
         participants = list(CustomUser.objects.filter(id__in=p_ids))
         hh_user_ids = list(hh.members.values_list("user_id", flat=True))
-        if any(p.id not in hh_user_ids for p in participants) or len(
-            participants
-        ) != len(p_ids):
-            messages.error(request, "One or more selected participants are invalid.")
+        if (
+            any(p.id not in hh_user_ids for p in participants)
+            or any(p.is_deactivated for p in participants)
+            or len(participants) != len(p_ids)
+        ):
+            messages.error(
+                request, "One or more selected participants are invalid or deactivated."
+            )
             return redirect("expenses_list")
 
     split_data = []
@@ -364,6 +436,10 @@ def add_expense_pro(request, expense_id=None):
             split_data.append((u, s))
 
     is_new = expense is None
+    old_amount = None
+    if not is_new:
+        old_amount = expense.amount
+
     if is_new:
         expense = Expense.objects.create(
             title=title,
@@ -371,14 +447,21 @@ def add_expense_pro(request, expense_id=None):
             payer=payer,
             household=hh,
             split_type=split_type,
-            date_spent=timezone.now().date(),
+            date_spent=date_spent,
         )
     else:
-        expense.title, expense.amount, expense.payer, expense.split_type = (
+        (
+            expense.title,
+            expense.amount,
+            expense.payer,
+            expense.split_type,
+            expense.date_spent,
+        ) = (
             title,
             total_amount,
             payer,
             split_type,
+            date_spent,
         )
         expense.save()
         expense.splits.all().delete()
@@ -386,18 +469,26 @@ def add_expense_pro(request, expense_id=None):
     for u, amt in split_data:
         ExpenseSplit.objects.create(expense=expense, user=u, amount_owed=amt)
 
-    action_str = "Added" if is_new else "Updated"
-    log_details = f"{action_str} expense '{title}' of ${total_amount}."
+    if is_new:
+        log_details = f"Added expense '{title}' of ${total_amount}."
+    else:
+        if old_amount != total_amount:
+            log_details = (
+                f"Updated expense '{title}': amount changed "
+                f"from ${old_amount} to ${total_amount}."
+            )
+        else:
+            log_details = f"Updated details for expense '{title}' (${total_amount})."
 
     ActivityLog.objects.create(
         user=request.user,
         household=hh,
-        action="EXPENSE_ADDED" if is_new else "EXPENSE_UPDATED",
+        action="EXPENSE_ADDED" if is_new else "EXPENSE_EDITED",
         details=log_details,
     )
 
     messages.success(
-        request, "updated successfully" if not is_new else "Expense added!"
+        request, "Updated successfully" if not is_new else "Expense added!"
     )
 
     if (

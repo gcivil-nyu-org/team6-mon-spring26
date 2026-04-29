@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TransactionTestCase
 from accounts.models import CustomUser
 from households.models import Household
 from chores.models import Chore, ChoreCompletion, ChoreSkip
@@ -6,7 +6,7 @@ from unittest.mock import patch
 from datetime import date
 
 
-class ChoreSignalsTests(TestCase):
+class ChoreSignalsTests(TransactionTestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
             username="sig_mgmt", password="123", email="sig_mgmt@a.com"
