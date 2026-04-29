@@ -20,72 +20,23 @@ install:
   - pip install coverage 'coveralls[yaml]' flake8 black
 
 before_script:
-  # ---- DEBUG: basic system info ----
-  - echo "===== SYSTEM INFO ====="
-  - python --version
-  - pip --version
-  - uname -a
-
-  # ---- DEBUG: AWS ENV PRESENCE CHECK (NEW BLOCK) ----
-  - echo "===== AWS ENV PRESENCE CHECK ====="
-  - |
-    for var in \
-      AWS_ACCESS_KEY_ID \
-      AWS_SECRET_ACCESS_KEY \
-      AWS_STORAGE_BUCKET_NAME \
-      AWS_S3_REGION_NAME \
-      S3_URI \
-      Amazon_Resource_Name \
-      AWS_DEPLOYMENT_BUCKET \
-      AWS_APP \
-      AWS_ENV_DEVELOP \
-      AWS_ENV_MAIN
-    do
-      val=$(printenv "$var")
-      if [ -z "$val" ]; then
-        echo "$var=<<MISSING>>"
-      else
-        echo "$var=<<SET>>"
-      fi
-    done
-
-  # ---- DEBUG: environment variables (masked safely) ----
-  - echo "===== ENV VARS (SAFE PRINT) ====="
-  - printenv | sort | sed -E 's/(AWS|SECRET|PASSWORD|KEY|TOKEN)=.*/\1=***MASKED***/g'
-
-  # ---- DEBUG: postgres connectivity ----
-  - echo "===== POSTGRES CHECK ====="
-  - psql --version
-  - pg_isready -h 127.0.0.1 -p 5432
-
-  # ---- CREATE DB ----
   - psql -h 127.0.0.1 -U postgres -d postgres -c 'CREATE DATABASE travis_ci_test;'
-
-  # ---- DEBUG: verify DB exists ----
-  - psql -h 127.0.0.1 -U postgres -l
-
-  # ---- MOVE INTO PROJECT ----
   - cd duesanddos
 
-  # ---- DEBUG: Django env visibility ----
-  - echo "===== DJANGO ENV CHECK ====="
-  - python - <<EOF
-import os
-print("DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
-print("PGHOST =", os.getenv("PGHOST"))
-print("PGDATABASE =", os.getenv("PGDATABASE"))
-EOF
-
 script:
-  - echo "===== RUNNING FORMAT/LINT ====="
   - black --check .
   - flake8 .
-
-  - echo "===== RUNNING TESTS ====="
-  - coverage run manage.py test -v 2
+  - coverage run manage.py test
 
 after_success:
   - coveralls --verbose
+
+before_deploy:
+  - echo "AWS_APP=$AWS_APP"
+  - echo "AWS_ENV_MAIN=$AWS_ENV_MAIN"
+  - echo "AWS_ENV_DEVELOP=$AWS_ENV_DEVELOP"
+  - echo "AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME"
+  - echo "AWS_DEPLOYMENT_BUCKET=$AWS_DEPLOYMENT_BUCKET"
 
 deploy:
   - provider: elasticbeanstalk
