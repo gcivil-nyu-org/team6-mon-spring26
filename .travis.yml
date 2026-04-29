@@ -46,12 +46,13 @@ before_script:
 
   # ---- DEBUG: Django env visibility ----
   - echo "===== DJANGO ENV CHECK ====="
-  - python - <<EOF
-import os
-print("DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
-print("PGHOST =", os.getenv("PGHOST"))
-print("PGDATABASE =", os.getenv("PGDATABASE"))
-EOF
+  - |
+    python - <<EOF
+    import os
+    print("DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
+    print("PGHOST =", os.getenv("PGHOST"))
+    print("PGDATABASE =", os.getenv("PGDATABASE"))
+    EOF
 
 script:
   - echo "===== RUNNING FORMAT/LINT ====="
