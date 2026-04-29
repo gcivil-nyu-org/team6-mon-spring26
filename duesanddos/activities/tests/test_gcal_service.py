@@ -156,6 +156,46 @@ class GCalServiceTests(TestCase):
     @patch("activities.google_calendar.SocialToken.objects.filter")
     @patch("activities.google_calendar.Credentials")
     @patch("activities.google_calendar.build")
+    def test_build_event_body_one_time_with_due_date(
+        self, mock_build, mock_creds_class, mock_filter
+    ):
+        """Test _build_event_body for ONE_TIME chore with due date and time."""
+        from chores.models import Chore
+        from households.models import Household
+
+        household = Household.objects.create(name="Test HH 2")
+        chore = Chore.objects.create(
+            description="Due date chore",
+            household=household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            has_due_date=True,
+            due_date=datetime.date.today(),
+            due_time=datetime.time(14, 0),
+        )
+        chore.assignees.add(self.user)
+
+        mock_token = MagicMock()
+        mock_token.app = None
+        mock_token.token_secret = "refresh"
+        mock_token.expires_at = None
+        mock_filter.return_value.select_related.return_value.first.return_value = (
+            mock_token
+        )
+
+        mock_creds = MagicMock()
+        mock_creds.expired = False
+        mock_creds_class.return_value = mock_creds
+        mock_build.return_value = MagicMock()
+
+        gcal = GoogleCalendarService(self.user)
+        body = gcal._build_event_body(chore)
+        self.assertIn("Due date:", body["description"])
+        self.assertIn("2:00 PM", body["description"])
+
+    @patch("activities.google_calendar.SocialToken.objects.filter")
+    @patch("activities.google_calendar.Credentials")
+    @patch("activities.google_calendar.build")
     def test_build_event_body_recurring_with_end_date_and_time(
         self, mock_build, mock_creds_class, mock_filter
     ):
