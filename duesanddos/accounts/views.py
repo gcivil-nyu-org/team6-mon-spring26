@@ -2,6 +2,7 @@ from datetime import datetime
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, update_session_auth_hash, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,28 +24,18 @@ from .forms import (
 
 
 def is_google_app_configured():
-    from django.conf import settings
-
-    # HOTFIX: Automatically delete duplicate Google SocialApps
-    # fmt: off
-    try:
-        site = Site.objects.get_current()
-        apps = SocialApp.objects.filter(
-            provider="google", sites=site
-        ).order_by("id")
-        if apps.count() > 1:  # pragma: no cover
-            for app in list(apps)[1:]:  # pragma: no cover
-                app.delete()  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
-    # fmt: on
-
-    # Check if configured in settings.py (allauth 0.47+)
     google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+
+    # If using settings.py-based allauth config
     if "APP" in google_config and google_config["APP"].get("client_id"):
         return True
 
-    # Fallback: check database (SocialApp model)
+    # If using database-based SocialApp config
+    try:
+        site = Site.objects.get_current()
+    except Exception:
+        return False
+
     return SocialApp.objects.filter(provider="google", sites=site).exists()
 
 
