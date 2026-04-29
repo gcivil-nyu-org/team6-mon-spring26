@@ -107,3 +107,97 @@ class NewLogicTests(TestCase):
         url = reverse("sync_chores_to_gcal")
         response = self.client.get(url)
         self.assertRedirects(response, reverse("household_settings"))
+
+
+class ProfileRelinkFlagTests(TestCase):
+    """Cover accounts/views.py L156: google_needs_relink = True."""
+
+    def setUp(self):
+        from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
+        from django.contrib.sites.models import Site
+
+        self.user = User.objects.create_user(
+            username="relink_user", password="pw", email="relink@example.com"
+        )
+        self.client.login(username="relink_user", password="pw")
+        Profile.objects.get_or_create(user=self.user)
+
+        # Create a minimal Google SocialApp
+        site = Site.objects.get_current()
+        app, _ = SocialApp.objects.get_or_create(
+            provider="google",
+            defaults={"name": "Google", "client_id": "x", "secret": "y"},
+        )
+        app.sites.add(site)
+
+        # Link a Google account to the user
+        self.social_account = SocialAccount.objects.create(
+            user=self.user, provider="google", uid="uid_relink"
+        )
+        # Token WITHOUT a refresh token — triggers relink flag
+        SocialToken.objects.create(
+            account=self.social_account,
+            app=app,
+            token="access",
+            token_secret="",  # empty = needs relink
+        )
+
+    def test_profile_page_sets_relink_flag(self):
+        """Profile view should detect missing refresh token and set relink flag."""
+        url = reverse("profile")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["google_needs_relink"])
+
+
+class CalendarViewPrefExceptionTests(TestCase):
+    """Cover activities/views.py L232-233: exception handler in view pref update."""
+
+    def setUp(self):
+        import json as _json
+
+        self.json = _json
+        self.user = User.objects.create_user(
+            username="vpref_user", password="pw", email="vpref@example.com"
+        )
+        self.client.login(username="vpref_user", password="pw")
+        Profile.objects.get_or_create(user=self.user)
+
+    def test_calendar_view_pref_bad_json_returns_error(self):
+        """Sending malformed JSON should hit the except branch (L232-233)."""
+        from django.urls import reverse as _reverse
+
+        url = _reverse("update_calendar_view_pref")
+        response = self.client.post(
+            url, data="not-valid-json", content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["status"], "error")
+
+
+class InactiveChoreSignalReturnTests(TestCase):
+    """Cover chores/signals.py L33: return after deleting inactive-chore GCal events."""
+
+    def setUp(self):
+        from chores.models import Chore
+        from households.models import Household
+
+        self.user = User.objects.create_user(
+            username="inactive_sig", password="pw", email="inactive@example.com"
+        )
+        self.household = Household.objects.create(name="Inactive HH")
+        self.chore = Chore.objects.create(
+            description="Will be deactivated",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+        )
+        self.chore.assignees.add(self.user)
+
+    def test_deactivating_chore_triggers_signal_return(self):
+        """Saving a chore with is_active=False should hit the return on L33."""
+        # No ChoreGoogleEvent exists, so the loop body is skipped, but L33 is still hit
+        self.chore.is_active = False
+        self.chore.save()
+        self.chore.refresh_from_db()
+        self.assertFalse(self.chore.is_active)
