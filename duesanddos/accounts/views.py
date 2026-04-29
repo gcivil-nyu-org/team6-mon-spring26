@@ -110,6 +110,14 @@ def profile_view(request):
                 messages.success(request, "Your profile was updated.")
                 return redirect("profile")
 
+        # 2.5 Handle "Update Preferences" (separate from main profile save)
+        elif "update_preferences" in request.POST:
+            profile_form = ProfileUpdateForm(request.POST, instance=profile)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Display preferences updated.")
+                return redirect("profile")
+
         # 3. Handle Password Change Modal
         elif "change_password" in request.POST:
             user_form = UserUpdateForm(instance=request.user)
@@ -128,10 +136,11 @@ def profile_view(request):
         user=request.user, provider="google"
     ).first()
 
-    # Detect when connected but refresh token is missing (needs re-link for calendar sync)
+    # Detect when connected but refresh token is missing
     google_needs_relink = False
     if google_account:
         from allauth.socialaccount.models import SocialToken
+
         token = SocialToken.objects.filter(account=google_account).first()
         if token and not token.token_secret:
             google_needs_relink = True

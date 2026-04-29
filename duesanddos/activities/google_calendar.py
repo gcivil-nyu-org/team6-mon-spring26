@@ -55,8 +55,8 @@ class GoogleCalendarService:
             client_id = token_obj.app.client_id
             client_secret = token_obj.app.secret
         else:
-            google_app = (
-                settings.SOCIALACCOUNT_PROVIDERS.get("google", {}).get("APP", {})
+            google_app = settings.SOCIALACCOUNT_PROVIDERS.get("google", {}).get(
+                "APP", {}
             )
             client_id = google_app.get("client_id", "")
             client_secret = google_app.get("secret", "")
@@ -72,12 +72,14 @@ class GoogleCalendarService:
 
         # Refresh if expired or about to expire (within 5 min)
         now = timezone.now()
-        needs_refresh = creds.expired or (db_expiry and db_expiry < now + timedelta(minutes=5))
+        needs_refresh = creds.expired or (
+            db_expiry and db_expiry < now + timedelta(minutes=5)
+        )
         if needs_refresh:
             if not creds.refresh_token:
                 logger.error(
-                    f"GCal sync skipped for {self.user.username}: no refresh token stored. "
-                    "User must disconnect and reconnect their Google account in Profile Settings."
+                    f"GCal sync skipped for {self.user.username}: no refresh token. "
+                    "User must reconnect their account in Profile Settings."
                 )
                 return None
             try:
@@ -164,12 +166,16 @@ class GoogleCalendarService:
         ]
 
         # Schedule type
-        type_label = dict(chore.REPEAT_TYPE_CHOICES).get(chore.repeat_type, chore.repeat_type)
+        type_label = dict(chore.REPEAT_TYPE_CHOICES).get(
+            chore.repeat_type, chore.repeat_type
+        )
         lines.append(f"🔁 Type: {type_label}")
 
         if chore.repeat_type == "ONE_TIME":
             if chore.has_due_date and chore.due_date:
-                lines.append(f"📅 Due date: {chore.due_date.strftime('%A, %B %-d, %Y')}")
+                lines.append(
+                    f"📅 Due date: {chore.due_date.strftime('%A, %B %-d, %Y')}"
+                )
             else:
                 lines.append("📅 Due date: No due date")
             if chore.due_time:
@@ -179,7 +185,9 @@ class GoogleCalendarService:
 
         else:
             if chore.start_date:
-                lines.append(f"📅 Starts: {chore.start_date.strftime('%A, %B %-d, %Y')}")
+                lines.append(
+                    f"📅 Starts: {chore.start_date.strftime('%A, %B %-d, %Y')}"
+                )
             if chore.end_date:
                 lines.append(f"🏁 Ends: {chore.end_date.strftime('%A, %B %-d, %Y')}")
             else:

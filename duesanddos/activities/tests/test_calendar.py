@@ -22,7 +22,7 @@ class CalendarApiTests(TestCase):
         )
 
     def test_calendar_api_returns_chores(self):
-        """Test if the API correctly fetches a chore occurrence for the logged-in user."""
+        """Test if the API correctly fetches a chore occurrence for the user."""
         chore = Chore.objects.create(
             description="Test Calendar Chore",
             household=self.household,

@@ -34,7 +34,9 @@ def sync_chore_to_gcal(chore_id):
 
         assignees = list(chore.assignees.all())
         if not assignees:
-            logger.debug(f"GCal: chore {chore.id} has no assignees yet — skipping sync.")
+            logger.debug(
+                f"GCal: chore {chore.id} has no assignees yet — skipping sync."
+            )
             return
         for user in assignees:
             service = GoogleCalendarService(user)
@@ -42,7 +44,7 @@ def sync_chore_to_gcal(chore_id):
                 result = service.sync_chore(chore)
                 if result:
                     logger.debug(
-                        f"GCal: synced chore {chore.id} for {user.username} → event {result.get('id')}"
+                        f"GCal: synced chore {chore.id} for {user.username}"
                     )
             else:
                 logger.debug(f"GCal: no service for {user.username} — skipping.")
@@ -131,7 +133,9 @@ def handle_chore_completion(sender, instance, created, **kwargs):
     if created:
         completion_id = instance.id
         db_transaction.on_commit(
-            lambda: run_in_background(target=update_completion_gcal_task, args=(completion_id,))
+            lambda: run_in_background(
+                target=update_completion_gcal_task, args=(completion_id,)
+            )
         )
 
 

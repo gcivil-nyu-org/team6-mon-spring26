@@ -22,7 +22,7 @@ def expenses_list_view(request):
     selected_month = request.GET.get("filter_month")
     if not selected_month:
         selected_month = timezone.now().strftime("%Y-%m")
-    
+
     selected_payer = request.GET.get("filter_payer")
     expenses = (
         active_hh.expenses.all()
@@ -450,7 +450,13 @@ def add_expense_pro(request, expense_id=None):
             date_spent=date_spent,
         )
     else:
-        expense.title, expense.amount, expense.payer, expense.split_type, expense.date_spent = (
+        (
+            expense.title,
+            expense.amount,
+            expense.payer,
+            expense.split_type,
+            expense.date_spent,
+        ) = (
             title,
             total_amount,
             payer,
