@@ -19,6 +19,23 @@
             <form id="profileForm" method="post" enctype="multipart/form-data" class="flex flex-col h-full">
                 {% csrf_token %}
                 
+                {% if user_form.errors or profile_form.errors %}
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+                    <p class="text-sm font-bold text-red-600 mb-2">Please correct the following errors:</p>
+                    <ul class="text-xs text-red-500 list-disc list-inside space-y-1">
+                        {% for field, errors in user_form.errors.items %}
+                            {% for error in errors %}<li>{{ field|title }}: {{ error }}</li>{% endfor %}
+                        {% endfor %}
+                        {% for field, errors in profile_form.errors.items %}
+                            {% for error in errors %}<li>{{ field|title }}: {{ error }}</li>{% endfor %}
+                        {% endfor %}
+                        {% for error in profile_form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
                 <div class="profile-avatar-section" style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
                     <label for="id_avatar" style="cursor: pointer; position: relative; display: inline-block;" class="avatar-upload-wrapper" title="Click to change avatar">
                         {% if profile.avatar %}
@@ -42,10 +59,13 @@
                     </div>
                 </div>
 
+                <p id="avatar-hint" class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1"></p>
+
                 <script>
                     const MAX_AVATAR_BYTES = 800 * 1024; // 800 KB
 
                     async function compressImage(file, maxBytes) {
+                        console.log('Starting compression for:', file.name, 'Size:', file.size);
                         return new Promise((resolve) => {
                             const reader = new FileReader();
                             reader.onload = (e) => {
@@ -62,6 +82,7 @@
                                     const tryCompress = () => {
                                         canvas.toBlob((blob) => {
                                             if (blob.size <= maxBytes || quality <= 0.1) {
+                                                console.log('Compression finished. Final size:', blob.size, 'Quality:', quality);
                                                 resolve(blob);
                                             } else {
                                                 quality = Math.max(0.1, quality - 0.1);
@@ -71,7 +92,15 @@
                                     };
                                     tryCompress();
                                 };
+                                img.onerror = () => {
+                                    console.error('Image load error during compression');
+                                    resolve(file); // fallback to original
+                                };
                                 img.src = e.target.result;
+                            };
+                            reader.onerror = () => {
+                                console.error('FileReader error during compression');
+                                resolve(file); // fallback to original
                             };
                             reader.readAsDataURL(file);
                         });
@@ -85,40 +114,61 @@
                         const original = input.files[0];
 
                         const hint = document.getElementById('avatar-hint');
-                        if (hint) hint.textContent = 'Compressing…';
+                        if (hint) hint.textContent = 'Compressing image...';
 
-                        const blob = await compressImage(original, MAX_AVATAR_BYTES);
-                        _compressedAvatarBlob = blob;
-                        _compressedAvatarName = original.name.replace(/\.[^.]+$/, '') + '_compressed.jpg';
+                        try {
+                            const blob = await compressImage(original, MAX_AVATAR_BYTES);
+                            _compressedAvatarBlob = blob;
+                            _compressedAvatarName = original.name.replace(/\.[^.]+$/, '') + '_compressed.jpg';
 
-                        const previewImg = document.getElementById('avatarPreviewImg');
-                        previewImg.src = URL.createObjectURL(blob);
-                        previewImg.style.display = 'block';
-                        const initials = document.getElementById('avatarInitials');
-                        if (initials) initials.style.display = 'none';
+                            const previewImg = document.getElementById('avatarPreviewImg');
+                            previewImg.src = URL.createObjectURL(blob);
+                            previewImg.style.display = 'block';
+                            const initials = document.getElementById('avatarInitials');
+                            if (initials) initials.style.display = 'none';
 
-                        const kb = (blob.size / 1024).toFixed(0);
-                        const origKb = (original.size / 1024).toFixed(0);
-                        if (hint) hint.textContent = `Compressed: ${kb} KB (from ${origKb} KB) — ready to save`;
+                            const kb = (blob.size / 1024).toFixed(0);
+                            const origKb = (original.size / 1024).toFixed(0);
+                            if (hint) hint.textContent = `Optimized: ${kb}KB (was ${origKb}KB) — Ready`;
+                        } catch (err) {
+                            console.error('Preview error:', err);
+                            if (hint) hint.textContent = 'Compression failed, using original';
+                        }
                     }
 
                     document.addEventListener('DOMContentLoaded', function() {
                         const form = document.getElementById('profileForm');
                         if (!form) return;
                         form.addEventListener('submit', function(e) {
-                            if (!_compressedAvatarBlob) return; // no image selected, submit normally
+                            if (!_compressedAvatarBlob) {
+                                console.log('Submitting profile form normally...');
+                                return;
+                            }
+                            
+                            console.log('Interpreting form submission to inject compressed avatar...');
                             e.preventDefault();
-                            const fileInput = document.getElementById('id_avatar');
-                            const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(new File([_compressedAvatarBlob], _compressedAvatarName, { type: 'image/jpeg' }));
-                            fileInput.files = dataTransfer.files;
-                            _compressedAvatarBlob = null;
-                            const hidden = document.createElement('input');
-                            hidden.type = 'hidden';
-                            hidden.name = 'save_profile';
-                            hidden.value = '';
-                            form.appendChild(hidden);
-                            form.submit(); 
+                            try {
+                                const fileInput = document.getElementById('id_avatar');
+                                const dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(new File([_compressedAvatarBlob], _compressedAvatarName, { type: 'image/jpeg' }));
+                                fileInput.files = dataTransfer.files;
+                                _compressedAvatarBlob = null;
+                                
+                                // Ensure save_profile name is passed since we are submitting via JS
+                                if (!form.querySelector('input[name="save_profile"]')) {
+                                    const hidden = document.createElement('input');
+                                    hidden.type = 'hidden';
+                                    hidden.name = 'save_profile';
+                                    hidden.value = '1';
+                                    form.appendChild(hidden);
+                                }
+                                
+                                console.log('Submitting modified form...');
+                                form.submit();
+                            } catch (err) {
+                                console.error('Form override failed:', err);
+                                form.submit(); // fallback
+                            }
                         });
                     });
                 </script>

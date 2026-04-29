@@ -32,58 +32,68 @@
 
     /* Dark mode overrides */
     .dark .note-fridge {
-        background: linear-gradient(135deg, #2d2610 0%, #1e1b0c 100%) !important;
-        border-color: #78350f !important;
-        box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(251, 191, 36, 0.05) !important;
+        background: linear-gradient(165deg, #2d2610 0%, #1e1b0c 100%) !important;
+        border-color: #fbbf24 !important;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(251, 191, 36, 0.15) !important;
     }
     .dark .note-fridge .header-yellow {
         color: #fbbf24 !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
     .dark .note-fridge .badge-yellow {
-        background-color: #78350f !important;
+        background-color: #b45309 !important;
         color: #fef3c7 !important;
-        border: 1px solid #b45309 !important;
+        border: 1px solid #d97706 !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
     }
     .dark .note-fridge .force-light-text {
-        color: #fde68a !important;
+        color: #fef3c7 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
     .dark .note-fridge textarea::placeholder {
-        color: rgba(251, 191, 36, 0.25) !important;
+        color: rgba(251, 191, 36, 0.3) !important;
     }
 
     .dark .note-personal {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-        border-color: #1e3a8a !important;
-        box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(96, 165, 250, 0.05) !important;
+        background: linear-gradient(165deg, #1e293b 0%, #0f172a 100%) !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(96, 165, 250, 0.15) !important;
     }
     .dark .note-personal h3 {
         color: #60a5fa !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
     .dark .note-personal span {
-        background-color: #1e3a8a !important;
+        background-color: #1d4ed8 !important;
         color: #dbeafe !important;
-        border: 1px solid #1d4ed8 !important;
+        border: 1px solid #2563eb !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
     }
     .dark .note-personal .force-blue-text {
-        color: #bfdbfe !important;
+        color: #dbeafe !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
     .dark .note-personal textarea::placeholder {
-        color: rgba(96, 165, 250, 0.25) !important;
+        color: rgba(96, 165, 250, 0.3) !important;
     }
 
     .dark .note-fridge button, .dark .note-personal button {
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(8px);
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .dark .note-fridge button:hover {
         background-color: #fbbf24 !important;
         color: #451a03 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
     }
     .dark .note-personal button:hover {
         background-color: #60a5fa !important;
         color: #0f172a !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
     }
 </style>
 
