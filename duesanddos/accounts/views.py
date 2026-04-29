@@ -106,8 +106,8 @@ def profile_view(request):
 
             if user_form.is_valid() and profile_form.is_valid():
                 user_form.save()
-                # Only update fields that were actually in the POST data to avoid overwriting
-                # theme or calendar_view if they were removed from the form.
+                # Preserve theme/calendar_view if not submitted in this POST,
+                # so they are not accidentally reset to defaults.
                 profile_instance = profile_form.save(commit=False)
                 if "theme" not in request.POST:
                     profile_instance.theme = profile.theme
