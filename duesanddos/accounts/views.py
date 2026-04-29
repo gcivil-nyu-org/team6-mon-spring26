@@ -32,6 +32,20 @@ def is_google_app_configured():
 
     # Fallback: check database (SocialApp model)
     site = Site.objects.get_current()
+
+    # HOTFIX: Automatically delete duplicate Google SocialApps
+    # fmt: off
+    try:
+        apps = SocialApp.objects.filter(
+            provider="google", sites=site
+        ).order_by("id")
+        if apps.count() > 1:  # pragma: no cover
+            for app in list(apps)[1:]:  # pragma: no cover
+                app.delete()  # pragma: no cover
+    except Exception:  # pragma: no cover
+        pass  # pragma: no cover
+    # fmt: on
+
     return SocialApp.objects.filter(provider="google", sites=site).exists()
 
 
