@@ -110,7 +110,7 @@ class ExpenseProCoverageTests(TestCase):
             follow=True,
         )
         messages = [str(m) for m in get_messages(response.wsgi_request)]
-        self.assertIn("Please enter a valid total amount.", messages)
+        self.assertIn("Please enter a valid total amount (numbers only).", messages)
 
     def test_add_expense_pro_negative_amount_error(self):
         response = self.client.post(
@@ -176,7 +176,9 @@ class ExpenseProCoverageTests(TestCase):
             follow=True,
         )
         messages = [str(m) for m in get_messages(response.wsgi_request)]
-        self.assertIn("One or more selected participants are invalid.", messages)
+        self.assertIn(
+            "One or more selected participants are invalid or deactivated.", messages
+        )
 
     def test_add_expense_pro_invalid_split_type_error(self):
         response = self.client.post(

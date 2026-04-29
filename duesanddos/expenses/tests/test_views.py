@@ -91,10 +91,45 @@ class ExpenseViewTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(response, "updated successfully")
+        self.assertContains(response, "Updated successfully")
         expense.refresh_from_db()
         self.assertEqual(expense.title, "New Title")
         self.assertEqual(expense.splits.count(), 2)
+
+    def test_edit_expense_pro_fails_if_settled(self):
+        from decimal import Decimal
+        from expenses.models import Expense, ExpenseSplit
+
+        expense = Expense.objects.create(
+            title="Old Title",
+            amount=Decimal("100.00"),
+            payer=self.user,
+            household=self.hh,
+        )
+        ExpenseSplit.objects.create(
+            expense=expense,
+            user=self.user2,
+            amount_owed=Decimal("100.00"),
+            is_settled=True,
+        )
+        url = reverse("edit_expense_pro", args=[expense.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "New Title",
+                "amount": "100.00",
+                "payer": self.user.id,
+                "participants": [self.user.id, self.user2.id],
+                "split_type": "EQUAL",
+            },
+            follow=True,
+        )
+        self.assertContains(
+            response,
+            "Cannot edit an expense that has already been partially or fully settled",
+        )
+        expense.refresh_from_db()
+        self.assertEqual(expense.title, "Old Title")
 
     def test_add_expense_pro_success_percent(self):
         url = reverse("add_expense_pro")
@@ -175,7 +210,9 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Please enter a valid total amount.")
+        self.assertContains(
+            response, "Please enter a valid total amount (numbers only)."
+        )
 
         # Negative amount
         response = self.client.post(
@@ -229,7 +266,9 @@ class ExpenseViewTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(response, "One or more selected participants are invalid.")
+        self.assertContains(
+            response, "One or more selected participants are invalid or deactivated."
+        )
 
     def test_add_expense_pro_invalid_split_type(self):
         url = reverse("add_expense_pro")
@@ -465,7 +504,9 @@ class ExpenseViewTests(TestCase):
             {"title": "T", "amount": "abc", "participants": [self.user.id]},
             follow=True,
         )
-        self.assertContains(response, "Invalid amount.")
+        self.assertContains(
+            response, "Please enter a valid total amount (numbers only)."
+        )
 
     def test_edit_expense_pro_split_types(self):
         expense = Expense.objects.create(
@@ -621,6 +662,36 @@ class ExpenseViewTests(TestCase):
             amount=Decimal("50.00"), receiver=self.user2
         ).exists()
         self.assertTrue(settlement_exists, "Settlement object was NOT created.")
+
+    def test_request_settlement_invalid_amount(self):
+        url = reverse("request_settlement")
+        self.client.login(username="exuser", password=TEST_PASSWORD)
+        response = self.client.post(
+            url, {"amount": "invalid", "receiver": self.user2.id}
+        )
+        self.assertRedirects(response, reverse("expenses_list"))
+
+    def test_request_settlement_large_amount(self):
+        url = reverse("request_settlement")
+        self.client.login(username="exuser", password=TEST_PASSWORD)
+        response = self.client.post(
+            url, {"amount": "1000000000.00", "receiver": self.user2.id}
+        )
+        self.assertRedirects(response, reverse("expenses_list"))
+
+    def test_add_expense_pro_large_amount(self):
+        url = reverse("add_expense_pro")
+        response = self.client.post(
+            url,
+            {
+                "title": "Too Large",
+                "amount": "1000000000.00",
+                "payer": self.user.id,
+                "split_type": "EQUAL",
+                "participants": [self.user.id],
+            },
+        )
+        self.assertRedirects(response, reverse("expenses_list"))
 
     def test_confirm_settlement_logic(self):
         from expenses.models import Settlement, Expense, ExpenseSplit

@@ -150,6 +150,25 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "activities": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+        "chores": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+        "accounts": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+    },
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 LANGUAGE_CODE = "en-us"
@@ -189,13 +208,24 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": [
             "profile",
             "email",
-            "https://www.googleapis.com/auth/calendar.events",  # Create/edit events
+            "https://www.googleapis.com/auth/calendar.events",
         ],
         "AUTH_PARAMS": {
-            "access_type": "offline",  # To get refresh token
+            "access_type": "offline",
+            "prompt": "consent",  # force Google to return a refresh_token every time
         },
     }
 }
+
+_google_client_id = os.environ.get("GOOGLE_OAUTH2_CLIENT_ID")
+_google_secret = os.environ.get("GOOGLE_OAUTH2_CLIENT_SECRET")
+
+if _google_client_id and _google_secret:
+    SOCIALACCOUNT_PROVIDERS["google"]["APP"] = {
+        "client_id": _google_client_id,
+        "secret": _google_secret,
+        "key": "",
+    }
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 

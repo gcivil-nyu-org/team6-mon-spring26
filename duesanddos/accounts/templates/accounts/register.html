@@ -145,13 +145,29 @@
 
             <div class="space-y-1">
                 <label for="id_password" class="form-label">Password</label>
-                <input type="password" name="password" id="id_password" class="input-field {% if form.password.errors %}border-red-500 bg-red-50{% endif %}" placeholder="Min. 8 characters" required>
+                <div class="relative">
+                    <input type="password" name="password" id="id_password" class="input-field pr-10 {% if form.password.errors %}border-red-500 bg-red-50{% endif %}" placeholder="Min. 8 characters" required>
+                    <button type="button" class="password-toggle absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none" data-target="id_password">
+                        <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
                 {% for error in form.password.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
             </div>
 
             <div class="space-y-1">
                 <label for="id_confirmPassword" class="form-label">Confirm Password</label>
-                <input type="password" name="confirmPassword" id="id_confirmPassword" class="input-field {% if form.confirmPassword.errors %}border-red-500 bg-red-50{% endif %}" placeholder="Confirm your password" required>
+                <div class="relative">
+                    <input type="password" name="confirmPassword" id="id_confirmPassword" class="input-field pr-10 {% if form.confirmPassword.errors %}border-red-500 bg-red-50{% endif %}" placeholder="Confirm your password" required>
+                    <button type="button" class="password-toggle absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none" data-target="id_confirmPassword">
+                        <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
                 {% for error in form.confirmPassword.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
                 <p class="text-xs text-stone-400 mt-1">Passwords must match.</p>
             </div>
@@ -171,6 +187,23 @@
     </div>
     <script>
         document.getElementById('year-r').textContent = new Date().getFullYear();
+
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const eyeIcon = this.querySelector('.eye-icon');
+                
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                
+                if (type === 'text') {
+                    eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                } else {
+                    eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                }
+            });
+        });
     </script>
 </body>
 </html>

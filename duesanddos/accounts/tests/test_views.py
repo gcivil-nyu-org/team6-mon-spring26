@@ -36,7 +36,7 @@ def _make_google_social_app():
     return app
 
 
-@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT, SOCIALACCOUNT_PROVIDERS={})
 class AuthAndProfileTests(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
@@ -101,6 +101,100 @@ class AuthAndProfileTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/logout.html")
+
+    def test_login_post_normal_user(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.username, "password": TEST_PASSWORD},
+        )
+        self.assertRedirects(
+            response, reverse("dashboard")
+        )  # Assuming successful login redirects to dashboard
+
+    def test_login_deactivated_user(self):
+        self.client.logout()
+        self.user.is_deactivated = True
+        self.user.save()
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.username, "password": TEST_PASSWORD},
+        )
+        self.assertRedirects(response, reverse("reactivate_account_confirm"))
+        self.assertEqual(
+            self.client.session.get("pending_reactivation_user_id"), self.user.id
+        )
+
+    def test_reactivate_account_confirm_view_get(self):
+        session = self.client.session
+        session["pending_reactivation_user_id"] = self.user.id
+        session.save()
+        response = self.client.get(reverse("reactivate_account_confirm"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/reactivate_confirm.html")
+
+    def test_reactivate_account_confirm_view_get_no_session(self):
+        response = self.client.get(reverse("reactivate_account_confirm"))
+        self.assertRedirects(response, reverse("login"))
+
+    def test_reactivate_account_confirm_view_post(self):
+        self.user.is_deactivated = True
+        self.user.save()
+        session = self.client.session
+        session["pending_reactivation_user_id"] = self.user.id
+        session.save()
+        response = self.client.post(reverse("reactivate_account_confirm"))
+        self.assertRedirects(response, reverse("dashboard"))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_deactivated)
+        self.assertNotIn("pending_reactivation_user_id", self.client.session)
+
+    def test_deactivate_account_view_get(self):
+        response = self.client.get(reverse("deactivate_account"))
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_deactivate_account_view_post_wrong_password(self):
+        response = self.client.post(
+            reverse("deactivate_account"), {"confirmation": "wrong"}
+        )
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_deactivate_account_view_post_correct_password(self):
+        response = self.client.post(
+            reverse("deactivate_account"), {"confirmation": TEST_PASSWORD}
+        )
+        self.assertRedirects(response, reverse("login"))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_deactivated)
+
+    def test_deactivate_account_view_post_no_password_wrong_word(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("deactivate_account"), {"confirmation": "wrong"}
+        )
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_deactivate_account_view_post_no_password_correct_word(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("deactivate_account"), {"confirmation": "DEACTIVATE"}
+        )
+        self.assertRedirects(response, reverse("login"))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_deactivated)
+
+    def test_toggle_theme_post(self):
+        response = self.client.post(reverse("toggle_theme"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["theme"], "dark")
+
+    def test_toggle_theme_get(self):
+        response = self.client.get(reverse("toggle_theme"))
+        self.assertEqual(response.status_code, 400)
 
     def test_delete_account_view_get(self):
         url = reverse("delete_account")
@@ -389,6 +483,7 @@ class AuthAndProfileTests(TestCase):
         self.assertNotIn(skipped_chore, response.context["pending_chores"])
 
 
+@override_settings(SOCIALACCOUNT_PROVIDERS={})
 class RegisterViewTests(TestCase):
     def setUp(self):
         # register.html uses {% provider_login_url 'google' %} — needs a fixture.
@@ -427,6 +522,7 @@ class RegisterViewTests(TestCase):
         self.assertFalse(CustomUser.objects.filter(email="bad-email").exists())
 
 
+@override_settings(SOCIALACCOUNT_PROVIDERS={})
 class AuthViewsWithoutSocialAppTests(TestCase):
     def test_login_get_without_google_social_app(self):
         response = self.client.get(reverse("login"))
@@ -436,7 +532,16 @@ class AuthViewsWithoutSocialAppTests(TestCase):
     def test_register_get_without_google_social_app(self):
         response = self.client.get(reverse("register"))
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Continue with Google")
+
+    @override_settings(
+        SOCIALACCOUNT_PROVIDERS={"google": {"APP": {"client_id": "test"}}}
+    )
+    def test_is_google_app_configured_settings(self):
+        from accounts.views import is_google_app_configured
+
+        self.assertTrue(is_google_app_configured())
 
 
 class StaticPageViewTests(TestCase):

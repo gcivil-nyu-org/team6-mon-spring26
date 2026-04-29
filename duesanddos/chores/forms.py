@@ -46,7 +46,7 @@ class ChoreForm(forms.ModelForm):
 
         if household is not None:
             self.fields["assignees"].queryset = CustomUser.objects.filter(
-                memberships__household=household
+                memberships__household=household, is_deactivated=False
             ).distinct()
 
     def clean(self):

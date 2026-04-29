@@ -87,7 +87,9 @@ def chores_list_view(request):
         .order_by("description")
     )
 
-    members = HouseholdMember.objects.filter(household=active_hh).select_related("user")
+    members = HouseholdMember.objects.filter(
+        household=active_hh, user__is_deactivated=False
+    ).select_related("user")
 
     completions = ChoreCompletion.objects.filter(
         chore__household=active_hh,
@@ -328,7 +330,7 @@ def edit_chore_view(request, chore_id):
             "chore": chore,
             "form": form,
             "members": HouseholdMember.objects.filter(
-                household=active_hh
+                household=active_hh, user__is_deactivated=False
             ).select_related("user"),
         },
     )
@@ -424,6 +426,7 @@ def complete_chore_occurrence_view(request, chore_id):
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
+        action="CHORE_COMPLETED",
         details=(
             f"Completed chore '{chore.description}' "
             f"for {occurrence_date.strftime('%-d %B').lower()}."
@@ -431,4 +434,25 @@ def complete_chore_occurrence_view(request, chore_id):
     )
 
     messages.success(request, "Chore marked complete.")
+    return redirect("chores_list")
+
+
+@login_required
+def sync_chores_to_gcal_view(request):
+    """Manually trigger a full sync of all active chores to Google Calendar."""
+    from chores.signals import sync_chore_to_gcal
+
+    active_hh = request.user.profile.active_household
+    if not active_hh:
+        messages.error(request, "Please select an active household first.")
+        return redirect("household_settings")
+
+    active_chores = Chore.objects.filter(household=active_hh, is_active=True)
+    for chore in active_chores:
+        sync_chore_to_gcal(chore.id)
+
+    messages.success(
+        request,
+        f"Triggered sync for {active_chores.count()} chores with Google Calendar.",
+    )
     return redirect("chores_list")

@@ -17,6 +17,15 @@ urlpatterns = [
     path("terms/", views.terms_view, name="terms"),
     path("privacy/", views.privacy_view, name="privacy"),
     path("delete-account/", views.delete_account_view, name="delete_account"),
+    path(
+        "deactivate-account/", views.deactivate_account_view, name="deactivate_account"
+    ),
+    path(
+        "reactivate-confirm/",
+        views.reactivate_account_confirm_view,
+        name="reactivate_account_confirm",
+    ),
+    path("toggle-theme/", views.toggle_theme, name="toggle_theme"),
     # Password Reset Routes
     path(
         "password-reset/",
