@@ -26,6 +26,29 @@ before_script:
   - pip --version
   - uname -a
 
+  # ---- DEBUG: AWS ENV PRESENCE CHECK (NEW BLOCK) ----
+  - echo "===== AWS ENV PRESENCE CHECK ====="
+  - |
+    for var in \
+      AWS_ACCESS_KEY_ID \
+      AWS_SECRET_ACCESS_KEY \
+      AWS_STORAGE_BUCKET_NAME \
+      AWS_S3_REGION_NAME \
+      S3_URI \
+      Amazon_Resource_Name \
+      AWS_DEPLOYMENT_BUCKET \
+      AWS_APP \
+      AWS_ENV_DEVELOP \
+      AWS_ENV_MAIN
+    do
+      val=$(printenv "$var")
+      if [ -z "$val" ]; then
+        echo "$var=<<MISSING>>"
+      else
+        echo "$var=<<SET>>"
+      fi
+    done
+
   # ---- DEBUG: environment variables (masked safely) ----
   - echo "===== ENV VARS (SAFE PRINT) ====="
   - printenv | sort | sed -E 's/(AWS|SECRET|PASSWORD|KEY|TOKEN)=.*/\1=***MASKED***/g'
