@@ -18,6 +18,10 @@ Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spr
 -   **Multi-Household Support**: Create or join multiple households with unique contexts.
 -   **Secure Authentication**: robust login/signup system with **Google OAuth2** integration for a seamless experience.
 -   **Household Invites**: Easily invite members using unique, time-limited 10-character invite codes.
+-   **Expenses Ledger**: Track shared bills and settle dues with automated calculations.
+-   **Chore Assignments**: Create and assign recurring household tasks with reminders.
+-   **Household Chat**: Real-time messaging within your household context.
+-   **Activity Feed**: Stay updated on all changes and contributions in your house.
 -   **Dynamic User Profiles**: Personalized profiles with high-quality avatar support (powered by Amazon S3).
 -   **Premium UI/UX**: A state-of-the-art interface featuring:
     -   **Glassmorphism** and vibrant modern color palettes.
@@ -32,13 +36,6 @@ Develop: [![Build Status](https://app.travis-ci.com/gcivil-nyu-org/team6-mon-spr
 -   **Storage**: Amazon S3 (for profile pictures)
 -   **Authentication**: django-allauth (with Google Provider)
 -   **Infrastructure**: AWS Elastic Beanstalk (Deployment ready)
-
-## 🗺️ Roadmap (Upcoming Features)
-
--   **Expenses Ledger**: Track shared bills and settle dues with automated calculations.
--   **Chore Assignments**: Create and assign recurring household tasks with reminders.
--   **Household Chat**: Real-time messaging within your household context.
--   **Activity Feed**: Stay updated on all changes and contributions in your house.
 
 ## 📈 Local Setup
 
