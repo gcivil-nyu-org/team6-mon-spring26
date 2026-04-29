@@ -20,23 +20,49 @@ install:
   - pip install coverage 'coveralls[yaml]' flake8 black
 
 before_script:
+  # ---- DEBUG: basic system info ----
+  - echo "===== SYSTEM INFO ====="
+  - python --version
+  - pip --version
+  - uname -a
+
+  # ---- DEBUG: environment variables (masked safely) ----
+  - echo "===== ENV VARS (SAFE PRINT) ====="
+  - printenv | sort | sed -E 's/(AWS|SECRET|PASSWORD|KEY|TOKEN)=.*/\1=***MASKED***/g'
+
+  # ---- DEBUG: postgres connectivity ----
+  - echo "===== POSTGRES CHECK ====="
+  - psql --version
+  - pg_isready -h 127.0.0.1 -p 5432
+
+  # ---- CREATE DB ----
   - psql -h 127.0.0.1 -U postgres -d postgres -c 'CREATE DATABASE travis_ci_test;'
+
+  # ---- DEBUG: verify DB exists ----
+  - psql -h 127.0.0.1 -U postgres -l
+
+  # ---- MOVE INTO PROJECT ----
   - cd duesanddos
 
+  # ---- DEBUG: Django env visibility ----
+  - echo "===== DJANGO ENV CHECK ====="
+  - python - <<EOF
+import os
+print("DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
+print("PGHOST =", os.getenv("PGHOST"))
+print("PGDATABASE =", os.getenv("PGDATABASE"))
+EOF
+
 script:
+  - echo "===== RUNNING FORMAT/LINT ====="
   - black --check .
   - flake8 .
-  - coverage run manage.py test
+
+  - echo "===== RUNNING TESTS ====="
+  - coverage run manage.py test -v 2
 
 after_success:
   - coveralls --verbose
-
-before_deploy:
-  - echo "APP=$AWS_APP"
-  - echo "ENV_MAIN=$AWS_ENV_MAIN"
-  - echo "ENV_DEVELOP=$AWS_ENV_DEVELOP"
-  - echo "REGION=$AWS_S3_REGION_NAME"
-  - echo "BUCKET=$AWS_DEPLOYMENT_BUCKET"
 
 deploy:
   - provider: elasticbeanstalk
