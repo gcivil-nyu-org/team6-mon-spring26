@@ -43,9 +43,7 @@ def sync_chore_to_gcal(chore_id):
             if service.service:
                 result = service.sync_chore(chore)
                 if result:
-                    logger.debug(
-                        f"GCal: synced chore {chore.id} for {user.username}"
-                    )
+                    logger.debug(f"GCal: synced chore {chore.id} for {user.username}")
             else:
                 logger.debug(f"GCal: no service for {user.username} — skipping.")
     except Chore.DoesNotExist:  # pragma: no cover
