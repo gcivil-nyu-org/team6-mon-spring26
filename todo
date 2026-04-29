@@ -3,11 +3,7 @@ is there any issue in the code ?
 
 
 
- 1. The profile images are not uploading.- also its not giving any error in the console so please chekc and fix.
 
- 2. We had the chore calendar integrated with google calendar but now it's not working.
-
-3. 
 
 
 DONE: 
@@ -19,8 +15,12 @@ DONE:
  6. Account deactivation (user can temporarily disable without data loss) — enhancement
  8. Fixed Google Login logic
  9. Added the favicon.
- 
 
+ 10. The profile images are not uploading.- also its not giving any error in the console so please chekc and fix.
+
+ 11. We had the chore calendar integrated with google calendar but now it's not working.
+ 
+12. Add Pagination in the "Expenses page"- Household Ledger, Expense History, Settlement History.
  Remainging: 
  1. improve dark mode.
- 2. Add Pagination in the "Expenses page"- Household Ledger, Expense History, Settlement History. similar with "All Chores" 
+ 

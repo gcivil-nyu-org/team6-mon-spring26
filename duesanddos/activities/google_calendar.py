@@ -91,17 +91,17 @@ class GoogleCalendarService:
                     token_obj.expires_at = refreshed_expiry
                 token_obj.save(update_fields=["token", "expires_at"])
             except Exception as e:  # pragma: no cover
-                logger.error(  # pragma: no cover
-                    f"Token refresh failed for {self.user.username}: {e}"
-                )
+                # fmt: off
+                logger.error(f"Token refresh failed for {self.user.username}: {e}")  # pragma: no cover  # noqa: E501
+                # fmt: on
                 return None  # pragma: no cover
 
         try:
             return build("calendar", "v3", credentials=creds)
         except Exception as e:  # pragma: no cover
-            logger.error(  # pragma: no cover
-                f"Failed to build GCal service for {self.user.username}: {e}"
-            )
+            # fmt: off
+            logger.error(f"Failed to build GCal service for {self.user.username}: {e}")  # pragma: no cover  # noqa: E501
+            # fmt: on
             return None  # pragma: no cover
 
     # -------------------------------------------------------------- helpers
