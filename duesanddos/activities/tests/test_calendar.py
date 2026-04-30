@@ -17,8 +17,8 @@ class CalendarApiTests(TestCase):
 
         # Setup household context
         self.household = Household.objects.create(name="Test Home")
-        self.profile = Profile.objects.create(
-            user=self.user, active_household=self.household
+        self.profile, _ = Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.household}
         )
 
     def test_calendar_api_returns_chores(self):

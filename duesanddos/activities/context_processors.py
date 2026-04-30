@@ -9,10 +9,7 @@ def activity_notifications(request):
     if not request.user.is_authenticated:
         return {}
 
-    try:
-        profile = request.user.profile
-    except Profile.DoesNotExist:
-        profile = Profile.objects.create(user=request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
 
     active_hh = profile.active_household
     if not active_hh:

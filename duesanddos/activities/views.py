@@ -174,9 +174,10 @@ def calendar_events_api(request):
 @login_required
 def sync_to_google(request, chore_id, date_str):
     """Pushes a chore occurrence to the user's Google Calendar."""
-    chore = get_object_or_404(
-        Chore, id=chore_id, household=request.user.profile.active_household
-    )
+    from accounts.models import Profile
+
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    chore = get_object_or_404(Chore, id=chore_id, household=profile.active_household)
     service = GoogleCalendarService(request.user)
 
     if not service.service:
@@ -201,7 +202,10 @@ def push_to_google_calendar(request, chore_occurrence):
 
 @login_required
 def activity_feed_view(request):
-    active_hh = request.user.profile.active_household
+    from accounts.models import Profile
+
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    active_hh = profile.active_household
     if not active_hh:
         activities = []
     else:

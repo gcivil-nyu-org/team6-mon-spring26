@@ -30,7 +30,7 @@ class ChatPermissionTests(TestCase):
         self.other_household = Household.objects.create(name="Home Two")
 
         for user in [self.user, self.housemate, self.stranger]:
-            Profile.objects.create(user=user)
+            Profile.objects.get_or_create(user=user)
 
         HouseholdMember.objects.create(user=self.user, household=self.household)
         HouseholdMember.objects.create(user=self.housemate, household=self.household)
