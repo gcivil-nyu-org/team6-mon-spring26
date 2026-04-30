@@ -229,7 +229,7 @@ def update_calendar_view_pref(request):
             # Validate against Profile choices
             valid_views = [choice[0] for choice in Profile.DEFAULT_VIEW_CHOICES]
             if new_view in valid_views:
-                profile = request.user.profile
+                profile, _ = Profile.objects.get_or_create(user=request.user)
                 profile.default_calendar_view = new_view
                 profile.save()
                 return JsonResponse({"status": "success"})

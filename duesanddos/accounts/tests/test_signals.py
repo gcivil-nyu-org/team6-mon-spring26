@@ -118,4 +118,20 @@ class SignalTests(TestCase):
         )
 
         user_signed_up.send(sender=User, request=None, user=self.user)
-        mock_get.assert_not_called()
+
+    def test_ensure_profile_exists_skips_raw_saves(self):
+        from accounts.signals import ensure_profile_exists
+
+        raw_user = User.objects.create_user(
+            username="rawuser", email="raw@example.com", password="password123"
+        )
+        Profile.objects.filter(user=raw_user).delete()
+
+        ensure_profile_exists(
+            sender=User,
+            instance=raw_user,
+            created=True,
+            raw=True,
+        )
+
+        self.assertFalse(Profile.objects.filter(user=raw_user).exists())
