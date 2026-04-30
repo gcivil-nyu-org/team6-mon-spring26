@@ -740,16 +740,42 @@ class ChoreViewTests(ChoresBaseTestCase):
             ).exists()
         )
 
-    def test_delete_series_deletes_chore(self):
+    def test_delete_series_archives_chore_and_preserves_history(self):
+        chore = self.create_chore(
+            repeat_type="DAILY",
+            has_due_date=False,
+            due_date=None,
+            start_date=date.today() - timedelta(days=2),
+        )
+
+        completion = ChoreCompletion.objects.create(
+            chore=chore,
+            occurrence_date=date.today() - timedelta(days=1),
+            completed_by=self.user,
+        )
+
+        response = self.client.post(reverse("delete_chore", args=[chore.id]))
+
+        self.assertRedirects(response, reverse("chores_list"))
+
+        chore.refresh_from_db()
+        self.assertFalse(chore.is_active)
+        self.assertTrue(
+            ChoreCompletion.objects.filter(id=completion.id).exists()
+        )
+        self.assertGreaterEqual(
+            ActivityLog.objects.filter(action="CHORE_DELETED").count(), 1
+        )
+
+    def test_delete_one_time_chore_archives_instead_of_deleting(self):
         chore = self.create_chore()
 
         response = self.client.post(reverse("delete_chore", args=[chore.id]))
 
         self.assertRedirects(response, reverse("chores_list"))
-        self.assertFalse(Chore.objects.filter(id=chore.id).exists())
-        self.assertGreaterEqual(
-            ActivityLog.objects.filter(action="CHORE_DELETED").count(), 1
-        )
+
+        chore.refresh_from_db()
+        self.assertFalse(chore.is_active)
 
     def test_complete_chore_get_redirects(self):
         chore = self.create_chore()

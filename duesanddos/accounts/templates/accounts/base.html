@@ -505,68 +505,104 @@
     {% endif %}
 
     <script>
+        const SIDEBAR_PIN_STORAGE_KEY = 'duesanddos_sidebar_pinned';
+
         document.addEventListener('DOMContentLoaded', function() {
             const messages = document.querySelectorAll('.django-message');
             messages.forEach(el => {
                 showNotificationToast(el.dataset.tags, el.dataset.content);
             });
+
+            updateSidebarState();
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        const sidebar = document.getElementById('app-sidebar');
+                        const pinIcon = document.getElementById('pinIcon');
+
+                        sidebar.classList.remove('pinned');
+                        localStorage.removeItem(SIDEBAR_PIN_STORAGE_KEY);
+
+                        if (pinIcon) {
+                            pinIcon.setAttribute('fill', 'none');
+                            pinIcon.style.transform = 'rotate(0deg) scale(1)';
+                        }
+                    }
+                });
+            });
         });
+
         function toggleLogout() {
             var box = document.getElementById('logoutBox');
             box.style.display = (box.style.display === 'block') ? 'none' : 'block';
         }
-        updateSidebarState();
+
         function toggleNotifications(event) {
             event.stopPropagation();
             const dropdown = document.getElementById('notificationDropdown');
             dropdown.classList.toggle('is-hidden');
         }
-        function toggleSidebarPin() {
+
+        function applySidebarPinnedState(isPinned) {
             const sidebar = document.getElementById('app-sidebar');
             const pinIcon = document.getElementById('pinIcon');
-            
-            sidebar.classList.toggle('pinned');
-            
-            if (sidebar.classList.contains('pinned')) {
-                pinIcon.setAttribute('fill', 'currentColor');
-                pinIcon.style.transform = 'rotate(8deg) scale(1.1)'; 
+
+            if (!sidebar) return;
+
+            if (isPinned) {
+                sidebar.classList.add('pinned');
+                if (pinIcon) {
+                    pinIcon.setAttribute('fill', 'currentColor');
+                    pinIcon.style.transform = 'rotate(8deg) scale(1.1)';
+                }
             } else {
-                pinIcon.setAttribute('fill', 'none');
-                pinIcon.style.transform = 'rotate(0deg) scale(1)';
+                sidebar.classList.remove('pinned');
+                if (pinIcon) {
+                    pinIcon.setAttribute('fill', 'none');
+                    pinIcon.style.transform = 'rotate(0deg) scale(1)';
+                }
             }
         }
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth < 1024) {
-                    document.getElementById('app-sidebar').classList.remove('pinned');
-                }
-            });
-        });
-        function updateSidebarState() {
-            console.log("Sidebar initialized");
+
+        function toggleSidebarPin() {
+            const sidebar = document.getElementById('app-sidebar');
+            if (!sidebar) return;
+
+            const willBePinned = !sidebar.classList.contains('pinned');
+            applySidebarPinnedState(willBePinned);
+
+            if (willBePinned) {
+                localStorage.setItem(SIDEBAR_PIN_STORAGE_KEY, 'true');
+            } else {
+                localStorage.removeItem(SIDEBAR_PIN_STORAGE_KEY);
+            }
+
+            window.dispatchEvent(new Event('resize'));
         }
+
+        function updateSidebarState() {
+            const isPinned = localStorage.getItem(SIDEBAR_PIN_STORAGE_KEY) === 'true';
+            applySidebarPinnedState(isPinned);
+        }
+
         document.addEventListener('click', function(event) {
             const logoutBox = document.getElementById('logoutBox');
             const userPill = document.querySelector('.user-pill');
             const notifBox = document.getElementById('notificationDropdown');
             const notifBtn = document.getElementById('notificationBtn');
+
             if (logoutBox && logoutBox.style.display === 'block') {
                 if (!logoutBox.contains(event.target) && !userPill.contains(event.target)) {
                     logoutBox.style.display = 'none';
                 }
             }
+
             if (notifBox && !notifBox.classList.contains('is-hidden')) {
                 if (!notifBtn.contains(event.target) && !notifBox.contains(event.target)) {
                     notifBox.classList.add('is-hidden');
                 }
             }
-        });
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth < 1024) {
-                    document.getElementById('app-sidebar').classList.remove('pinned');
-                }
-            });
         });
 
         async function toggleTheme() {
