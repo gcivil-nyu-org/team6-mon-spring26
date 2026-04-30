@@ -760,9 +760,7 @@ class ChoreViewTests(ChoresBaseTestCase):
 
         chore.refresh_from_db()
         self.assertFalse(chore.is_active)
-        self.assertTrue(
-            ChoreCompletion.objects.filter(id=completion.id).exists()
-        )
+        self.assertTrue(ChoreCompletion.objects.filter(id=completion.id).exists())
         self.assertGreaterEqual(
             ActivityLog.objects.filter(action="CHORE_DELETED").count(), 1
         )
