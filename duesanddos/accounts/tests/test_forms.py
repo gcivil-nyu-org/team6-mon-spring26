@@ -74,7 +74,7 @@ class ProfileUpdateFormTests(TestCase):
             email="test@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
 
     def test_meta_model_is_profile(self):
         self.assertEqual(ProfileUpdateForm.Meta.model, Profile)

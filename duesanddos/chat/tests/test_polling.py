@@ -32,10 +32,14 @@ class ChatPollingTests(TestCase):
         self.household = Household.objects.create(name="Polling House")
         self.other_household = Household.objects.create(name="Other House")
 
-        Profile.objects.create(user=self.user, active_household=self.household)
-        Profile.objects.create(user=self.other, active_household=self.household)
-        Profile.objects.create(
-            user=self.outsider, active_household=self.other_household
+        Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.household}
+        )
+        Profile.objects.update_or_create(
+            user=self.other, defaults={"active_household": self.household}
+        )
+        Profile.objects.update_or_create(
+            user=self.outsider, defaults={"active_household": self.other_household}
         )
 
         HouseholdMember.objects.create(user=self.user, household=self.household)

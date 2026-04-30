@@ -32,11 +32,11 @@ class ChoresBaseTestCase(TestCase):
             password=TEST_PASSWORD,
         )
         self.household = Household.objects.create(name="Chore House")
-        self.profile = Profile.objects.create(
-            user=self.user, active_household=self.household
+        self.profile, _ = Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.household}
         )
-        self.other_profile = Profile.objects.create(
-            user=self.other_user, active_household=self.household
+        self.other_profile, _ = Profile.objects.update_or_create(
+            user=self.other_user, defaults={"active_household": self.household}
         )
 
         HouseholdMember.objects.create(

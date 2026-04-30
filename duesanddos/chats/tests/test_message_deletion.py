@@ -37,10 +37,14 @@ class ChatMessageDeletionTests(TestCase):
         self.household = Household.objects.create(name="Deletion House")
         self.other_household = Household.objects.create(name="Other House")
 
-        Profile.objects.create(user=self.author, active_household=self.household)
-        Profile.objects.create(user=self.peer, active_household=self.household)
-        Profile.objects.create(
-            user=self.outsider, active_household=self.other_household
+        Profile.objects.update_or_create(
+            user=self.author, defaults={"active_household": self.household}
+        )
+        Profile.objects.update_or_create(
+            user=self.peer, defaults={"active_household": self.household}
+        )
+        Profile.objects.update_or_create(
+            user=self.outsider, defaults={"active_household": self.other_household}
         )
 
         HouseholdMember.objects.create(user=self.author, household=self.household)
@@ -288,7 +292,9 @@ class ChatMessageDeletionTests(TestCase):
             email="nohouse@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=no_house_user, active_household=None)
+        Profile.objects.update_or_create(
+            user=no_house_user, defaults={"active_household": None}
+        )
         self.login(no_house_user)
 
         response = self.client.post(

@@ -190,6 +190,12 @@ class ActivitiesViewsTests(TestCase):
         result = push_to_google_calendar(request, {"chore": chore})
         self.assertIsNone(result)
 
+        # Test push when sync fails
+        mock_service.service = True
+        mock_service.sync_chore.return_value = None
+        result = push_to_google_calendar(request, {"chore": chore})
+        self.assertIsNone(result)
+
     def test_activity_feed_view(self):
         response = self.client.get(reverse("activity_feed"))
         self.assertEqual(response.status_code, 200)

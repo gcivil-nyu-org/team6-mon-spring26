@@ -38,3 +38,12 @@ class CalendarViewPrefTests(TestCase):
     def test_update_view_pref_get_fails(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 400)
+
+    def test_update_view_pref_bad_json_returns_error(self):
+        response = self.client.post(
+            self.url,
+            data="{not-json",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["status"], "error")

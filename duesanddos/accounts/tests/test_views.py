@@ -45,7 +45,7 @@ class AuthAndProfileTests(TestCase):
             email="test@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
         self.client.login(username="testuser", password=TEST_PASSWORD)
         _make_google_social_app()
 
@@ -584,7 +584,9 @@ class AuthViewsWithoutSocialAppTests(TestCase):
         self.assertNotContains(response, "Continue with Google")
 
     @override_settings(
-        SOCIALACCOUNT_PROVIDERS={"google": {"APP": {"client_id": "test"}}}
+        SOCIALACCOUNT_PROVIDERS={
+            "google": {"APP": {"client_id": "test", "secret": "test"}}
+        }
     )
     def test_is_google_app_configured_settings(self):
         from accounts.views import is_google_app_configured

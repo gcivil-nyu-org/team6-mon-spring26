@@ -1,12 +1,31 @@
 import logging
 import requests
+from django.contrib.auth import get_user_model
+from django.contrib.auth.signals import user_logged_in
 from django.core.files.base import ContentFile
 from django.dispatch import receiver
+from django.db.models.signals import post_save
 from allauth.account.signals import user_signed_up
 from .models import Profile
 from allauth.socialaccount.models import SocialAccount
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
+
+
+@receiver(post_save, sender=User)
+def ensure_profile_exists(sender, instance, created, raw, **kwargs):
+    if raw:
+        return
+    if not created:
+        return
+    Profile.objects.get_or_create(user=instance)
+
+
+@receiver(user_logged_in)
+def ensure_profile_on_login(sender, user, request, **kwargs):
+    Profile.objects.get_or_create(user=user)
 
 
 @receiver(user_signed_up)

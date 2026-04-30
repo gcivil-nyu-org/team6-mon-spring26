@@ -36,7 +36,7 @@ class ChatModelTests(TestCase):
         self.other_household = Household.objects.create(name="Beta Home")
 
         for user in [self.owner, self.member, self.outsider]:
-            Profile.objects.create(user=user)
+            Profile.objects.get_or_create(user=user)
 
         HouseholdMember.objects.create(
             user=self.owner, household=self.household, role="Admin"

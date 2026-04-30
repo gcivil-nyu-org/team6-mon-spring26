@@ -24,10 +24,14 @@ from .forms import (
 
 
 def is_google_app_configured():
-    google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+    google_config = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get("google", {})
 
     # If using settings.py-based allauth config
-    if "APP" in google_config and google_config["APP"].get("client_id"):
+    if (
+        "APP" in google_config
+        and google_config["APP"].get("client_id")
+        and google_config["APP"].get("secret")
+    ):
         return True
 
     # If using database-based SocialApp config
@@ -36,7 +40,14 @@ def is_google_app_configured():
     except Exception:
         return False
 
-    return SocialApp.objects.filter(provider="google", sites=site).exists()
+    return (
+        SocialApp.objects.filter(
+            provider="google", sites=site, client_id__isnull=False, secret__isnull=False
+        )
+        .exclude(client_id="")
+        .exclude(secret="")
+        .exists()
+    )
 
 
 class CustomLoginView(LoginView):
