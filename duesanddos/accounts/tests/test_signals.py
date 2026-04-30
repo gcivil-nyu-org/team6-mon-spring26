@@ -1,13 +1,31 @@
+import tempfile
+import shutil
 from unittest.mock import patch, MagicMock
-from django.test import TestCase
+
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from allauth.socialaccount.models import SocialAccount
 from allauth.account.signals import user_signed_up
+
 from accounts.models import Profile
 
 User = get_user_model()
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
+
+@override_settings(
+    MEDIA_ROOT=TEMP_MEDIA_ROOT,
+    DEFAULT_FILE_STORAGE="django.core.files.storage.FileSystemStorage",
+    STORAGES={
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    },
+)
 class SignalTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -15,29 +33,31 @@ class SignalTests(TestCase):
         )
         self.profile, _ = Profile.objects.get_or_create(user=self.user)
 
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
+
     @patch("accounts.signals.requests.get")
     def test_fetch_gmail_photo_success(self, mock_get):
-        # Setup mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.content = b"fake image content"
         mock_get.return_value = mock_response
 
-        # Setup social account
         SocialAccount.objects.create(
             user=self.user,
             provider="google",
             extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
-        # Triger the signal
         user_signed_up.send(sender=User, request=None, user=self.user)
 
-        # Check if avatar was saved
-        # Note: We need to refresh from DB
         self.profile.refresh_from_db()
         self.assertTrue(bool(self.profile.avatar))
-        self.assertEqual(self.profile.avatar.read(), b"fake image content")
+
+        with self.profile.avatar.open("rb") as avatar_file:
+            self.assertEqual(avatar_file.read(), b"fake image content")
 
     @patch("accounts.signals.requests.get")
     def test_fetch_gmail_photo_no_social_account(self, mock_get):
@@ -52,7 +72,6 @@ class SignalTests(TestCase):
 
     @patch("accounts.signals.requests.get")
     def test_fetch_gmail_photo_failure(self, mock_get):
-        # Setup mock response for failure
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_get.return_value = mock_response
@@ -63,7 +82,6 @@ class SignalTests(TestCase):
             extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
-        # Should not crash
         user_signed_up.send(sender=User, request=None, user=self.user)
 
         self.profile.refresh_from_db()
@@ -80,7 +98,6 @@ class SignalTests(TestCase):
             extra_data={"picture": "http://example.com/photo.jpg"},
         )
 
-        # Should not crash
         user_signed_up.send(sender=User, request=None, user=self.user)
         self.assertFalse(bool(self.profile.avatar))
         mock_print.assert_not_called()
@@ -101,4 +118,20 @@ class SignalTests(TestCase):
         )
 
         user_signed_up.send(sender=User, request=None, user=self.user)
-        mock_get.assert_not_called()
+
+    def test_ensure_profile_exists_skips_raw_saves(self):
+        from accounts.signals import ensure_profile_exists
+
+        raw_user = User.objects.create_user(
+            username="rawuser", email="raw@example.com", password="password123"
+        )
+        Profile.objects.filter(user=raw_user).delete()
+
+        ensure_profile_exists(
+            sender=User,
+            instance=raw_user,
+            created=True,
+            raw=True,
+        )
+
+        self.assertFalse(Profile.objects.filter(user=raw_user).exists())

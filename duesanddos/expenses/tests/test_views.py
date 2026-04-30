@@ -26,9 +26,11 @@ class ExpenseViewTests(TestCase):
         HouseholdMember.objects.create(
             user=self.user2, household=self.hh, role="Member"
         )
-        self.profile = Profile.objects.create(user=self.user, active_household=self.hh)
-        self.profile2 = Profile.objects.create(
-            user=self.user2, active_household=self.hh
+        self.profile, _ = Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.hh}
+        )
+        self.profile2, _ = Profile.objects.update_or_create(
+            user=self.user2, defaults={"active_household": self.hh}
         )
         self.client.login(username="exuser", password=TEST_PASSWORD)
 
@@ -420,7 +422,9 @@ class ExpenseViewTests(TestCase):
             username="u3", email="u3@ex.com", password=TEST_PASSWORD
         )
         HouseholdMember.objects.create(user=user3, household=self.hh)
-        Profile.objects.create(user=user3, active_household=self.hh)
+        Profile.objects.update_or_create(
+            user=user3, defaults={"active_household": self.hh}
+        )
         expense = Expense.objects.create(
             title="D", amount=10, payer=self.user, household=self.hh
         )
@@ -790,7 +794,7 @@ class ExpenseViewTests(TestCase):
         user3 = CustomUser.objects.create_user(
             username="u3", email="u3@x.com", password=TEST_PASSWORD
         )
-        Profile.objects.create(user=user3)
+        Profile.objects.get_or_create(user=user3)
         settlement2 = Settlement.objects.create(
             payer=self.user,
             receiver=self.user2,

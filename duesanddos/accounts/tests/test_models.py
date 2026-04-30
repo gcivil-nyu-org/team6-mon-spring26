@@ -24,7 +24,7 @@ class ProfileModelTests(TestCase):
             email="test@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
 
     def test_str_returns_formatted_string(self):
         self.assertEqual(str(self.profile), "testuser's profile")
@@ -62,7 +62,7 @@ class UploadToPathTests(TestCase):
             email="upload@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
 
     def test_upload_path_has_correct_category(self):
         uploader = UploadToPath("test_cat")

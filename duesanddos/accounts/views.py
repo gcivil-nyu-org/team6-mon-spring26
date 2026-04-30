@@ -2,6 +2,7 @@ from datetime import datetime
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, update_session_auth_hash, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,16 +24,30 @@ from .forms import (
 
 
 def is_google_app_configured():
-    from django.conf import settings
+    google_config = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get("google", {})
 
-    # Check if configured in settings.py (allauth 0.47+)
-    google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
-    if "APP" in google_config and google_config["APP"].get("client_id"):
+    # If using settings.py-based allauth config
+    if (
+        "APP" in google_config
+        and google_config["APP"].get("client_id")
+        and google_config["APP"].get("secret")
+    ):
         return True
 
-    # Fallback: check database (SocialApp model)
-    site = Site.objects.get_current()
-    return SocialApp.objects.filter(provider="google", sites=site).exists()
+    # If using database-based SocialApp config
+    try:
+        site = Site.objects.get_current()
+    except Exception:
+        return False
+
+    return (
+        SocialApp.objects.filter(
+            provider="google", sites=site, client_id__isnull=False, secret__isnull=False
+        )
+        .exclude(client_id="")
+        .exclude(secret="")
+        .exists()
+    )
 
 
 class CustomLoginView(LoginView):

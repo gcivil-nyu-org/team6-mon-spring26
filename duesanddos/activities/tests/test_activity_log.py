@@ -17,8 +17,8 @@ class ActivityLogViewTests(TestCase):
             username="activitytester", email="act@example.com", password=TEST_PASSWORD
         )
         self.household = Household.objects.create(name="Activity House")
-        self.profile = Profile.objects.create(
-            user=self.user, active_household=self.household
+        self.profile, _ = Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.household}
         )
         HouseholdMember.objects.create(
             user=self.user, household=self.household, role="Admin"

@@ -7,6 +7,7 @@ from django.utils import timezone
 from chores.models import Chore
 from expenses.models import Expense
 from households.models import HouseholdMember
+from accounts.models import Profile
 
 from .models import (
     Conversation,
@@ -21,7 +22,7 @@ DELETED_MESSAGE_LABEL = "Message deleted"
 
 
 def get_active_household_for_user(user):
-    profile = user.profile
+    profile, _ = Profile.objects.get_or_create(user=user)
     household = profile.active_household
     if household is None:
         return None

@@ -14,7 +14,7 @@ class HouseholdSettingsViewTests(TestCase):
             email="hh@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
         self.household = Household.objects.create(name="Test House")
         self.member = HouseholdMember.objects.create(
             user=self.user, household=self.household, role="Admin"
@@ -117,7 +117,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="member@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=member_user, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=member_user, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=member_user, household=self.household, role="Member"
         )
@@ -148,7 +150,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="member2@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=member_user, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=member_user, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=member_user, household=self.household, role="Member"
         )
@@ -180,7 +184,7 @@ class HouseholdSettingsViewTests(TestCase):
             email="joiner@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=new_user)
+        Profile.objects.get_or_create(user=new_user)
         self.client.logout()
         self.client.login(username="joiner", password=TEST_PASSWORD)
         self.client.post(
@@ -292,7 +296,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="leaver@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=leaver, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=leaver, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=leaver, household=self.household, role="Member"
         )
@@ -358,7 +364,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="nodelete@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=member_user, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=member_user, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=member_user, household=self.household, role="Member"
         )
@@ -386,7 +394,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="nonadmin@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=member_user, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=member_user, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=member_user, household=self.household, role="Member"
         )
@@ -434,7 +444,9 @@ class HouseholdSettingsViewTests(TestCase):
             email="leaver2@example.com",
             password=TEST_PASSWORD,
         )
-        Profile.objects.create(user=leaver, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=leaver, defaults={"active_household": self.household}
+        )
         HouseholdMember.objects.create(
             user=leaver, household=self.household, role="Member"
         )

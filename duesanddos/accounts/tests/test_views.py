@@ -1,5 +1,6 @@
 import tempfile
 import shutil
+from unittest.mock import patch
 from django.contrib.sites.models import Site
 from django.contrib.messages import get_messages
 from django.test import TestCase, override_settings
@@ -44,7 +45,7 @@ class AuthAndProfileTests(TestCase):
             email="test@example.com",
             password=TEST_PASSWORD,
         )
-        self.profile = Profile.objects.create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(user=self.user)
         self.client.login(username="testuser", password=TEST_PASSWORD)
         _make_google_social_app()
 
@@ -482,6 +483,54 @@ class AuthAndProfileTests(TestCase):
         self.assertNotIn(completed_chore, response.context["pending_chores"])
         self.assertNotIn(skipped_chore, response.context["pending_chores"])
 
+    def test_profile_view_post_save_profile_preserves_preferences_when_omitted(self):
+        self.profile.theme = "dark"
+        self.profile.default_calendar_view = "timeGridWeek"
+        self.profile.save()
+
+        url = reverse("profile")
+        data = {
+            "save_profile": "1",
+            "first_name": "NewFirst",
+            "last_name": "NewLast",
+            "email": self.user.email,
+            "username": self.user.username,
+            "bio": "Updated without preferences",
+            # Intentionally omit theme and default_calendar_view
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertRedirects(response, url)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.bio, "Updated without preferences")
+        self.assertEqual(self.profile.theme, "dark")
+        self.assertEqual(self.profile.default_calendar_view, "timeGridWeek")
+
+    def test_profile_view_sets_google_needs_relink_when_refresh_token_missing(self):
+        from allauth.socialaccount.models import SocialToken
+
+        app = SocialApp.objects.filter(provider="google").first()
+
+        google_account = SocialAccount.objects.create(
+            user=self.user,
+            provider="google",
+            uid="uid-needs-relink",
+        )
+
+        SocialToken.objects.create(
+            account=google_account,
+            app=app,
+            token="access-token",
+            token_secret="",
+        )
+
+        response = self.client.get(reverse("profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["google_needs_relink"])
+
 
 @override_settings(SOCIALACCOUNT_PROVIDERS={})
 class RegisterViewTests(TestCase):
@@ -532,16 +581,27 @@ class AuthViewsWithoutSocialAppTests(TestCase):
     def test_register_get_without_google_social_app(self):
         response = self.client.get(reverse("register"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Continue with Google")
 
     @override_settings(
-        SOCIALACCOUNT_PROVIDERS={"google": {"APP": {"client_id": "test"}}}
+        SOCIALACCOUNT_PROVIDERS={
+            "google": {"APP": {"client_id": "test", "secret": "test"}}
+        }
     )
     def test_is_google_app_configured_settings(self):
         from accounts.views import is_google_app_configured
 
         self.assertTrue(is_google_app_configured())
+
+    @patch("accounts.views.Site.objects.get_current")
+    def test_is_google_app_configured_returns_false_when_site_lookup_fails(
+        self, mock_get_current
+    ):
+        from accounts.views import is_google_app_configured
+
+        mock_get_current.side_effect = Exception("Site lookup failed")
+
+        self.assertFalse(is_google_app_configured())
 
 
 class StaticPageViewTests(TestCase):

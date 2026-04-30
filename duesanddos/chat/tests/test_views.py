@@ -27,11 +27,12 @@ class ChatViewTests(TestCase):
         self.household = Household.objects.create(name="Main Home")
         HouseholdMember.objects.create(user=self.user, household=self.household)
         HouseholdMember.objects.create(user=self.other, household=self.household)
-        self.profile = Profile.objects.create(
-            user=self.user,
-            active_household=self.household,
+        self.profile, _ = Profile.objects.update_or_create(
+            user=self.user, defaults={"active_household": self.household}
         )
-        Profile.objects.create(user=self.other, active_household=self.household)
+        Profile.objects.update_or_create(
+            user=self.other, defaults={"active_household": self.household}
+        )
         self.client.login(username="viewer", password=TEST_PASSWORD)
 
     def test_unauthenticated_users_redirected_to_login(self):

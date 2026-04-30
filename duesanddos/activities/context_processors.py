@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from .models import ActivityLog
 from chores.models import Chore, ChoreCompletion
+from accounts.models import Profile
 
 
 def activity_notifications(request):
@@ -8,7 +9,9 @@ def activity_notifications(request):
     if not request.user.is_authenticated:
         return {}
 
-    active_hh = request.user.profile.active_household
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    active_hh = profile.active_household
     if not active_hh:
         return {}
 
