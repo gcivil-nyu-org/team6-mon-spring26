@@ -26,7 +26,7 @@ before_script:
 script:
   - black --check .
   - flake8 .
-  - coverage run manage.py test
+  - coverage run manage.py test -v 2
 
 after_success:
   - coveralls --verbose
