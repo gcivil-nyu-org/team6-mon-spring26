@@ -138,21 +138,29 @@ def calendar_events_api(request):
                     status = "Completed"
                     display_title = chore.description
                     if comp:
-                        display_title = f"{chore.description} (Done by {comp.completed_by.username})"
-                    events.append({
-                        "id": f"{chore.id}-{occ_date}",
-                        "title": display_title,
-                        "start": occ_date.isoformat(),
-                        "allDay": True,
-                        "backgroundColor": color,
-                        "borderColor": color,
-                        "extendedProps": {
-                            "chore_id": chore.id,
-                            "assignees": ", ".join([u.username for u in chore.assignees.all()]),
-                            "completed_by": comp.completed_by.username if comp else None,
-                            "status": status,
+                        done_by = comp.completed_by.username
+                        display_title = f"{chore.description} (Done by {done_by})"
+                    events.append(
+                        {
+                            "id": f"{chore.id}-{occ_date}",
+                            "title": display_title,
+                            "start": occ_date.isoformat(),
+                            "allDay": True,
+                            "color": color,  # Added back for test compatibility
+                            "backgroundColor": color,
+                            "borderColor": color,
+                            "extendedProps": {
+                                "chore_id": chore.id,
+                                "assignees": ", ".join(
+                                    [u.username for u in chore.assignees.all()]
+                                ),
+                                "completed_by": (
+                                    comp.completed_by.username if comp else None
+                                ),
+                                "status": status,
+                            },
                         }
-                    })
+                    )
             continue  # Skip further processing for inactive chores
 
         if not chore.is_active:
@@ -175,7 +183,8 @@ def calendar_events_api(request):
 
             if comp:
                 status = "Completed"
-                display_title = f"{chore.description} (Done by {comp.completed_by.username})"
+                done_by = comp.completed_by.username
+                display_title = f"{chore.description} (Done by {done_by})"
                 if comp.completed_at > due_datetime:
                     color = "#f59e0b"  # Yellow
                 else:
@@ -185,21 +194,25 @@ def calendar_events_api(request):
                 color = "#ef4444"  # Red
                 display_title = f"{chore.description} (Overdue)"
 
-            events.append({
-                "id": f"{chore.id}-{occ_date}",
-                "title": display_title,
-                "start": occ_date.isoformat(),
-                "allDay": True,
-                "color": color,  # Added back for test compatibility
-                "backgroundColor": color,
-                "borderColor": color,
-                "extendedProps": {
-                    "chore_id": chore.id,
-                    "assignees": ", ".join([u.username for u in chore.assignees.all()]),
-                    "completed_by": comp.completed_by.username if comp else None,
-                    "status": status,
+            events.append(
+                {
+                    "id": f"{chore.id}-{occ_date}",
+                    "title": display_title,
+                    "start": occ_date.isoformat(),
+                    "allDay": True,
+                    "color": color,  # Added back for test compatibility
+                    "backgroundColor": color,
+                    "borderColor": color,
+                    "extendedProps": {
+                        "chore_id": chore.id,
+                        "assignees": ", ".join(
+                            [u.username for u in chore.assignees.all()]
+                        ),
+                        "completed_by": (comp.completed_by.username if comp else None),
+                        "status": status,
+                    },
                 }
-            })
+            )
     return JsonResponse(events, safe=False)
 
 
