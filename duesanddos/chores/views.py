@@ -71,15 +71,28 @@ def chores_list_view(request):
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
 
-    time_filter = request.GET.get("time_filter", "all")
+    time_filter = request.GET.get("time_filter", "")
     member_filter = request.GET.get("member", "").strip()
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
 
-    if time_filter == "week":
+    if start_date_str and end_date_str:
+        try:
+            range_start = date.fromisoformat(start_date_str)
+            range_end = date.fromisoformat(end_date_str)
+            time_filter = "custom"
+        except ValueError:
+            range_start = today - timedelta(days=30)
+            range_end = today + timedelta(days=90)
+            time_filter = "all"
+    elif time_filter == "week":
         range_start, range_end = start_of_week, end_of_week
-    elif time_filter == "all":
-        range_start, range_end = today - timedelta(days=30), today + timedelta(days=90)
-    else:
+    elif time_filter == "today":
         range_start = range_end = today
+    else:
+        range_start = today - timedelta(days=30)
+        range_end = today + timedelta(days=90)
+        time_filter = "all"
 
     chores = (
         Chore.objects.filter(household=active_hh, is_active=True)
@@ -180,6 +193,8 @@ def chores_list_view(request):
             "today": today,
             "active_household": active_hh,
             "latest_completions": latest_completion_by_chore,
+            "start_date": range_start,
+            "end_date": range_end,
         },
     )
 
