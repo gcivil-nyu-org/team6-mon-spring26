@@ -54,6 +54,14 @@ class ActivitiesViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
 
+    def test_calendar_events_api_invalid_member_id(self):
+        """Test that invalid member_id is handled gracefully."""
+        response = self.client.get(
+            reverse("calendar_events_api"), {"user_id": "not-an-id"}
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should fall back to None and return all results
+
     @patch("django.utils.timezone.now")
     def test_calendar_events_api_with_chore_states(self, mock_tz_now):
         fixed_now = timezone.make_aware(datetime.datetime(2026, 4, 10, 12, 0, 0))
