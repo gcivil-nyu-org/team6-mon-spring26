@@ -278,6 +278,9 @@ def update_calendar_view_pref(request):
                 profile.default_calendar_view = new_view
                 profile.save()
                 return JsonResponse({"status": "success"})
+            return JsonResponse(
+                {"status": "error", "message": "Invalid view"}, status=400
+            )
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
     return JsonResponse({"status": "error", "message": "POST required"}, status=400)
