@@ -380,16 +380,34 @@ def delete_chore_view(request, chore_id):
         return redirect("chores_list")
 
     description = chore.description
-    chore.delete()
+
+    if chore.repeat_type in ["DAILY", "WEEKLY"]:
+        chore.is_active = False
+        if not chore.end_date or chore.end_date > date.today():
+            chore.end_date = date.today()
+        chore.save(update_fields=["is_active", "end_date", "updated_at"])
+
+        ActivityLog.objects.create(
+            user=request.user,
+            household=active_hh,
+            action="CHORE_DELETED",
+            details=f"Archived recurring chore '{description}'.",
+        )
+
+        messages.success(request, "Recurring chore archived successfully.")
+        return redirect("chores_list")
+
+    chore.is_active = False
+    chore.save(update_fields=["is_active", "updated_at"])
 
     ActivityLog.objects.create(
         user=request.user,
         household=active_hh,
         action="CHORE_DELETED",
-        details=f"Deleted chore '{description}'.",
+        details=f"Archived chore '{description}'.",
     )
 
-    messages.success(request, "Chore deleted successfully.")
+    messages.success(request, "Chore archived successfully.")
     return redirect("chores_list")
 
 
