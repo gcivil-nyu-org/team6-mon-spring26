@@ -88,13 +88,26 @@ def calendar_events_api(request):
     if not active_hh:
         return JsonResponse([], safe=False)
 
-    # Use a broad range for the calendar view
-    start_date = date.today() - timedelta(days=60)
-    end_date = date.today() + timedelta(days=90)
+    # Use FullCalendar's range if provided, else fallback to a wide window
+    start_str = request.GET.get("start")
+    end_str = request.GET.get("end")
 
-    chores = Chore.objects.filter(household=active_hh, is_active=True).prefetch_related(
-        "assignees"
-    )
+    try:
+        if start_str:
+            start_date = datetime.fromisoformat(start_str.split("T")[0]).date()
+        else:
+            start_date = date.today() - timedelta(days=365)
+
+        if end_str:
+            end_date = datetime.fromisoformat(end_str.split("T")[0]).date()
+        else:
+            end_date = date.today() + timedelta(days=365)
+    except (ValueError, IndexError):
+        start_date = date.today() - timedelta(days=365)
+        end_date = date.today() + timedelta(days=365)
+
+    # Include both active chores AND completed one-time chores (is_active=False)
+    chores = Chore.objects.filter(household=active_hh).prefetch_related("assignees")
 
     # Fetch completions to map them to occurrences
     completions = ChoreCompletion.objects.filter(
@@ -103,71 +116,90 @@ def calendar_events_api(request):
 
     completion_map = {(c.chore_id, c.occurrence_date): c for c in completions}
 
-    # Default to the logged-in user; allow filtering by any household member
-    member_id = request.GET.get("user_id") or str(request.user.id)
+    # member_id: None means All, "" (from select) means All
+    member_id = request.GET.get("user_id")
 
     events = []
     for chore in chores:
-        if not chore.assignees.filter(id=member_id).exists():
-            continue
+        # Filter by member if specified
+        if member_id and member_id != "":
+            if not chore.assignees.filter(id=member_id).exists():
+                continue
 
-        # Get occurrences using teammate's logic
+        # For completed one-time chores, the chore is inactive but we still want
+        # to show it on its due_date (with "Completed" status from completions)
+        if not chore.is_active and chore.repeat_type == "ONE_TIME":
+            # Show on the due_date if it has one and it falls in range
+            if chore.has_due_date and chore.due_date:
+                if start_date <= chore.due_date <= end_date:
+                    occ_date = chore.due_date
+                    comp = completion_map.get((chore.id, occ_date))
+                    color = "#10b981"  # Green (completed)
+                    status = "Completed"
+                    display_title = chore.description
+                    if comp:
+                        display_title = f"{chore.description} (Done by {comp.completed_by.username})"
+                    events.append({
+                        "id": f"{chore.id}-{occ_date}",
+                        "title": display_title,
+                        "start": occ_date.isoformat(),
+                        "allDay": True,
+                        "backgroundColor": color,
+                        "borderColor": color,
+                        "extendedProps": {
+                            "chore_id": chore.id,
+                            "assignees": ", ".join([u.username for u in chore.assignees.all()]),
+                            "completed_by": comp.completed_by.username if comp else None,
+                            "status": status,
+                        }
+                    })
+            continue  # Skip further processing for inactive chores
+
+        if not chore.is_active:
+            continue  # Skip inactive recurring chores
+
+        # Get occurrences for active chores
         occurrences = get_occurrences_for_range(chore, start_date, end_date)
 
         for occ in occurrences:
             occ_date = occ["date"]
             comp = completion_map.get((chore.id, occ_date))
 
-            # Default Status: Upcoming or Today
+            # Default Status
             color = "#3b82f6"  # Blue
+            status = "Pending"
             display_title = chore.description
 
-            # Combine occurrence date and due time into a datetime object for comparison
-            # If no due time, assume 23:59:59 of that day
             target_time = chore.due_time or datetime.max.time()
             due_datetime = timezone.make_aware(datetime.combine(occ_date, target_time))
 
             if comp:
-                done_by = comp.completed_by.username
-                # Show done by in title or tooltip
-                display_title = f"{chore.description} (Done by {done_by})"
-
+                status = "Completed"
+                display_title = f"{chore.description} (Done by {comp.completed_by.username})"
                 if comp.completed_at > due_datetime:
-                    # Completed LATE
                     color = "#f59e0b"  # Yellow
                 else:
-                    # Completed ON TIME
                     color = "#10b981"  # Green
             elif timezone.now() > due_datetime:
-                # OVERDUE (Past due date/time and not completed)
+                status = "Overdue"
                 color = "#ef4444"  # Red
                 display_title = f"{chore.description} (Overdue)"
 
-            events.append(
-                {
-                    "id": f"{chore.id}-{occ_date}",
-                    "title": display_title,
-                    "start": occ_date.isoformat(),
-                    "allDay": True,
-                    "color": color,
-                    "extendedProps": {
-                        "chore_id": chore.id,
-                        "assignees": ", ".join(
-                            [u.username for u in chore.assignees.all()]
-                        ),
-                        "completed_by": comp.completed_by.username if comp else None,
-                        "status": (
-                            "Completed"
-                            if comp
-                            else (
-                                "Overdue"
-                                if timezone.now() > due_datetime
-                                else "Pending"
-                            )
-                        ),
-                    },
+            events.append({
+                "id": f"{chore.id}-{occ_date}",
+                "title": display_title,
+                "start": occ_date.isoformat(),
+                "allDay": True,
+                "color": color,  # Added back for test compatibility
+                "backgroundColor": color,
+                "borderColor": color,
+                "extendedProps": {
+                    "chore_id": chore.id,
+                    "assignees": ", ".join([u.username for u in chore.assignees.all()]),
+                    "completed_by": comp.completed_by.username if comp else None,
+                    "status": status,
                 }
-            )
+            })
     return JsonResponse(events, safe=False)
 
 
