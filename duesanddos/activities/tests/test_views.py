@@ -3,8 +3,11 @@ from django.urls import reverse
 from accounts.models import CustomUser, Profile
 from activities.views import sync_to_google, push_to_google_calendar
 from households.models import Household, HouseholdMember
-from chores.models import Chore
+from chores.models import Chore, ChoreCompletion
 from unittest.mock import patch, MagicMock
+from django.utils import timezone
+import datetime
+import json
 
 
 class ActivitiesViewsTests(TestCase):
@@ -51,12 +54,16 @@ class ActivitiesViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
 
+    def test_calendar_events_api_invalid_member_id(self):
+        """Test that invalid member_id is handled gracefully."""
+        response = self.client.get(
+            reverse("calendar_events_api"), {"user_id": "not-an-id"}
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should fall back to None and return all results
+
     @patch("django.utils.timezone.now")
     def test_calendar_events_api_with_chore_states(self, mock_tz_now):
-        from django.utils import timezone
-        import datetime
-        from chores.models import ChoreCompletion
-
         fixed_now = timezone.make_aware(datetime.datetime(2026, 4, 10, 12, 0, 0))
         mock_tz_now.return_value = fixed_now
 
@@ -134,6 +141,79 @@ class ActivitiesViewsTests(TestCase):
         )
         self.assertEqual(overdue_event["color"], "#ef4444")  # Red
 
+    def test_calendar_events_api_date_range(self):
+        """Test start and end date parameters in calendar API."""
+        Chore.objects.create(
+            description="Range Chore",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=datetime.date(2026, 5, 15),
+            has_due_date=True,
+        )
+        # Query for a range that EXCLUDES the chore
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"start": "2026-06-01T00:00:00Z", "end": "2026-06-30T00:00:00Z"},
+        )
+        self.assertEqual(len(response.json()), 0)
+
+        # Query for a range that INCLUDES the chore
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"start": "2026-05-01T00:00:00Z", "end": "2026-05-31T00:00:00Z"},
+        )
+        self.assertEqual(len(response.json()), 1)
+
+    def test_calendar_events_api_invalid_date_range(self):
+        """Test fallback when invalid dates are provided."""
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"start": "invalid-date", "end": "2026-05-31"},
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should not crash and return results based on default window
+
+    def test_calendar_events_api_completed_one_time_chore(self):
+        """Test that inactive but completed one-time chores show on calendar."""
+        chore = Chore.objects.create(
+            description="Inactive Completed OneTime",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=datetime.date(2026, 5, 1),
+            has_due_date=True,
+            is_active=False,  # Inactive
+        )
+        # Create a completion
+        ChoreCompletion.objects.create(
+            chore=chore,
+            occurrence_date=datetime.date(2026, 5, 1),
+            completed_by=self.user,
+        )
+
+        response = self.client.get(
+            reverse("calendar_events_api"), {"start": "2026-05-01", "end": "2026-05-02"}
+        )
+        events = response.json()
+        self.assertEqual(len(events), 1)
+        self.assertEqual(
+            events[0]["title"], f"{chore.description} (Done by {self.user.username})"
+        )
+        self.assertEqual(events[0]["backgroundColor"], "#10b981")
+
+    def test_calendar_events_api_inactive_recurring_skipped(self):
+        """Test that inactive recurring chores are skipped."""
+        Chore.objects.create(
+            description="Inactive Recurring",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="DAILY",
+            is_active=False,
+        )
+        response = self.client.get(reverse("calendar_events_api"))
+        self.assertEqual(len(response.json()), 0)
+
     @patch("activities.views.GoogleCalendarService")
     def test_sync_to_google(self, MockGoogleCalendarService):
         mock_service = MagicMock()
@@ -205,6 +285,69 @@ class ActivitiesViewsTests(TestCase):
         response = self.client.get(reverse("activity_feed"))
         self.assertEqual(response.status_code, 200)
 
+    def test_activity_log_view_no_household(self):
+        """Test redirect when no household is active."""
+        self.profile.active_household = None
+        self.profile.save()
+        response = self.client.get(reverse("activity_log"))
+        self.assertRedirects(response, reverse("household_settings"))
+
+    def test_activity_log_view_filters(self):
+        """Test activity log with date and action filters."""
+        from activities.models import ActivityLog
+
+        ActivityLog.objects.create(
+            user=self.user,
+            household=self.household,
+            action="CHORE_CREATED",
+            details="Test",
+        )
+        response = self.client.get(
+            reverse("activity_log"),
+            {
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "action": "CHORE_CREATED",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CHORE_CREATED")
+
     def test_activity_log_view_invalid_date(self):
         response = self.client.get(reverse("activity_log"), {"start_date": "invalid"})
         self.assertEqual(response.status_code, 200)
+
+    def test_update_calendar_view_pref(self):
+        """Test updating calendar view preference."""
+        data = {"view": "timeGridWeek"}
+        response = self.client.post(
+            reverse("update_calendar_view_pref"),
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.default_calendar_view, "timeGridWeek")
+
+    def test_update_calendar_view_pref_invalid(self):
+        """Test updating preference with invalid method and data."""
+        # Test GET (should fail)
+        response = self.client.get(reverse("update_calendar_view_pref"))
+        self.assertEqual(response.status_code, 400)
+
+        # Test invalid JSON
+        response = self.client.post(
+            reverse("update_calendar_view_pref"),
+            data="not-json",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+        # Test invalid view name
+        data = {"view": "invalidView"}
+        response = self.client.post(
+            reverse("update_calendar_view_pref"),
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)

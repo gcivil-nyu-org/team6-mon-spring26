@@ -60,7 +60,7 @@
                             type="checkbox"
                             name="has_due_date"
                             id="hasDueDate"
-                            onchange="toggleDueFields()"
+                            onchange="this.dataset.manuallyToggled = true; toggleDueFields()"
                             class="w-5 h-5 rounded border-gray-300 text-blue-600"
                         >
                         <span>Has due date</span>
@@ -414,11 +414,18 @@ function toggleRepeatFields() {
     const recurringFields = document.getElementById("recurringFields");
     const weeklyFields = document.getElementById("weeklyFields");
     const startDateField = document.getElementById("startDateField");
+    const hasDueDate = document.getElementById("hasDueDate");
 
     if (repeatType === "ONE_TIME") {
         recurringFields.classList.add("hidden");
         weeklyFields.classList.add("hidden");
         startDateField.required = false;
+        
+        // Default to "Has due date" for one-time chores
+        if (!hasDueDate.dataset.manuallyToggled) {
+            hasDueDate.checked = true;
+            toggleDueFields();
+        }
     } else {
         recurringFields.classList.remove("hidden");
         startDateField.required = true;
@@ -435,14 +442,17 @@ function toggleRepeatFields() {
 }
 
 function toggleDueFields() {
-    const hasDueDate = document.getElementById("hasDueDate").checked;
+    const hasDueDate = document.getElementById("hasDueDate");
     const dueFields = document.getElementById("dueFields");
     const repeatType = document.getElementById("repeatType").value;
     const dueDateField = document.getElementById("dueDateField");
 
-    if (hasDueDate) {
+    if (hasDueDate.checked) {
         dueFields.classList.remove("hidden");
         dueDateField.required = repeatType === "ONE_TIME";
+        if (!dueDateField.value) {
+            dueDateField.value = new Date().toISOString().split('T')[0];
+        }
     } else {
         dueFields.classList.add("hidden");
         dueDateField.required = false;

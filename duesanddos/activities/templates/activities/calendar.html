@@ -16,7 +16,7 @@
                 <select id="memberFilter" class="appearance-none bg-gray-50 border-none text-sm font-bold text-gray-700 py-2 pl-3 pr-10 rounded-xl cursor-pointer focus:ring-2 focus:ring-blue-100 transition-all w-full md:w-[220px]">
                     <option value="">All Roommates</option>
                     {% for member in members %}
-                    <option value="{{ member.user.id }}">
+                    <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
                         {{ member.user.get_full_name|default:member.user.username }} ({{ member.user.username }})
                     </option>
                     {% endfor %}
@@ -49,161 +49,10 @@
         </div>
     </div>
 
-    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 relative overflow-hidden">
+    <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40">
         <div id="calendar"></div>
     </div>
 </div>
-
-<style>
-    /* FullCalendar Premium Overhaul */
-    :root {
-        --fc-border-color: #f1f5f9;
-        --fc-daygrid-event-dot-width: 8px;
-        --fc-today-bg-color: #eff6ff;
-    }
-
-    #calendar {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        border: none !important;
-    }
-
-    /* Toolbar Styling */
-    .fc .fc-toolbar {
-        margin-bottom: 2rem !important;
-    }
-
-    .fc .fc-toolbar-title {
-        font-size: 1.5rem !important;
-        font-weight: 800 !important;
-        color: #1e293b !important;
-        letter-spacing: -0.025em;
-    }
-
-    .fc .fc-button-primary {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        color: #64748b !important;
-        font-weight: 700 !important;
-        font-size: 0.85rem !important;
-        text-transform: capitalize !important;
-        padding: 8px 16px !important;
-        border-radius: 12px !important;
-        transition: all 0.2s ease !important;
-        box-shadow: none !important;
-    }
-
-    .fc .fc-button-primary:hover {
-        background-color: #f8fafc !important;
-        color: #0f172a !important;
-        border-color: #cbd5e1 !important;
-    }
-
-    .fc .fc-button-active {
-        background-color: #0a317d !important;
-        border-color: #0a317d !important;
-        color: #ffffff !important;
-    }
-
-    .fc .fc-button-primary:not(:disabled):active {
-        background-color: #0a317d !important;
-        border-color: #0a317d !important;
-    }
-
-    .fc-direction-ltr .fc-button-group > .fc-button:not(:first-child) {
-        margin-left: 5px;
-    }
-
-    /* Today Button specific - make it stand out */
-    .fc .fc-today-button {
-        background-color: #eff6ff !important;
-        color: #2563eb !important;
-        border-color: #bfdbfe !important;
-    }
-
-    .fc .fc-today-button:disabled {
-        display: none !important;
-    }
-
-    /* Day Header Styling */
-    .fc .fc-col-header-cell {
-        padding: 12px 0 !important;
-        background-color: #f8fafc !important;
-        border: none !important;
-    }
-
-    .fc .fc-col-header-cell-cushion {
-        font-size: 0.75rem !important;
-        font-weight: 800 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        color: #94a3b8 !important;
-        text-decoration: none !important;
-    }
-
-    /* Grid Styling */
-    .fc-theme-standard td, .fc-theme-standard th {
-        border-color: #f1f5f9 !important;
-    }
-
-    .fc .fc-daygrid-day-top {
-        flex-direction: row !important;
-        padding: 8px !important;
-    }
-
-    .fc .fc-daygrid-day-number {
-        font-weight: 700 !important;
-        color: #64748b !important;
-        font-size: 0.9rem !important;
-        text-decoration: none !important;
-        padding: 4px 8px !important;
-        border-radius: 6px !important;
-    }
-
-    /* Today Highlight */
-    .fc .fc-day-today {
-        background-color: #f0f7ff !important;
-    }
-
-    .fc .fc-day-today .fc-daygrid-day-number {
-        background-color: #2563eb !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
-    }
-
-    /* Event Styling */
-    .fc-v-event, .fc-h-event {
-        border: none !important;
-        padding: 2px !important;
-        border-radius: 8px !important;
-        margin-top: 1px !important;
-        margin-bottom: 1px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-    }
-
-    .fc-event-main {
-        padding: 2px 4px !important;
-    }
-
-    /* More Events (+n more) */
-    .fc-daygrid-more-link {
-        font-size: 0.75rem !important;
-        font-weight: 800 !important;
-        color: #2563eb !important;
-        text-decoration: none !important;
-        padding-left: 8px !important;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .fc .fc-toolbar {
-            flex-direction: column !important;
-            gap: 1rem !important;
-        }
-        .fc .fc-toolbar-title {
-            font-size: 1.25rem !important;
-        }
-    }
-</style>
 
 <!-- Custom Calendar Event Modal -->
 <div id="calendarModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200" onclick="if(event.target === this) closeCalendarModal()">
@@ -251,110 +100,275 @@
     </div>
 </div>
 
+<style>
+    /* FullCalendar Overhaul - Scoped to avoid app CSS interference */
+    :root {
+        --fc-border-color: #f1f5f9;
+        --fc-daygrid-event-dot-width: 8px;
+        --fc-today-bg-color: #eff6ff;
+        --fc-event-text-color: #ffffff;
+        --fc-event-border-color: transparent;
+    }
+
+    #calendar, #calendar * {
+        box-sizing: border-box !important;
+        text-transform: none !important;
+    }
+
+    #calendar {
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+        border: none !important;
+    }
+
+    /* Toolbar Styling */
+    .fc .fc-toolbar {
+        margin-bottom: 2rem !important;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        color: #1e293b !important;
+        letter-spacing: -0.025em;
+    }
+
+    .fc .fc-button-primary {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #64748b !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        padding: 8px 16px !important;
+        border-radius: 12px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: none !important;
+    }
+
+    .fc .fc-button-primary:hover {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    .fc .fc-button-active {
+        background-color: #0a317d !important;
+        border-color: #0a317d !important;
+        color: #ffffff !important;
+    }
+
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #0a317d !important;
+        border-color: #0a317d !important;
+    }
+
+    .fc .fc-today-button {
+        background-color: #eff6ff !important;
+        color: #2563eb !important;
+        border-color: #bfdbfe !important;
+    }
+
+    .fc .fc-today-button:disabled {
+        display: none !important;
+    }
+
+    .fc-direction-ltr .fc-button-group > .fc-button:not(:first-child) {
+        margin-left: 5px;
+    }
+
+    /* Column Headers */
+    .fc .fc-col-header-cell {
+        padding: 12px 0 !important;
+        background-color: #f8fafc !important;
+        border: none !important;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        color: #94a3b8 !important;
+        text-decoration: none !important;
+    }
+
+    /* Grid Styling */
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: #f1f5f9 !important;
+    }
+
+    .fc .fc-daygrid-day-top {
+        flex-direction: row !important;
+        padding: 8px !important;
+    }
+
+    .fc .fc-daygrid-day-number {
+        font-weight: 700 !important;
+        color: #64748b !important;
+        font-size: 0.9rem !important;
+        text-decoration: none !important;
+        padding: 4px 8px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Today Highlight */
+    .fc .fc-day-today {
+        background-color: #f0f7ff !important;
+    }
+
+    .fc .fc-day-today .fc-daygrid-day-number {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* List View Styling */
+    .fc-list-event-title {
+        font-weight: 700 !important;
+        color: #1e293b !important;
+    }
+
+    .fc-list-day-side-text, .fc-list-day-text {
+        font-weight: 800 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .fc .fc-toolbar {
+            flex-direction: column !important;
+            gap: 1rem !important;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem !important;
+        }
+    }
+</style>
+
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const defaultCalendarView = "{{ default_calendar_view|escapejs }}";
-    console.log("default_calendar_view", defaultCalendarView);
-
+document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: defaultCalendarView || 'dayGridMonth',
-      height: 'auto',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      datesSet: function(info) {
-          saveViewPreference(info.view.type);
-      },
-      buttonText: {
-          today: 'Go to Today',
-          month: 'Month',
-          week: 'Week',
-          day: 'Day'
-      },
-      dayMaxEvents: 3,
-      events: '/activities/api/calendar-events/',
-      eventDisplay: 'block',
-      eventTimeFormat: {
-        hour: 'numeric',
-        minute: '2-digit',
-        meridiem: 'short'
-      },
-      eventContent: function(arg) {
-        let title = arg.event.title;
-        const isDone = title.includes('(Done');
-        const isOverdue = title.includes('(Overdue)');
-        
-        // Strip out the (Done by...) part for the main text but keep it as a subtitle
-        const pureTitle = title.split(' (')[0];
-        
-        return {
-          html: `
-            <div class="flex flex-col gap-0.5 px-2 py-0.5" title="${title}">
-              <div class="text-[10px] font-black leading-tight truncate uppercase tracking-tight">${pureTitle}</div>
-              ${isDone ? '<div class="text-[8px] opacity-90 font-bold italic truncate">Completed</div>' : ''}
-              ${isOverdue ? '<div class="text-[8px] opacity-95 font-black truncate">PAST DUE</div>' : ''}
-            </div>
-          `
-        };
-      },
-      // Custom modal on click
-      eventClick: function(info) {
-          const props = info.event.extendedProps;
-          const color = info.event.backgroundColor;
-          const title = info.event.title;
-          
-          // Pure title (strip status in parens if any)
-          const pureTitle = title.split(' (')[0];
-          
-          document.getElementById('modalDescription').innerText = pureTitle;
-          document.getElementById('modalAssignees').innerText = props.assignees || 'Unassigned';
-          
-          const statusEl = document.getElementById('modalStatus');
-          statusEl.innerText = props.status;
-          
-          // Reset and apply status styles
-          statusEl.className = 'inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset';
-          if (color === '#10b981') { // Green
-              statusEl.classList.add('bg-green-50', 'text-green-700', 'ring-green-600/20');
-          } else if (color === '#f59e0b') { // Yellow
-              statusEl.classList.add('bg-yellow-50', 'text-yellow-700', 'ring-yellow-600/20');
-          } else if (color === '#ef4444') { // Red
-              statusEl.classList.add('bg-red-50', 'text-red-700', 'ring-red-600/20');
-          } else { // Blue
-              statusEl.classList.add('bg-blue-50', 'text-blue-700', 'ring-blue-600/20');
-          }
+    var defaultCalendarView = "{{ default_calendar_view|escapejs }}";
+    var eventsUrl = '/activities/api/calendar-events/';
 
-          document.getElementById('modalHeaderColor').style.backgroundColor = color;
-          
-          const completedRow = document.getElementById('modalCompletedByRow');
-          if (props.completed_by) {
-              completedRow.classList.remove('hidden');
-              document.getElementById('modalCompletedBy').innerText = props.completed_by;
-          } else {
-              completedRow.classList.add('hidden');
-          }
-          
-          document.getElementById('calendarModal').classList.remove('hidden');
-      }
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: defaultCalendarView || 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        datesSet: function(info) {
+            saveViewPreference(info.view.type);
+        },
+        buttonText: { 
+            today: 'Go to Today', 
+            month: 'Month', 
+            week: 'Week', 
+            day: 'Day',
+            list: 'List'
+        },
+        dayMaxEvents: 10,
+        eventDisplay: 'block',
+        
+        events: {
+            url: eventsUrl,
+            extraParams: function() {
+                return {
+                    user_id: document.getElementById('memberFilter').value
+                };
+            }
+        },
+
+        eventDidMount: function(info) {
+            var el = info.el;
+            var eventDate = info.event.start;
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            var isPast = eventDate < today;
+
+            // Apply aggressive inline styles to bypass global CSS resets
+            el.style.setProperty('display', 'block', 'important');
+            el.style.setProperty('background-color', info.event.backgroundColor || '#3b82f6', 'important');
+            el.style.setProperty('color', '#ffffff', 'important');
+            el.style.setProperty('min-height', '1.5em', 'important');
+            el.style.setProperty('border', 'none', 'important');
+            el.style.setProperty('border-radius', '4px', 'important');
+            el.style.setProperty('margin', '1px', 'important');
+            el.style.setProperty('padding', '2px 6px', 'important');
+            
+            // Shading for past tasks (subtle de-emphasis)
+            if (isPast) {
+                el.style.setProperty('opacity', '0.75', 'important');
+                el.style.setProperty('filter', 'none', 'important');
+            } else {
+                el.style.setProperty('opacity', '1', 'important');
+                el.style.setProperty('filter', 'none', 'important');
+            }
+            
+            // Ensure title is visible and white
+            var titleEl = el.querySelector('.fc-event-title');
+            if (titleEl) {
+                titleEl.style.setProperty('display', 'block', 'important');
+                titleEl.style.setProperty('color', '#ffffff', 'important');
+                titleEl.style.setProperty('overflow', 'hidden', 'important');
+                titleEl.style.setProperty('text-overflow', 'ellipsis', 'important');
+            }
+        },
+
+        eventClick: function(info) {
+            var props = info.event.extendedProps;
+            var color = info.event.backgroundColor;
+            var title = info.event.title;
+            var pureTitle = title.split(' (')[0];
+
+            document.getElementById('modalDescription').innerText = pureTitle;
+            document.getElementById('modalAssignees').innerText = props.assignees || 'Unassigned';
+
+            var statusEl = document.getElementById('modalStatus');
+            statusEl.innerText = props.status;
+            statusEl.className = 'inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset';
+
+            if (color === '#10b981') {
+                statusEl.classList.add('bg-green-50', 'text-green-700', 'ring-green-600/20');
+            } else if (color === '#f59e0b') {
+                statusEl.classList.add('bg-yellow-50', 'text-yellow-700', 'ring-yellow-600/20');
+            } else if (color === '#ef4444') {
+                statusEl.classList.add('bg-red-50', 'text-red-700', 'ring-red-600/20');
+            } else {
+                statusEl.classList.add('bg-blue-50', 'text-blue-700', 'ring-blue-600/20');
+            }
+
+            document.getElementById('modalHeaderColor').style.backgroundColor = color;
+
+            var completedRow = document.getElementById('modalCompletedByRow');
+            if (props.completed_by) {
+                completedRow.classList.remove('hidden');
+                document.getElementById('modalCompletedBy').innerText = props.completed_by;
+            } else {
+                completedRow.classList.add('hidden');
+            }
+
+            document.getElementById('calendarModal').classList.remove('hidden');
+        }
     });
 
     window.closeCalendarModal = function() {
         document.getElementById('calendarModal').classList.add('hidden');
-    }
+    };
+
     calendar.render();
 
     document.getElementById('memberFilter').addEventListener('change', function() {
-        calendar.setOption('events', '/activities/api/calendar-events/?user_id=' + this.value);
+        calendar.refetchEvents();
     });
 
-    let lastSavedView = defaultCalendarView;
+    var lastSavedView = defaultCalendarView;
     function saveViewPreference(viewType) {
         if (viewType === lastSavedView) return;
-        
         fetch('{% url "update_calendar_view_pref" %}', {
             method: 'POST',
             headers: {
@@ -363,14 +377,10 @@
             },
             body: JSON.stringify({ view: viewType })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                lastSavedView = viewType;
-            }
-        })
-        .catch(error => console.error('Error saving view preference:', error));
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.status === 'success') lastSavedView = viewType; })
+        .catch(function(e) { console.error('Error saving view preference:', e); });
     }
-  });
+});
 </script>
 {% endblock %}
