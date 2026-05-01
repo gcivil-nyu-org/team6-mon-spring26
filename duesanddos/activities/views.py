@@ -96,15 +96,15 @@ def calendar_events_api(request):
         if start_str:
             start_date = datetime.fromisoformat(start_str.split("T")[0]).date()
         else:
-            start_date = date.today() - timedelta(days=365)
+            start_date = date.today() - timedelta(days=180)
 
         if end_str:
             end_date = datetime.fromisoformat(end_str.split("T")[0]).date()
         else:
-            end_date = date.today() + timedelta(days=365)
+            end_date = date.today() + timedelta(days=180)
     except (ValueError, IndexError):
-        start_date = date.today() - timedelta(days=365)
-        end_date = date.today() + timedelta(days=365)
+        start_date = date.today() - timedelta(days=180)
+        end_date = date.today() + timedelta(days=180)
 
     # Include both active chores AND completed one-time chores (is_active=False)
     chores = Chore.objects.filter(household=active_hh).prefetch_related("assignees")
@@ -118,12 +118,19 @@ def calendar_events_api(request):
 
     # member_id: None means All, "" (from select) means All
     member_id = request.GET.get("user_id")
+    if member_id:
+        try:
+            member_id = int(member_id)
+        except ValueError:
+            member_id = None
 
     events = []
     for chore in chores:
         # Filter by member if specified
-        if member_id and member_id != "":
-            if not chore.assignees.filter(id=member_id).exists():
+        if member_id:
+            # Optimization: Use pre-fetched assignees in memory
+            assignee_ids = [u.id for u in chore.assignees.all()]
+            if member_id not in assignee_ids:
                 continue
 
         # For completed one-time chores, the chore is inactive but we still want
