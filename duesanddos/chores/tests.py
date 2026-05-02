@@ -439,13 +439,12 @@ class ChoreViewTests(ChoresBaseTestCase):
         chore_out_range = self.create_chore(
             description="Out of range", due_date=today + timedelta(days=10)
         )
-        
+
         start_date = (today + timedelta(days=1)).isoformat()
         end_date = (today + timedelta(days=5)).isoformat()
-        
+
         response = self.client.get(
-            reverse("chores_list"), 
-            {"start_date": start_date, "end_date": end_date}
+            reverse("chores_list"), {"start_date": start_date, "end_date": end_date}
         )
         self.assertEqual(response.status_code, 200)
         occurrences = [item["chore"] for item in response.context["occurrences"]]
@@ -455,8 +454,8 @@ class ChoreViewTests(ChoresBaseTestCase):
 
     def test_chores_list_custom_date_filter_invalid(self):
         response = self.client.get(
-            reverse("chores_list"), 
-            {"start_date": "invalid-date", "end_date": "also-invalid"}
+            reverse("chores_list"),
+            {"start_date": "invalid-date", "end_date": "also-invalid"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["time_filter"], "all")
