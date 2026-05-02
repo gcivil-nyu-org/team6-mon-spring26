@@ -431,6 +431,36 @@ class ChoreViewTests(ChoresBaseTestCase):
             chore, [item["chore"] for item in response.context["occurrences"]]
         )
 
+    def test_chores_list_custom_date_filter_valid(self):
+        today = date.today()
+        chore_in_range = self.create_chore(
+            description="In range", due_date=today + timedelta(days=2)
+        )
+        chore_out_range = self.create_chore(
+            description="Out of range", due_date=today + timedelta(days=10)
+        )
+        
+        start_date = (today + timedelta(days=1)).isoformat()
+        end_date = (today + timedelta(days=5)).isoformat()
+        
+        response = self.client.get(
+            reverse("chores_list"), 
+            {"start_date": start_date, "end_date": end_date}
+        )
+        self.assertEqual(response.status_code, 200)
+        occurrences = [item["chore"] for item in response.context["occurrences"]]
+        self.assertIn(chore_in_range, occurrences)
+        self.assertNotIn(chore_out_range, occurrences)
+        self.assertEqual(response.context["time_filter"], "custom")
+
+    def test_chores_list_custom_date_filter_invalid(self):
+        response = self.client.get(
+            reverse("chores_list"), 
+            {"start_date": "invalid-date", "end_date": "also-invalid"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["time_filter"], "all")
+
     def test_chores_list_highlights_targeted_chore_block(self):
         chore = self.create_chore(
             description="Highlight this chore",
