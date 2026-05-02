@@ -307,8 +307,7 @@ def disconnect_google_view(request):
         if not request.user.has_usable_password():
             messages.error(
                 request,
-                "Cannot disconnect Google — you have no password set. "
-                "Please set a password first so you don't lose access to your account.",
+                "Cannot disconnect Google — you have no password set. ",
             )
             return redirect("profile")
 
