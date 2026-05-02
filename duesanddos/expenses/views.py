@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib import messages
@@ -130,7 +131,12 @@ def expenses_list_view(request):
     pending_incoming = Settlement.objects.filter(
         receiver=request.user, household=active_hh, status="PENDING"
     )
-
+    status_updates = Settlement.objects.filter(
+        payer=request.user,
+        household=active_hh,
+        status__in=["CONFIRMED", "REJECTED", "VOIDED"],
+        is_read=False,
+    ).order_by("-confirmed_at")
     return render(
         request,
         "accounts/expenses.html",
@@ -143,6 +149,7 @@ def expenses_list_view(request):
             "ledger_per_page": ledger_per_page,
             "members": members,
             "active_household": active_hh,
+            "status_updates": status_updates,
             "you_are_owed": you_are_owed,
             "you_owe": you_owe,
             "pending_incoming": pending_incoming,
@@ -192,28 +199,83 @@ def request_settlement(request):
 @login_required
 @transaction.atomic
 def confirm_settlement(request, settlement_id):
+    # Only the receiver (the person who was paid) can confirm the settlement
     settlement = get_object_or_404(Settlement, id=settlement_id, receiver=request.user)
+
     if request.method == "POST":
         action = request.POST.get("action")
+
+        # 1. HANDLE REJECTION
         if action == "reject":
-            settlement.delete()
+            settlement.status = "REJECTED"
+            settlement.save()
+
+            # Notify the Payer
+            ActivityLog.objects.create(
+                user=settlement.payer,
+                household=settlement.household,
+                action="SETTLEMENT_REJECTED",
+                details=(
+                    f"{request.user.username} rejected your settlement "
+                    f"claim for ${settlement.amount}."
+                ),
+            )
             messages.warning(request, "Settlement request rejected.")
             return redirect("expenses_list")
+
+        # 2. VOID LOGIC (For Test 3: No debt left to settle)
+        # Calculate exactly what the Payer owes the current User (Receiver)
+        they_owed_me_total = (
+            ExpenseSplit.objects.filter(
+                expense__payer=request.user,  # I am the payer of the original expense
+                user=settlement.payer,  # They are the one who owed money
+                is_settled=False,
+                expense__household=settlement.household,
+            ).aggregate(Sum("amount_owed"))["amount_owed__sum"]
+            or 0
+        )
+
+        if they_owed_me_total <= 0:
+            settlement.status = "VOIDED"
+            settlement.save()
+
+            # Notify the Payer that their attempt was voided
+            ActivityLog.objects.create(
+                user=settlement.payer,
+                household=settlement.household,
+                action="SETTLEMENT_VOIDED",
+                details=(
+                    f"Settlement of ${settlement.amount} to {request.user.username}"
+                    f"was voided because your balance is already $0.00."
+                ),
+            )
+            messages.info(
+                request, "This settlement was voided. There is nothing left to settle."
+            )
+            return redirect("expenses_list")
+
+        # 3. SUCCESSFUL CONFIRMATION
         settlement.status = "CONFIRMED"
         settlement.confirmed_at = timezone.now()
         settlement.save()
+
+        # Get all unsettled splits where the settler owes the receiver
         splits = ExpenseSplit.objects.filter(
             user=settlement.payer,
             expense__payer=request.user,
             is_settled=False,
             expense__household=settlement.household,
         ).order_by("expense__date_spent")
+
         remaining_amt = float(settlement.amount)
+
         for s in splits:
             if remaining_amt <= 0:
                 break
+
             settlement.related_splits.add(s)
             owed = float(s.amount_owed)
+
             if owed <= (remaining_amt + 0.01):
                 remaining_amt -= owed
                 s.is_settled = True
@@ -222,7 +284,19 @@ def confirm_settlement(request, settlement_id):
                 s.amount_owed = Decimal(owed - remaining_amt).quantize(Decimal("0.01"))
                 remaining_amt = 0
                 s.save()
-        messages.success(request, "Payment confirmed!")
+
+        ActivityLog.objects.create(
+            user=settlement.payer,
+            household=settlement.household,
+            action="SETTLEMENT_CONFIRMED",
+            details=(
+                f"{request.user.username} confirmed your payment "
+                f"of ${settlement.amount}."
+            ),
+        )
+
+        messages.success(request, "Payment confirmed and ledger updated!")
+
     return redirect("expenses_list")
 
 
@@ -231,8 +305,13 @@ def request_delete_settlement(request, settlement_id):
     settlement = get_object_or_404(Settlement, id=settlement_id)
     if request.user == settlement.payer or request.user == settlement.receiver:
         settlement.status = "DELETE_PENDING"
+        if request.user == settlement.payer:
+            settlement.is_read = True
+        else:
+            settlement.is_read = False
+
         settlement.save()
-        messages.info(request, "Deletion request sent.")
+        messages.info(request, "Void request sent to the other party.")
     return redirect("expenses_list")
 
 
@@ -240,11 +319,6 @@ def request_delete_settlement(request, settlement_id):
 @transaction.atomic
 def approve_delete_settlement(request, settlement_id):
     settlement = get_object_or_404(Settlement, id=settlement_id)
-    if request.user != settlement.receiver:
-        messages.error(
-            request, "Only the payment recipient can approve this void request."
-        )
-        return redirect("expenses_list")
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "approve":
@@ -265,8 +339,9 @@ def approve_delete_settlement(request, settlement_id):
             messages.success(request, "Settlement voided. Balance restored.")
         elif action == "reject":
             settlement.status = "CONFIRMED"
+            settlement.is_read = True
             settlement.save()
-            messages.warning(request, "Deletion request rejected.")
+            messages.warning(request, "Void request rejected.")
     return redirect("expenses_list")
 
 
@@ -547,3 +622,11 @@ def settle_split(request, split_id):
         split.save()
         messages.success(request, "settled!")
     return redirect("expenses_list")
+
+
+@login_required
+def dismiss_activity(request, log_id):
+    settlement = get_object_or_404(Settlement, id=log_id, payer=request.user)
+    settlement.is_read = True
+    settlement.save()
+    return JsonResponse({"status": "success"})

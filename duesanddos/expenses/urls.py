@@ -29,4 +29,9 @@ urlpatterns = [
     path("history/", views.expenses_list_view, name="expense_history"),
     path("edit/<int:expense_id>/", views.edit_expense_pro, name="edit_expense_pro"),
     path("settle-split/<int:split_id>/", views.settle_split, name="settle_split"),
+    path(
+        "activity/dismiss/<int:log_id>/",
+        views.dismiss_activity,
+        name="dismiss_activity",
+    ),
 ]
