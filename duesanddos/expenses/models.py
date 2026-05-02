@@ -58,6 +58,7 @@ class Settlement(models.Model):
         ("PENDING", "Pending Confirmation"),
         ("CONFIRMED", "Confirmed"),
         ("REJECTED", "Rejected"),
+        ("VOIDED", "Voided (No Debt)"),
         ("DELETE_PENDING", "Deletion Requested"),
     )
 
@@ -69,6 +70,7 @@ class Settlement(models.Model):
         on_delete=models.CASCADE,
         related_name="payments_received",
     )
+
     household = models.ForeignKey(
         "households.Household", on_delete=models.CASCADE, related_name="settlements"
     )
@@ -76,7 +78,7 @@ class Settlement(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
-
+    is_read = models.BooleanField(default=False)
     related_splits = models.ManyToManyField("ExpenseSplit", blank=True)
 
     class Meta:

@@ -431,6 +431,35 @@ class ChoreViewTests(ChoresBaseTestCase):
             chore, [item["chore"] for item in response.context["occurrences"]]
         )
 
+    def test_chores_list_custom_date_filter_valid(self):
+        today = date.today()
+        chore_in_range = self.create_chore(
+            description="In range", due_date=today + timedelta(days=2)
+        )
+        chore_out_range = self.create_chore(
+            description="Out of range", due_date=today + timedelta(days=10)
+        )
+
+        start_date = (today + timedelta(days=1)).isoformat()
+        end_date = (today + timedelta(days=5)).isoformat()
+
+        response = self.client.get(
+            reverse("chores_list"), {"start_date": start_date, "end_date": end_date}
+        )
+        self.assertEqual(response.status_code, 200)
+        occurrences = [item["chore"] for item in response.context["occurrences"]]
+        self.assertIn(chore_in_range, occurrences)
+        self.assertNotIn(chore_out_range, occurrences)
+        self.assertEqual(response.context["time_filter"], "custom")
+
+    def test_chores_list_custom_date_filter_invalid(self):
+        response = self.client.get(
+            reverse("chores_list"),
+            {"start_date": "invalid-date", "end_date": "also-invalid"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["time_filter"], "all")
+
     def test_chores_list_highlights_targeted_chore_block(self):
         chore = self.create_chore(
             description="Highlight this chore",
@@ -740,16 +769,40 @@ class ChoreViewTests(ChoresBaseTestCase):
             ).exists()
         )
 
-    def test_delete_series_deletes_chore(self):
+    def test_delete_series_archives_chore_and_preserves_history(self):
+        chore = self.create_chore(
+            repeat_type="DAILY",
+            has_due_date=False,
+            due_date=None,
+            start_date=date.today() - timedelta(days=2),
+        )
+
+        completion = ChoreCompletion.objects.create(
+            chore=chore,
+            occurrence_date=date.today() - timedelta(days=1),
+            completed_by=self.user,
+        )
+
+        response = self.client.post(reverse("delete_chore", args=[chore.id]))
+
+        self.assertRedirects(response, reverse("chores_list"))
+
+        chore.refresh_from_db()
+        self.assertFalse(chore.is_active)
+        self.assertTrue(ChoreCompletion.objects.filter(id=completion.id).exists())
+        self.assertGreaterEqual(
+            ActivityLog.objects.filter(action="CHORE_DELETED").count(), 1
+        )
+
+    def test_delete_one_time_chore_archives_instead_of_deleting(self):
         chore = self.create_chore()
 
         response = self.client.post(reverse("delete_chore", args=[chore.id]))
 
         self.assertRedirects(response, reverse("chores_list"))
-        self.assertFalse(Chore.objects.filter(id=chore.id).exists())
-        self.assertGreaterEqual(
-            ActivityLog.objects.filter(action="CHORE_DELETED").count(), 1
-        )
+
+        chore.refresh_from_db()
+        self.assertFalse(chore.is_active)
 
     def test_complete_chore_get_redirects(self):
         chore = self.create_chore()
