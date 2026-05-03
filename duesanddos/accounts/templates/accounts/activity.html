@@ -47,14 +47,14 @@
                        class="flex items-center gap-4 px-6 py-3 hover:bg-slate-50 transition-colors group">
                         <div class="w-8 h-8 rounded-lg flex items-center justify-center 
                             {% if code == 'EXPENSE_ADDED' or code == 'CHORE_CREATED' %}bg-green-50 text-green-500
-                            {% elif code == 'PAYMENT_SETTLED' or code == 'CHORE_COMPLETED' %}bg-blue-50 text-blue-500
+	                            {% elif code == 'PAYMENT_SETTLED' or code == 'SETTLEMENT_CONFIRMED' or code == 'CHORE_COMPLETED' %}bg-blue-50 text-blue-500
                             {% elif code == 'EXPENSE_DELETED' or code == 'CHORE_DELETED' %}bg-red-50 text-red-500
                             {% elif code == 'EXPENSE_EDITED' or code == 'CHORE_UPDATED' %}bg-amber-50 text-amber-500
                             {% else %}bg-slate-50 text-slate-400{% endif %}">
                             {% if code == 'EXPENSE_ADDED' or code == 'CHORE_CREATED' %}
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
-                            {% elif code == 'PAYMENT_SETTLED' or code == 'CHORE_COMPLETED' %}
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+	                            {% elif code == 'PAYMENT_SETTLED' or code == 'SETTLEMENT_CONFIRMED' or code == 'CHORE_COMPLETED' %}
+	                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
                             {% elif code == 'EXPENSE_DELETED' or code == 'CHORE_DELETED' %}
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             {% elif code == 'EXPENSE_EDITED' or code == 'CHORE_UPDATED' %}
@@ -129,14 +129,14 @@
                         <td class="px-6 py-4">
                             <div class="w-8 h-8 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300
                                 {% if log.action == 'EXPENSE_ADDED' or log.action == 'CHORE_CREATED' %}bg-green-50 text-green-500
-                                {% elif log.action == 'PAYMENT_SETTLED' or log.action == 'CHORE_COMPLETED' %}bg-blue-50 text-blue-500
+	                                {% elif log.action == 'PAYMENT_SETTLED' or log.action == 'SETTLEMENT_CONFIRMED' or log.action == 'CHORE_COMPLETED' %}bg-blue-50 text-blue-500
                                 {% elif log.action == 'EXPENSE_DELETED' or log.action == 'CHORE_DELETED' %}bg-red-50 text-red-500
                                 {% elif log.action == 'EXPENSE_EDITED' or log.action == 'CHORE_UPDATED' %}bg-amber-50 text-amber-500
                                 {% else %}bg-slate-50 text-slate-400{% endif %}">
                                 {% if log.action == 'EXPENSE_ADDED' or log.action == 'CHORE_CREATED' %}
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
-                                {% elif log.action == 'PAYMENT_SETTLED' or log.action == 'CHORE_COMPLETED' %}
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+	                                {% elif log.action == 'PAYMENT_SETTLED' or log.action == 'SETTLEMENT_CONFIRMED' or log.action == 'CHORE_COMPLETED' %}
+	                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
                                 {% elif log.action == 'EXPENSE_DELETED' or log.action == 'CHORE_DELETED' %}
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 {% elif log.action == 'EXPENSE_EDITED' or log.action == 'CHORE_UPDATED' %}

@@ -190,7 +190,7 @@ def request_settlement(request):
             user=request.user,
             household=hh,
             action="PAYMENT_SETTLED",
-            details=f"Submitted settlement of ${amount} to {receiver.username}.",
+            details=f"Settlement request submitted: ${amount} to {receiver.username}.",
         )
         messages.success(request, f"Settlement request for ${amount} sent!")
     return redirect("expenses_list")
