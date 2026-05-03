@@ -122,12 +122,12 @@
                     Members ({{ members|length }})
                 </div>
 
-                {% if not is_admin %}
-                <div class="shrink-0" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; margin-bottom: 12px;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="display:inline; margin-top:-2px; margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="15"></line></svg>
-                    You are not an admin. Please contact a household admin to request changes.
-                </div>
-                {% endif %}
+	                {% if not is_admin %}
+	                <div class="shrink-0 admin-warning">
+	                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="display:inline; margin-top:-2px; margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="15"></line></svg>
+	                    You are not an admin. Please contact a household admin to request changes.
+	                </div>
+	                {% endif %}
 
                 <div class="members-scroll-area">
                     {% for member in members %}

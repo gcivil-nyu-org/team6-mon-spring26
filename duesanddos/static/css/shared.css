@@ -80,6 +80,17 @@ input[type="password"]::placeholder,
 .lowercase { text-transform: lowercase !important; }
 .email-text { text-transform: none !important; }
 
+.admin-warning {
+  background-color: #fffbeb; /* amber-50 */
+  color: #92400e; /* amber-800 */
+  border: 1px solid #fde68a; /* amber-200 */
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
 
 input[type="text"], 
 input[type="number"], 

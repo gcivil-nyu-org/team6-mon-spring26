@@ -134,6 +134,13 @@
   color: #cbd5e1 !important;
 }
 
+/* ── Household settings admin warning (contrast fix) ── */
+.dark .admin-warning {
+  background-color: rgba(245, 158, 11, 0.15) !important; /* amber tint */
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #fbbf24 !important; /* amber-400 */
+}
+
 /* ── Settings card text (dark on dark fix) ── */
 .dark .settings-card label,
 .dark .settings-card h3,
@@ -1095,4 +1102,3 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
 }
-
