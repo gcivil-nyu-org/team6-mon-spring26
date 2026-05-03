@@ -5,7 +5,10 @@ from django.conf import settings
 class ActivityLog(models.Model):
     ACTION_CHOICES = (
         ("EXPENSE_ADDED", "Expense Added"),
-        ("PAYMENT_SETTLED", "Payment Settled"),
+        ("PAYMENT_SETTLED", "Settlement Request submitted"),
+        ("SETTLEMENT_CONFIRMED", "Settlement Confirmed"),
+        ("SETTLEMENT_REJECTED", "Settlement Rejected"),
+        ("SETTLEMENT_VOIDED", "Settlement Voided"),
         ("HOUSEHOLD_JOINED", "Joined Household"),
         ("MEMBER_REMOVED", "Member Removed"),
         ("EXPENSE_DELETED", "Expense Deleted"),
