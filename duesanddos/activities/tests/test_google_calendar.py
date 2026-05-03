@@ -217,6 +217,85 @@ class GoogleCalendarServiceTests(TestCase):
         body2 = service._build_event_body(self.chore, status_prefix="✅ DONE")
         self.assertTrue(body2["summary"].startswith("✅ DONE"))
 
+    def test_build_event_body_all_day_when_no_due_time(self):
+        """When chore.due_time is None the event must be created as all-day
+        (start.date / end.date) instead of defaulting to a 9 AM dateTime."""
+        service = GoogleCalendarService(self.user)
+        self.chore.due_time = None
+        self.chore.due_date = date.today()
+        self.chore.has_due_date = True
+
+        body = service._build_event_body(self.chore)
+        self.assertIn("date", body["start"])
+        self.assertNotIn("dateTime", body["start"])
+        self.assertEqual(body["start"]["date"], date.today().isoformat())
+        # Google all-day end date is exclusive — must be next day.
+        from datetime import timedelta
+
+        self.assertEqual(
+            body["end"]["date"], (date.today() + timedelta(days=1)).isoformat()
+        )
+
+    def test_build_event_body_timed_when_due_time_set(self):
+        """When due_time is set the event must use start.dateTime and timeZone."""
+        from datetime import time
+
+        service = GoogleCalendarService(self.user)
+        self.chore.due_time = time(14, 30)
+        self.chore.due_date = date.today()
+        self.chore.has_due_date = True
+
+        body = service._build_event_body(self.chore)
+        self.assertIn("dateTime", body["start"])
+        self.assertIn("timeZone", body["start"])
+        self.assertNotIn("date", body["start"])
+
+    def test_recurrence_rule_until_format_all_day_vs_timed(self):
+        """All-day recurring events must use UNTIL=YYYYMMDD; timed events
+        must use UNTIL=YYYYMMDDT235959Z. Mixed formats are rejected by GCal."""
+        from datetime import time
+
+        service = GoogleCalendarService(self.user)
+        self.chore.repeat_type = "DAILY"
+        self.chore.end_date = date(2026, 5, 10)
+
+        self.chore.due_time = None
+        all_day_rule = service._get_recurrence_rule(self.chore)[0]
+        self.assertIn("UNTIL=20260510", all_day_rule)
+        self.assertNotIn("T235959Z", all_day_rule)
+
+        self.chore.due_time = time(9, 0)
+        timed_rule = service._get_recurrence_rule(self.chore)[0]
+        self.assertIn("UNTIL=20260510T235959Z", timed_rule)
+
+    @patch("activities.google_calendar.build")
+    @patch("activities.google_calendar.Credentials")
+    def test_sync_chore_uses_update_not_patch_for_existing_event(
+        self, MockCredentials, MockBuild
+    ):
+        """When a ChoreGoogleEvent already exists, sync_chore must call
+        events().update() (PUT) — not patch — so removed fields are cleared."""
+        mock_creds = MagicMock()
+        mock_creds.expiry = None
+        mock_creds.expired = False
+        MockCredentials.return_value = mock_creds
+
+        mock_service = MagicMock()
+        events = MagicMock()
+        mock_service.events.return_value = events
+        events.update().execute.return_value = {"id": "test_id"}
+        MockBuild.return_value = mock_service
+
+        service = GoogleCalendarService(self.user)
+        result = service.sync_chore(self.chore)
+        self.assertIsNotNone(result)
+        events.update.assert_any_call(
+            calendarId="primary",
+            eventId="test_id",
+            body=service._build_event_body(self.chore),
+        )
+        events.patch.assert_not_called()
+
     @patch("activities.google_calendar.build")
     @patch("activities.google_calendar.Credentials")
     def test_mark_occurrence_done_recurring(self, MockCredentials, MockBuild):

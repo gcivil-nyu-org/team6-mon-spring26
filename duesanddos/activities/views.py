@@ -6,7 +6,8 @@ from django.core.paginator import Paginator
 from .models import ActivityLog
 from .google_calendar import GoogleCalendarService
 from django.http import JsonResponse
-from chores.models import Chore, ChoreCompletion
+from collections import defaultdict
+from chores.models import Chore, ChoreCompletion, ChoreSkip
 from chores.views import get_occurrences_for_range
 
 
@@ -116,6 +117,15 @@ def calendar_events_api(request):
 
     completion_map = {(c.chore_id, c.occurrence_date): c for c in completions}
 
+    # Single-occurrence deletes on recurring chores create ChoreSkip rows;
+    # those dates must be hidden from the calendar.
+    skips = ChoreSkip.objects.filter(
+        chore__household=active_hh, occurrence_date__range=(start_date, end_date)
+    )
+    skipped_dates_by_chore = defaultdict(set)
+    for skip in skips:
+        skipped_dates_by_chore[skip.chore_id].add(skip.occurrence_date)
+
     # member_id: None means All, "" (from select) means All
     member_id = request.GET.get("user_id")
     if member_id:
@@ -134,15 +144,29 @@ def calendar_events_api(request):
                 continue
 
         # For completed one-time chores, the chore is inactive but we still want
-        # to show it on its due_date (with "Completed" status from completions)
+        # to show it on its due_date (with "Completed" status from completions).
+        # Deleted/archived one-time chores are also is_active=False but have no
+        # completion — those must NOT show on the calendar.
         if not chore.is_active and chore.repeat_type == "ONE_TIME":
             # Show on the due_date if it has one and it falls in range
             if chore.has_due_date and chore.due_date:
                 if start_date <= chore.due_date <= end_date:
                     occ_date = chore.due_date
                     comp = completion_map.get((chore.id, occ_date))
-                    color = "#10b981"  # Green (completed)
+                    if not comp:
+                        continue
+
                     status = "Completed"
+                    target_time = chore.due_time or datetime.max.time()
+                    due_datetime = timezone.make_aware(
+                        datetime.combine(occ_date, target_time)
+                    )
+
+                    if comp.completed_at > due_datetime:
+                        color = "#f59e0b"  # Yellow (Late)
+                    else:
+                        color = "#10b981"  # Green (On Time)
+
                     display_title = chore.description
                     if comp:
                         done_by = comp.completed_by.username
@@ -174,7 +198,12 @@ def calendar_events_api(request):
             continue  # Skip inactive recurring chores
 
         # Get occurrences for active chores
-        occurrences = get_occurrences_for_range(chore, start_date, end_date)
+        occurrences = get_occurrences_for_range(
+            chore,
+            start_date,
+            end_date,
+            skipped_dates=skipped_dates_by_chore.get(chore.id, set()),
+        )
 
         for occ in occurrences:
             occ_date = occ["date"]

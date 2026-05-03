@@ -74,6 +74,12 @@ def delete_chore_from_gcal_task(google_sync_data):
 @receiver(post_save, sender=Chore)
 def handle_chore_save(sender, instance, created, **kwargs):
     """Triggered on chore creation or update."""
+    if created:
+        # On creation, assignees are attached right after via form.save_m2m(),
+        # which fires m2m_changed → handle_assignee_change. Letting both signals
+        # schedule a sync causes two background threads to race and each
+        # INSERT a separate Google Calendar event. Defer to the m2m handler.
+        return
     chore_id = instance.id
     db_transaction.on_commit(
         lambda: run_in_background(target=sync_chore_to_gcal, args=(chore_id,))

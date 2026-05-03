@@ -16,7 +16,7 @@
                 <select id="memberFilter" class="appearance-none bg-gray-50 border-none text-sm font-bold text-gray-700 py-2 pl-3 pr-10 rounded-xl cursor-pointer focus:ring-2 focus:ring-blue-100 transition-all w-full md:w-[220px]">
                     <option value="">All Roommates</option>
                     {% for member in members %}
-                    <option value="{{ member.user.id }}" {% if member.user == request.user %}selected{% endif %}>
+                    <option value="{{ member.user.id }}">
                         {{ member.user.get_full_name|default:member.user.username }} ({{ member.user.username }})
                     </option>
                     {% endfor %}

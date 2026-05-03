@@ -6,8 +6,9 @@ from .models import Chore
 class ChoreForm(forms.ModelForm):
     assignees = forms.ModelMultipleChoiceField(
         queryset=CustomUser.objects.none(),
-        required=False,
+        required=True,
         widget=forms.CheckboxSelectMultiple,
+        error_messages={"required": "Please assign this chore to at least one person."},
     )
 
     class Meta:

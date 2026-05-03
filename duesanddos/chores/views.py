@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from django.core.management import call_command
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -58,7 +59,7 @@ def run_overdue_sync():
 
 
 @login_required
-def chores_list_view(request):
+def chores_list_view(request, form=None):
     active_hh = request.user.profile.active_household
     if not active_hh:
         messages.error(request, "Please select an active household first.")
@@ -179,7 +180,22 @@ def chores_list_view(request):
         )
     )
 
-    form = ChoreForm(household=active_hh)
+    per_page_param = request.GET.get("chores_per_page", "10")
+    if per_page_param not in ["10", "20", "50", "all"]:
+        per_page_param = "10"
+
+    total_count = len(occurrences)
+    if per_page_param == "all":
+        per_page_value = total_count if total_count > 0 else 1
+    else:
+        per_page_value = int(per_page_param)
+
+    chores_paginator = Paginator(occurrences, per_page_value)
+    chores_page_num = request.GET.get("chores_page", 1)
+    chores_page_obj = chores_paginator.get_page(chores_page_num)
+
+    if form is None:
+        form = ChoreForm(household=active_hh)
 
     return render(
         request,
@@ -187,7 +203,8 @@ def chores_list_view(request):
         {
             "form": form,
             "members": members,
-            "occurrences": occurrences,
+            "occurrences": chores_page_obj,
+            "chores_per_page": per_page_param,
             "time_filter": time_filter,
             "member_filter": member_filter,
             "today": today,
@@ -213,16 +230,7 @@ def add_chore_view(request):
     form = ChoreForm(request.POST, household=active_hh)
 
     if not form.is_valid():
-        for field, errors in form.errors.items():
-            if field == "__all__":
-                for error in errors:
-                    messages.error(request, error)
-            else:
-                for error in errors:
-                    messages.error(
-                        request, f"{field.replace('_', ' ').title()}: {error}"
-                    )
-        return redirect("chores_list")
+        return chores_list_view(request, form=form)
 
     chore = form.save(commit=False)
     chore.household = active_hh
@@ -419,10 +427,10 @@ def delete_chore_view(request, chore_id):
         user=request.user,
         household=active_hh,
         action="CHORE_DELETED",
-        details=f"Archived chore '{description}'.",
+        details=f"Deleted chore '{description}'.",
     )
 
-    messages.success(request, "Chore archived successfully.")
+    messages.success(request, "Chore deleted successfully.")
     return redirect("chores_list")
 
 
