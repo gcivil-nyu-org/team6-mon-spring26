@@ -3,7 +3,7 @@ from django.urls import reverse
 from accounts.models import CustomUser, Profile
 from activities.views import sync_to_google, push_to_google_calendar
 from households.models import Household, HouseholdMember
-from chores.models import Chore, ChoreCompletion
+from chores.models import Chore, ChoreCompletion, ChoreSkip
 from unittest.mock import patch, MagicMock
 from django.utils import timezone
 import datetime
@@ -175,7 +175,8 @@ class ActivitiesViewsTests(TestCase):
         # Should not crash and return results based on default window
 
     def test_calendar_events_api_completed_one_time_chore(self):
-        """Test that inactive but completed one-time chores show on calendar."""
+        """Test that inactive but completed one-time chores show on calendar
+        with the on-time green color when completed before the due moment."""
         chore = Chore.objects.create(
             description="Inactive Completed OneTime",
             household=self.household,
@@ -185,12 +186,17 @@ class ActivitiesViewsTests(TestCase):
             has_due_date=True,
             is_active=False,  # Inactive
         )
-        # Create a completion
-        ChoreCompletion.objects.create(
+        # Create a completion timestamped before the end of the due day so the
+        # late/on-time branch resolves to "on time".
+        comp = ChoreCompletion.objects.create(
             chore=chore,
             occurrence_date=datetime.date(2026, 5, 1),
             completed_by=self.user,
         )
+        comp.completed_at = timezone.make_aware(
+            datetime.datetime(2026, 5, 1, 10, 0, 0)
+        )
+        comp.save()
 
         response = self.client.get(
             reverse("calendar_events_api"), {"start": "2026-05-01", "end": "2026-05-02"}
@@ -201,6 +207,35 @@ class ActivitiesViewsTests(TestCase):
             events[0]["title"], f"{chore.description} (Done by {self.user.username})"
         )
         self.assertEqual(events[0]["backgroundColor"], "#10b981")
+
+    def test_calendar_events_api_completed_one_time_chore_late(self):
+        """Inactive completed one-time chore completed after due time → yellow."""
+        chore = Chore.objects.create(
+            description="Late Inactive OneTime",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=datetime.date(2026, 5, 1),
+            due_time=datetime.time(8, 0),
+            has_due_date=True,
+            is_active=False,
+        )
+        comp = ChoreCompletion.objects.create(
+            chore=chore,
+            occurrence_date=datetime.date(2026, 5, 1),
+            completed_by=self.user,
+        )
+        comp.completed_at = timezone.make_aware(
+            datetime.datetime(2026, 5, 1, 18, 0, 0)
+        )
+        comp.save()
+
+        response = self.client.get(
+            reverse("calendar_events_api"), {"start": "2026-05-01", "end": "2026-05-02"}
+        )
+        events = response.json()
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["backgroundColor"], "#f59e0b")
 
     def test_calendar_events_api_inactive_recurring_skipped(self):
         """Test that inactive recurring chores are skipped."""
@@ -213,6 +248,52 @@ class ActivitiesViewsTests(TestCase):
         )
         response = self.client.get(reverse("calendar_events_api"))
         self.assertEqual(len(response.json()), 0)
+
+    def test_calendar_events_api_deleted_one_time_chore_hidden(self):
+        """Soft-deleted one-time chores (is_active=False, no completion) must
+        not appear on the household calendar."""
+        Chore.objects.create(
+            description="Deleted OneTime",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="ONE_TIME",
+            due_date=datetime.date(2026, 5, 1),
+            has_due_date=True,
+            is_active=False,
+        )
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"start": "2026-05-01", "end": "2026-05-02"},
+        )
+        self.assertEqual(response.json(), [])
+
+    def test_calendar_events_api_skipped_recurring_occurrence_hidden(self):
+        """A ChoreSkip row must hide that single occurrence on the calendar
+        while leaving other occurrences of the recurring chore visible."""
+        chore = Chore.objects.create(
+            description="Daily With Skip",
+            household=self.household,
+            created_by=self.user,
+            repeat_type="DAILY",
+            start_date=datetime.date(2026, 5, 1),
+            end_date=datetime.date(2026, 5, 3),
+        )
+        chore.assignees.add(self.user)
+
+        skipped_date = datetime.date(2026, 5, 2)
+        ChoreSkip.objects.create(
+            chore=chore, occurrence_date=skipped_date, skipped_by=self.user
+        )
+
+        response = self.client.get(
+            reverse("calendar_events_api"),
+            {"start": "2026-05-01", "end": "2026-05-04"},
+        )
+        events = response.json()
+        starts = {e["start"] for e in events}
+        self.assertIn("2026-05-01", starts)
+        self.assertNotIn(skipped_date.isoformat(), starts)
+        self.assertIn("2026-05-03", starts)
 
     @patch("activities.views.GoogleCalendarService")
     def test_sync_to_google(self, MockGoogleCalendarService):

@@ -275,3 +275,22 @@ def household_settings_view(request):
         "active_invite_code": active_invite_code,
     }
     return render(request, "accounts/household_settings.html", context)
+
+
+@login_required
+def switch_household_view(request, household_id):
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    # Verify user is a member of the target household
+    member_link = HouseholdMember.objects.filter(
+        user=request.user, household_id=household_id
+    ).first()
+
+    if member_link:
+        profile.active_household = member_link.household
+        profile.save()
+        messages.success(request, f"Switched context to {member_link.household.name}")
+    else:
+        messages.error(request, "You do not have access to this household.")
+
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
