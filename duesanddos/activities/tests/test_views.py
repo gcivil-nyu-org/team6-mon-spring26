@@ -193,9 +193,7 @@ class ActivitiesViewsTests(TestCase):
             occurrence_date=datetime.date(2026, 5, 1),
             completed_by=self.user,
         )
-        comp.completed_at = timezone.make_aware(
-            datetime.datetime(2026, 5, 1, 10, 0, 0)
-        )
+        comp.completed_at = timezone.make_aware(datetime.datetime(2026, 5, 1, 10, 0, 0))
         comp.save()
 
         response = self.client.get(
@@ -225,9 +223,7 @@ class ActivitiesViewsTests(TestCase):
             occurrence_date=datetime.date(2026, 5, 1),
             completed_by=self.user,
         )
-        comp.completed_at = timezone.make_aware(
-            datetime.datetime(2026, 5, 1, 18, 0, 0)
-        )
+        comp.completed_at = timezone.make_aware(datetime.datetime(2026, 5, 1, 18, 0, 0))
         comp.save()
 
         response = self.client.get(

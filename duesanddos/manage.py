@@ -13,7 +13,6 @@ def main():
     if "test" in sys.argv:
         try:
             from django.template.context import BaseContext
-            import copy
 
             def patched_copy(self):
                 cls = self.__class__
