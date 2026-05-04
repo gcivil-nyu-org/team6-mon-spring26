@@ -27,14 +27,25 @@
         </div>
     </div>
 
-    <div id="choreFormCard" class="hidden form-card border border-gray-100 shadow-xl shadow-gray-200/40">
+    <div id="choreFormCard" class="{% if not form.errors %}hidden{% endif %} form-card border border-gray-100 shadow-xl shadow-gray-200/40">
         <h3 class="text-xl font-black mb-6">New Chore</h3>
 
         <form method="POST" action="{% url 'add_chore' %}" class="space-y-4">
             {% csrf_token %}
 
+            {% if form.non_field_errors %}
+            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+                {% for error in form.non_field_errors %}
+                    <p class="font-bold">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div>
-                <input type="text" name="description" id="choreDescription" placeholder="Chore description" required maxlength="255" class="w-full" oninput="updateCharCount(this)">
+                <input type="text" name="description" id="choreDescription" placeholder="Chore description" required maxlength="255" class="w-full {% if form.description.errors %}border-red-500{% endif %}" oninput="updateCharCount(this)" value="{{ form.description.value|default:'' }}">
+                {% if form.description.errors %}
+                    <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.description.errors %}{{ error }}{% endfor %}</p>
+                {% endif %}
                 <div class="mt-1 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">
                     <span id="charCount">0</span>/255
                 </div>
@@ -43,11 +54,14 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Chore Type</label>
-                    <select name="repeat_type" id="repeatType" class="mt-1 expense-select" onchange="toggleRepeatFields()">
-                        <option value="ONE_TIME">One-time</option>
-                        <option value="DAILY">Recurring - Daily</option>
-                        <option value="WEEKLY">Recurring - Weekly</option>
+                    <select name="repeat_type" id="repeatType" class="mt-1 expense-select {% if form.repeat_type.errors %}border-red-500{% endif %}" onchange="toggleRepeatFields()">
+                        <option value="ONE_TIME" {% if form.repeat_type.value == 'ONE_TIME' %}selected{% endif %}>One-time</option>
+                        <option value="DAILY" {% if form.repeat_type.value == 'DAILY' %}selected{% endif %}>Recurring - Daily</option>
+                        <option value="WEEKLY" {% if form.repeat_type.value == 'WEEKLY' %}selected{% endif %}>Recurring - Weekly</option>
                     </select>
+                    {% if form.repeat_type.errors %}
+                        <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.repeat_type.errors %}{{ error }}{% endfor %}</p>
+                    {% endif %}
                 </div>
 
                 <div class="flex items-end">
@@ -58,6 +72,7 @@
                             id="hasDueDate"
                             onchange="this.dataset.manuallyToggled = true; toggleDueFields()"
                             class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                            {% if form.has_due_date.value %}checked{% endif %}
                         >
                         <span>Has due date</span>
                     </label>
@@ -67,11 +82,17 @@
             <div id="dueFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Date</label>
-                    <input type="date" name="due_date" id="dueDateField" class="mt-1">
+                    <input type="date" name="due_date" id="dueDateField" class="mt-1 {% if form.due_date.errors %}border-red-500{% endif %}" value="{{ form.due_date.value|default:'' }}">
+                    {% if form.due_date.errors %}
+                        <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.due_date.errors %}{{ error }}{% endfor %}</p>
+                    {% endif %}
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Due Time (Optional)</label>
-                    <input type="time" name="due_time" class="mt-1">
+                    <input type="time" name="due_time" class="mt-1 {% if form.due_time.errors %}border-red-500{% endif %}" value="{{ form.due_time.value|default:'' }}">
+                    {% if form.due_time.errors %}
+                        <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.due_time.errors %}{{ error }}{% endfor %}</p>
+                    {% endif %}
                 </div>
             </div>
 
@@ -79,42 +100,53 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Date</label>
-                        <input type="date" name="start_date" id="startDateField" class="mt-1">
+                        <input type="date" name="start_date" id="startDateField" class="mt-1 {% if form.start_date.errors %}border-red-500{% endif %}" value="{{ form.start_date.value|default:'' }}">
+                        {% if form.start_date.errors %}
+                            <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.start_date.errors %}{{ error }}{% endfor %}</p>
+                        {% endif %}
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Date (Optional)</label>
-                        <input type="date" name="end_date" class="mt-1">
+                        <input type="date" name="end_date" class="mt-1 {% if form.end_date.errors %}border-red-500{% endif %}" value="{{ form.end_date.value|default:'' }}">
+                        {% if form.end_date.errors %}
+                            <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.end_date.errors %}{{ error }}{% endfor %}</p>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div id="weeklyFields" class="hidden">
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Repeat On</label>
                     <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_monday"> Monday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_tuesday"> Tuesday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_wednesday"> Wednesday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_thursday"> Thursday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_friday"> Friday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_saturday"> Saturday</label>
-                        <label class="weekday-pill"><input type="checkbox" name="repeat_sunday"> Sunday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_monday" {% if form.repeat_monday.value %}checked{% endif %}> Monday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_tuesday" {% if form.repeat_tuesday.value %}checked{% endif %}> Tuesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_wednesday" {% if form.repeat_wednesday.value %}checked{% endif %}> Wednesday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_thursday" {% if form.repeat_thursday.value %}checked{% endif %}> Thursday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_friday" {% if form.repeat_friday.value %}checked{% endif %}> Friday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_saturday" {% if form.repeat_saturday.value %}checked{% endif %}> Saturday</label>
+                        <label class="weekday-pill"><input type="checkbox" name="repeat_sunday" {% if form.repeat_sunday.value %}checked{% endif %}> Sunday</label>
                     </div>
                 </div>
             </div>
 
             <div class="bg-gray-50 p-6 rounded-[1.5rem]">
                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assign Household Members</label>
+                {% if form.assignees.errors %}
+                    <p class="text-red-500 text-xs mt-1 font-bold">{% for error in form.assignees.errors %}{{ error }}{% endfor %}</p>
+                {% endif %}
                 <div class="mt-4 space-y-3">
                     {% for member in members %}
-                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border {% if form.assignees.errors %}border-red-200 bg-red-50/30{% else %}border-gray-100{% endif %}">
                         <label class="flex items-center gap-3 w-full">
                             <input
                                 type="checkbox"
                                 name="assignees"
                                 value="{{ member.user.id }}"
                                 class="w-5 h-5 rounded border-gray-300 text-blue-600"
+                                {% if member.user.id|stringformat:"s" in form.assignees.value or member.user.id in form.assignees.value %}checked{% endif %}
                             >
                             <span class="font-bold text-gray-700">
                                 {{ member.user.get_full_name|default:member.user.username }}
+                                {% if member.user == request.user %}(you){% endif %}
                                 <span class="text-xs text-gray-400 ml-1 font-normal">({{ member.user.username }})</span>
                             </span>
                         </label>
@@ -143,13 +175,13 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <a href="?time_filter=all{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'all' %}active{% endif %}">
+                <a href="?time_filter=all&chores_per_page={{ chores_per_page }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'all' %}active{% endif %}">
                     All Chores
                 </a>
-                <a href="?time_filter=today{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'today' %}active{% endif %}">
+                <a href="?time_filter=today&chores_per_page={{ chores_per_page }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'today' %}active{% endif %}">
                     Today
                 </a>
-                <a href="?time_filter=week{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'week' %}active{% endif %}">
+                <a href="?time_filter=week&chores_per_page={{ chores_per_page }}{% if member_filter %}&member={{ member_filter }}{% endif %}" class="filter-chip {% if time_filter == 'week' %}active{% endif %}">
                     This Week
                 </a>
 
@@ -170,6 +202,7 @@
                     <div id="dateFilterDropdown" class="hidden absolute right-0 mt-4 w-72 bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-6 z-[110] animate-in zoom-in-95 duration-200">
                         <form method="GET" class="space-y-4">
                             <input type="hidden" name="member" value="{{ member_filter|default:'' }}">
+                            <input type="hidden" name="chores_per_page" value="{{ chores_per_page }}">
                             <div class="space-y-4">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">From Date</label>
@@ -192,6 +225,7 @@
 
         <form method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <input type="hidden" name="time_filter" value="{{ time_filter }}">
+            <input type="hidden" name="chores_per_page" value="{{ chores_per_page }}">
             {% if request.GET.start_date %}<input type="hidden" name="start_date" value="{{ request.GET.start_date }}">{% endif %}
             {% if request.GET.end_date %}<input type="hidden" name="end_date" value="{{ request.GET.end_date }}">{% endif %}
 
@@ -214,6 +248,52 @@
             </div>
         </form>
 
+        {% if occurrences.paginator.count > 0 %}
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div class="flex items-center gap-4">
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest whitespace-nowrap">
+                    {{ occurrences.start_index }}-{{ occurrences.end_index }} of {{ occurrences.paginator.count }} chores
+                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black uppercase text-gray-300 tracking-widest">Show</span>
+                    <select onchange="changeChoresPerPage(this.value)" class="bg-transparent border-none text-[10px] font-black text-gray-500 focus:ring-0 cursor-pointer p-0">
+                        <option value="10" {% if chores_per_page == "10" %}selected{% endif %}>10</option>
+                        <option value="20" {% if chores_per_page == "20" %}selected{% endif %}>20</option>
+                        <option value="50" {% if chores_per_page == "50" %}selected{% endif %}>50</option>
+                        <option value="all" {% if chores_per_page == "all" %}selected{% endif %}>All</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if occurrences.has_previous %}
+                    <a href="?chores_page={{ occurrences.previous_page_number }}&chores_per_page={{ chores_per_page }}&time_filter={{ time_filter }}&member={{ member_filter }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}"
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+                    </a>
+                {% else %}
+                    <div class="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-100 rounded-lg text-gray-300 cursor-not-allowed">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+                    </div>
+                {% endif %}
+
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">
+                    {{ occurrences.number }} / {{ occurrences.paginator.num_pages }}
+                </span>
+
+                {% if occurrences.has_next %}
+                    <a href="?chores_page={{ occurrences.next_page_number }}&chores_per_page={{ chores_per_page }}&time_filter={{ time_filter }}&member={{ member_filter }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}"
+                       class="w-8 h-8 flex items-center justify-center bg-white border border-gray-100 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                {% else %}
+                    <div class="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-100 rounded-lg text-gray-300 cursor-not-allowed">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="space-y-3">
             {% for item in occurrences %}
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100" id="chore-{{ item.chore.id }}">
@@ -235,10 +315,19 @@
                         <div class="text-xs text-gray-400 mt-2">
                             Assigned to:
                             {% for user in item.chore.assignees.all %}
-                                {{ user.username }}{% if not forloop.last %}, {% endif %}
+                                {% if user == request.user %}you{% else %}{{ user.username }}{% endif %}{% if not forloop.last %}, {% endif %}
                             {% empty %}
                                 Unassigned
                             {% endfor %}
+                        </div>
+
+                        <div class="text-xs text-gray-400 mt-1">
+                            Created by:
+                            {% if item.chore.created_by %}
+                                {% if item.chore.created_by == request.user %}you{% else %}{{ item.chore.created_by.username }}{% endif %}
+                            {% else %}
+                                Unknown
+                            {% endif %}
                         </div>
 
                         {% if item.latest_completion %}
@@ -330,7 +419,7 @@
                                     <input type="hidden" name="occurrence_date" value="{{ item.date|date:'Y-m-d' }}">
                                 {% endif %}
                                 <button type="button" 
-                                        onclick="showConfirmModal('Mark as Complete?', 'Are you sure you want to mark this chore occurrence as finished?', 'Complete', 'success', () => document.getElementById(`complete-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}`).submit())"
+                                        onclick="{% if request.user in item.chore.assignees.all %}showConfirmModal('Mark as Complete?', 'Are you sure you want to mark this chore occurrence as finished?', 'Complete', 'success', () => document.getElementById(`complete-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}`).submit()){% else %}showConfirmModal('Not Assigned to You', 'This task was assigned to {% for u in item.chore.assignees.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}no one{% endfor %}. Do you still want to complete it?', 'Complete Anyway', 'info', () => document.getElementById(`complete-form-{{ item.chore.id }}-{{ item.date|date:'Ymd' }}`).submit()){% endif %}"
                                         class="action-link complete-link">
                                     Mark Complete
                                 </button>
@@ -418,6 +507,13 @@ function closeConfirmModal() {
 
 function toggleChoreForm() {
     document.getElementById("choreFormCard").classList.toggle("hidden");
+}
+
+function changeChoresPerPage(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('chores_per_page', value);
+    url.searchParams.set('chores_page', 1);
+    window.location.href = url.toString();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -544,6 +640,12 @@ document.addEventListener("DOMContentLoaded", function () {
     
     const descInput = document.getElementById('choreDescription');
     if (descInput) updateCharCount(descInput);
+
+    // Scroll to form if it has errors
+    const formCard = document.getElementById('choreFormCard');
+    if (formCard && !formCard.classList.contains('hidden')) {
+        formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 });
 </script>
 {% endblock %}

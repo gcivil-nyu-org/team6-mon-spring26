@@ -8,6 +8,24 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "duesanddos.settings")
+
+    # Monkey-patch Django for Python 3.14 compatibility in tests
+    if "test" in sys.argv:
+        try:
+            from django.template.context import BaseContext
+
+            def patched_copy(self):
+                cls = self.__class__
+                result = cls.__new__(cls)
+                for key, value in self.__dict__.items():
+                    setattr(result, key, value)
+                if hasattr(self, "dicts"):
+                    result.dicts = self.dicts[:]
+                return result
+
+            BaseContext.__copy__ = patched_copy
+        except (ImportError, AttributeError):
+            pass
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

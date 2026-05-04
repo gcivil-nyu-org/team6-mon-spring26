@@ -106,10 +106,16 @@ class GoogleCalendarService:
 
     # -------------------------------------------------------------- helpers
     def _get_recurrence_rule(self, chore):
+        # All-day events use a date-only UNTIL value; timed events use UTC datetime.
+        if chore.due_time:
+            until_fmt = "%Y%m%dT235959Z"
+        else:
+            until_fmt = "%Y%m%d"
+
         if chore.repeat_type == "DAILY":
             rule = "RRULE:FREQ=DAILY"
             if chore.end_date:
-                rule += f";UNTIL={chore.end_date.strftime('%Y%m%dT235959Z')}"
+                rule += f";UNTIL={chore.end_date.strftime(until_fmt)}"
             return [rule]
         elif chore.repeat_type == "WEEKLY":
             days = []
@@ -133,7 +139,7 @@ class GoogleCalendarService:
 
             rule = f"RRULE:FREQ=WEEKLY;BYDAY={','.join(days)}"
             if chore.end_date:
-                rule += f";UNTIL={chore.end_date.strftime('%Y%m%dT235959Z')}"
+                rule += f";UNTIL={chore.end_date.strftime(until_fmt)}"
             return [rule]
         return None
 
@@ -144,14 +150,17 @@ class GoogleCalendarService:
         else:
             start_date = chore.start_date or timezone.now().date()
 
-        target_time = chore.due_time or time(9, 0)
-        start_dt = datetime.combine(start_date, target_time)
-        try:
-            aware_start = timezone.make_aware(start_dt)
-        except ValueError:  # pragma: no cover
-            aware_start = start_dt
-
-        end_dt = aware_start + timedelta(minutes=30)
+        is_all_day = chore.due_time is None
+        if is_all_day:
+            aware_start = None
+            end_dt = None
+        else:
+            start_dt = datetime.combine(start_date, chore.due_time)
+            try:
+                aware_start = timezone.make_aware(start_dt)
+            except ValueError:  # pragma: no cover
+                aware_start = start_dt
+            end_dt = aware_start + timedelta(minutes=30)
 
         summary = f"Chore: {chore.description}"
         if status_prefix:
@@ -199,7 +208,7 @@ class GoogleCalendarService:
             if chore.due_time:
                 lines.append(f"⏰ Time: {chore.due_time.strftime('%-I:%M %p')}")
             else:
-                lines.append("⏰ Time: Any time (defaulting to 9:00 AM)")
+                lines.append("⏰ Time: Any time (all-day)")
 
             if chore.repeat_type == "WEEKLY":
                 day_names = []
@@ -217,14 +226,26 @@ class GoogleCalendarService:
                         day_names.append(name)
                 lines.append(f"📆 Repeats on: {', '.join(day_names)}")
 
-        tz_name = str(timezone.get_current_timezone())
         event_body = {
             "summary": summary,
             "description": "\n".join(lines),
-            "start": {"dateTime": aware_start.isoformat(), "timeZone": tz_name},
-            "end": {"dateTime": end_dt.isoformat(), "timeZone": tz_name},
             "reminders": {"useDefault": True},
         }
+
+        if is_all_day:
+            # Google Calendar treats all-day end dates as exclusive.
+            event_body["start"] = {"date": start_date.isoformat()}
+            event_body["end"] = {"date": (start_date + timedelta(days=1)).isoformat()}
+        else:
+            tz_name = str(timezone.get_current_timezone())
+            event_body["start"] = {
+                "dateTime": aware_start.isoformat(),
+                "timeZone": tz_name,
+            }
+            event_body["end"] = {
+                "dateTime": end_dt.isoformat(),
+                "timeZone": tz_name,
+            }
 
         recurrence = self._get_recurrence_rule(chore)
         if recurrence:
@@ -248,9 +269,14 @@ class GoogleCalendarService:
             ).first()
 
             if sync_record:
+                # Use update (PUT) — not patch — so fields removed from the
+                # chore (e.g. recurrence when switching to one-time, or
+                # start.dateTime when switching to all-day) are actually
+                # cleared on the Google event instead of lingering as stale
+                # values from the original create.
                 event = (
                     self.service.events()
-                    .patch(
+                    .update(
                         calendarId="primary",
                         eventId=sync_record.google_event_id,
                         body=event_body,

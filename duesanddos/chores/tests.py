@@ -259,6 +259,7 @@ class ChoreFormTests(ChoresBaseTestCase):
                 "repeat_type": "ONE_TIME",
                 "has_due_date": "on",
                 "due_date": date.today().isoformat(),
+                "assignees": [self.user.id],
             },
             household=self.household,
         )
@@ -311,6 +312,23 @@ class ChoreFormTests(ChoresBaseTestCase):
         )
         self.assertFalse(form.is_valid())
         self.assertIn("end_date", form.errors)
+
+    def test_form_requires_at_least_one_assignee(self):
+        form = ChoreForm(
+            {
+                "description": "Lonely chore",
+                "repeat_type": "ONE_TIME",
+                "has_due_date": "on",
+                "due_date": date.today().isoformat(),
+            },
+            household=self.household,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("assignees", form.errors)
+        self.assertIn(
+            "Please assign this chore to at least one person.",
+            form.errors["assignees"],
+        )
 
 
 class ChoreUtilityFunctionTests(ChoresBaseTestCase):
@@ -498,7 +516,7 @@ class ChoreViewTests(ChoresBaseTestCase):
         run_overdue_sync()
         mock_call.assert_called_once_with("sync_gcal_overdues")
 
-    def test_add_chore_invalid_form_redirects_without_creating(self):
+    def test_add_chore_invalid_form_stays_on_page(self):
         count_before = Chore.objects.count()
 
         response = self.client.post(
@@ -506,7 +524,8 @@ class ChoreViewTests(ChoresBaseTestCase):
             {"description": "Bad weekly", "repeat_type": "WEEKLY"},
         )
 
-        self.assertRedirects(response, reverse("chores_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/chores.html")
         self.assertEqual(Chore.objects.count(), count_before)
 
     def test_add_chore_creates_one_time_daily_and_weekly(self):
@@ -515,6 +534,7 @@ class ChoreViewTests(ChoresBaseTestCase):
             {
                 "description": "One-time",
                 "repeat_type": "ONE_TIME",
+                "assignees": [str(self.user.id)],
             },
         )
         self.assertRedirects(response_one, reverse("chores_list"))
@@ -529,6 +549,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "description": "Daily",
                 "repeat_type": "DAILY",
                 "start_date": date.today().isoformat(),
+                "assignees": [str(self.user.id)],
             },
         )
         self.assertRedirects(response_daily, reverse("chores_list"))
@@ -564,6 +585,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "repeat_monday": "on",
                 "has_due_date": "on",
                 "due_date": date.today().isoformat(),
+                "assignees": [str(self.user.id)],
             },
         )
         daily = Chore.objects.get(description="Daily Cleanup")
@@ -580,6 +602,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "repeat_monday": "on",
                 "has_due_date": "on",
                 "due_date": date.today().isoformat(),
+                "assignees": [str(self.user.id)],
             },
         )
         weekly = Chore.objects.get(description="Weekly Cleanup")
@@ -632,6 +655,7 @@ class ChoreViewTests(ChoresBaseTestCase):
             {
                 "description": "Editable one updated",
                 "repeat_type": "ONE_TIME",
+                "assignees": [str(self.user.id)],
             },
         )
         self.assertRedirects(response_one, reverse("chores_list"))
@@ -653,6 +677,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "description": "Editable daily updated",
                 "repeat_type": "DAILY",
                 "start_date": date.today().isoformat(),
+                "assignees": [str(self.user.id)],
             },
         )
         self.assertRedirects(response_daily, reverse("chores_list"))
@@ -675,6 +700,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "repeat_type": "WEEKLY",
                 "start_date": date.today().isoformat(),
                 "repeat_tuesday": "on",
+                "assignees": [str(self.user.id)],
             },
         )
         self.assertRedirects(response_weekly, reverse("chores_list"))
@@ -694,6 +720,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "repeat_monday": "on",
                 "has_due_date": "on",
                 "due_date": date.today().isoformat(),
+                "assignees": [self.user.id],
             },
         )
         chore_daily.refresh_from_db()
@@ -710,6 +737,7 @@ class ChoreViewTests(ChoresBaseTestCase):
                 "repeat_monday": "on",
                 "has_due_date": "on",
                 "due_date": date.today().isoformat(),
+                "assignees": [self.user.id],
             },
         )
         chore_weekly.refresh_from_db()
