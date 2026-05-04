@@ -119,6 +119,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0;
     padding: 8px;
     background-color: #eff6ff;
     border-radius: 12px;
@@ -128,6 +129,11 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 48px;
     height: 48px;
+    box-sizing: border-box;
+}
+
+.household-switcher .sidebar-text {
+    display: none;
 }
 
 .sidebar:hover .household-switcher, .sidebar.pinned .household-switcher {
@@ -135,6 +141,12 @@
     height: auto;
     justify-content: flex-start;
     padding: 12px;
+    gap: 12px;
+}
+
+.sidebar:hover .household-switcher .sidebar-text,
+.sidebar.pinned .household-switcher .sidebar-text {
+    display: inline-flex;
 }
 
 .household-switcher:hover {
