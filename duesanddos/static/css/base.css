@@ -12,11 +12,11 @@
     border-right: 1px solid var(--color-gray-border);
     display: flex;
     flex-direction: column;
-    padding: 0 12px 24px 12px; /* Reduced side padding for better centering */
+    padding: 0 20px 24px 20px; /* Removed top padding to handle brand area separately */
     height: 100vh;
     z-index: 1000;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
-    overflow: visible;
+    overflow: hidden;
     flex-shrink: 0;
 }
 
@@ -75,8 +75,7 @@
 .sidebar.pinned .sidebar-text {
     opacity: 1;
     transform: translateX(0);
-    width: auto;
-    flex: 1;
+    width: 100%;
     pointer-events: auto;
 }
 
@@ -118,35 +117,19 @@
 .household-switcher {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0;
+    gap: 12px;
     padding: 8px;
-    background-color: #eff6ff;
+    background-color: #f0fdf4;
     border-radius: 12px;
-    margin: 0 auto 24px auto;
+    margin-bottom: 32px;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 48px;
-    height: 48px;
-    box-sizing: border-box;
-}
-
-.household-switcher .sidebar-text {
-    display: none;
+    transition: all 0.2s;
+    min-width: 200px;
 }
 
 .sidebar:hover .household-switcher, .sidebar.pinned .household-switcher {
-    width: 100%;
-    height: auto;
-    justify-content: flex-start;
     padding: 12px;
-    gap: 12px;
-}
-
-.sidebar:hover .household-switcher .sidebar-text,
-.sidebar.pinned .household-switcher .sidebar-text {
-    display: inline-flex;
 }
 
 .household-switcher:hover {
@@ -155,8 +138,8 @@
 .household-icon {
     width: 32px;
     height: 32px;
-    background-color: #dbeafe;
-    color: #2563eb;
+    background-color: #dcfce7;
+    color: #16a34a;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -169,17 +152,14 @@
     flex-direction: column;
     gap: 4px;
     flex-grow: 1;
-    min-width: 0;
+    min-width: 200px;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 12px;
-    padding: 10px 0;
-    width: 48px;
-    margin: 0 auto;
+    padding: 10px;
     text-decoration: none;
     color: var(--color-text-muted);
     border-radius: 8px;
@@ -190,8 +170,6 @@
 }
 
 .sidebar:hover .nav-item, .sidebar.pinned .nav-item {
-    width: 100%;
-    justify-content: flex-start;
     padding: 10px 12px;
 }
 
@@ -298,13 +276,6 @@
 
 .pin-btn:hover #pinIcon {
     stroke-width: 2.5;
-}
-
-.sidebar-household-dropdown {
-    position: absolute !important;
-    left: calc(100% + 10px) !important;
-    top: 0 !important;
-    width: 220px !important;
 }
 
 @media (max-width: 1024px) {
